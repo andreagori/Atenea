@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// DARLE OTRA LEIDA A MI BASE DE DATOS Y BUSCAR INCONSISTENCIAS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId       Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(20)
+  passwordHash String    @db.VarChar(255)
+  createdAt    DateTime  @default(now())
+
+  decks         Deck[]
+  studySessions StudySession[]
+  exams         Exam[]
+  userStats     UserStats?
+}
+
+model Deck {
+  deckId    Int    @id @default(autoincrement())
+  userId    Int
+  title     String @db.VarChar(100)
+  body      String?
+  createdAt DateTime @default(now())
+
+  user          User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  cards         Card[]
+  studySessions StudySession[]
+}
+
+model Card {
+  cardId         Int       @id @default(autoincrement())
+  deckId         Int
+  learningMethod LearningMethod
+
+  deck          Deck @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
+  activeRecall  CardsActiveRecall?
+  cornell       CardsCornell?
+  visualCard    VisualCard?
+}
+
+model CardsActiveRecall {
+  cardId       Int     @id
+  questionTitle String @db.Text
+  answer       String @db.Text
+
+  card         Card    @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+}
+
+model CardsCornell {
+  cardId        Int     @id
+  principalNote String  @db.Text
+  noteQuestions String  @db.Text
+  shortNote     String  @db.Text
+
+  card          Card    @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+}
+
+model VisualCard {
+  cardId   Int    @id
+  urlImage String @db.VarChar(250)
+
+  card     Card   @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+}
+
+model StudySession {
+  sessionId      Int       @id @default(autoincrement())
+  userId         Int
+  deckId         Int
+  startTime      DateTime
+  endTime        DateTime
+  minDuration    Int?
+  learningMethod LearningMethod
+  studyMethod    StudyMethod
+
+  user           User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  deck           Deck @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
+  sessionResult  SessionsResult?
+}
+
+model SessionsResult {
+  resultId  Int       @id @default(autoincrement())
+  sessionId Int       @unique
+  score     Int
+  testDate  DateTime  @default(now())
+
+  session   StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+}
+
+model UserStats {
+  userId              Int    @id
+  totalSessions       Int    @default(0)
+  totalStudyMin       Int    @default(0)
+  mostUsedLearningM   LearningMethod?
+  mostUsedStudyM      StudyMethod?
+
+  user               User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Exam {
+  examId    Int      @id @default(autoincrement())
+  userId    Int
+  examDate  DateTime
+  examScore Int
+  note      String?  @db.Text
+
+  user      User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+enum LearningMethod {
+  activeRecall
+  cornell
+  visualCard
+}
+
+enum StudyMethod {
+  pomodoro
+  simulatedTest
+}
