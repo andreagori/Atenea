@@ -1,36 +1,33 @@
 services:
-  # PostgreSQL Database
-  db:
-    image: postgres:17-alpine
-    container_name: atenea_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: atenea_user
-      POSTGRES_PASSWORD: atenea_password
-      POSTGRES_DB: atenea_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - atenea_network
-
   # Backend (NestJS)
   backend:
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
     container_name: atenea_backend
-    restart: unless-stopped
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgresql://atenea_user:atenea_password@db:5432/atenea_db
-      PORT: 3000
     ports:
       - "3000:3000"
     networks:
       - atenea_network
+    depends_on:
+      - db
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://root:123@db:5432/atenea"
+
+  # PostgreSQL Database
+  db:
+    image: postgres:17
+    container_name: atenea_db
+    environment:
+      POSTGRES_USER: atenea_user
+      POSTGRES_PASSWORD: atenea_pass
+      POSTGRES_DB: atenea_db
+    ports:
+      - "5432:5432"
+    networks:
+      - atenea_network
+    restart: unless-stopped
 
   # Frontend (React + Vite)
   frontend:
@@ -46,7 +43,6 @@ services:
     networks:
       - atenea_network
 
-volumes:
-  postgres_data:
 networks:
-  atenea_network: {}
+  atenea_network:
+    driver: bridge
