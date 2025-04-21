@@ -66,3 +66,18 @@ funnel-sans-<uniquifier>
   font-weight: <weight>;
   font-style: normal;
 }
+
+/* ANIMATION */
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradientMove linear infinite;
+  background-size: 300% 100%;
+}
