@@ -11,8 +11,10 @@ Revisar si debo de cambiar esto por el plugin de daisyui.
     /* DARK COLORS */
   --color-darkBackground:#0D1529;
   --color-darkComponent: #1A2734;
+  --color-darkComponent2: #010515;
   --color-darkComponentElement: #314157;
   --color-darkPrimary: #1A368B;
+  --color-darkPrimary2: #001144;
   --color-darkSecondary: #193AB7;
   --color-darkAccent: #A683FF;
   --color-darkNeutral: #BDDAFE;

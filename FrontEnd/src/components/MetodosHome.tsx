@@ -1,3 +1,0 @@
-/*
-Agregar la parte de los metodos con las tarjetas dentro del home y de la barra de nav del mismo.
-*/

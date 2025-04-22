@@ -3,8 +3,8 @@ import Banner from "../components/Banner";
 import MetodosCardsHome from "../components/MetodosCardsHome";
 import AnalisisContainer from "../components/AnalisisContainer";
 import QuienesSomosContainer from "../components/QuienesSomosContainer";
-import GradientText from "../components/GradientText";
-
+import GradientText from "../libs/reactbits/GradientText";
+import Footer from "../components/Footer";
 
 const Home = () => {
   return (
@@ -32,27 +32,27 @@ const Home = () => {
       </div>
 
       {/* Gradient subtitle */}
-      <main className="mt-24 text-center flex flex-col items-center justify-center">
+      <main className="mt-24 text-center flex flex-col items-center justify-center flex-1">
         <GradientText
-          colors={["#193AB7", "#A683FF", "#193AB7", "#A683FF", "#193AB7"]}
-          animationSpeed={3}
+          colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
+          animationSpeed={5}
           showBorder={false}
-          className="text-5xl font-bold mb-8"
+          className="text-6xl font-bold mb-8"
         >
           Metodos
         </GradientText>
         <MetodosCardsHome />
         <GradientText
-          colors={["#193AB7", "#A683FF", "#193AB7", "#A683FF", "#193AB7"]}
-          animationSpeed={3}
+          colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
+          animationSpeed={5}
           showBorder={false}
           className="text-5xl font-bold mt-10"
         >
           Analisis
         </GradientText>
         <GradientText
-          colors={["#193AB7", "#A683FF", "#193AB7", "#A683FF", "#193AB7"]}
-          animationSpeed={3}
+          colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
+          animationSpeed={5}
           showBorder={false}
           className="text-5xl font-bold mt-10 mb-15"
         >
@@ -61,6 +61,9 @@ const Home = () => {
         </GradientText>
         <QuienesSomosContainer />
       </main>
+      <footer className="w-full">
+        <Footer />
+      </footer>
     </div>
   );
 };

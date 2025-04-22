@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
-import "../styles/SpotlightCard.css"; // Import your CSS file for styles
+// Import your CSS file for styles
+import "./styles/SpotlightCard.css"; 
 
 interface Position {
   x: 10;
