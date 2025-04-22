@@ -19,7 +19,7 @@ export default function Banner() {
                                 Iniciar Sesión
                             </button>
                         </Link>
-                        <Link to="/login">
+                        <Link to="/register">
                         <button className="bg-gradient-to-b from-darkSecondary to-darkPrimary2 text-white px-6 py-2 rounded hover:from-darkPrimary2 hover:to-darkSecondary transition duration-300">
                                 Registro
                             </button>
