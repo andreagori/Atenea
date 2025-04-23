@@ -8,9 +8,10 @@ import { CardModule } from './card/card.module';
 import { CardsActiveRecallModule } from './cards-active-recall/cards-active-recall.module';
 import { CardsCornellModule } from './cards-cornell/cards-cornell.module';
 import { ExamModule } from './exam/exam.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, DeckModule, CardModule, CardsActiveRecallModule, CardsCornellModule, ExamModule],
+  imports: [PrismaModule, UserModule, DeckModule, CardModule, CardsActiveRecallModule, CardsCornellModule, ExamModule, AuthModule],
   controllers: [PrismaController],
   providers: [PrismaService],
   exports: [PrismaService],
