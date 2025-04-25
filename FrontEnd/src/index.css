@@ -83,3 +83,7 @@ funnel-sans-<uniquifier>
   animation: gradientMove linear infinite;
   background-size: 300% 100%;
 }
+
+html {
+  scroll-behavior: smooth;
+}

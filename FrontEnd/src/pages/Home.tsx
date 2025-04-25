@@ -15,17 +15,21 @@ const Home = () => {
           <Banner />
       </div>
 
-      {/* Gradient subtitle */}
-      <main className="mt-24 text-center flex flex-col items-center justify-center flex-1">
-        <GradientText
-          colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
-          animationSpeed={5}
-          showBorder={false}
-          className="text-6xl font-bold mb-8"
-        >
-          Metodos
-        </GradientText>
-        <MetodosCardsHome />
+      {/* Gradient subtitle. Metodos Section */}
+      <section id="metodos" className="mt-24 text-center flex flex-col items-center justify-center flex-1">
+          <GradientText
+            colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
+            animationSpeed={5}
+            showBorder={false}
+            className="text-6xl font-bold mb-8"
+          >
+            Metodos
+          </GradientText>
+          <MetodosCardsHome />
+        </section>
+
+      {/* Gradient subtitle. Analisis Section */}
+      <section id="analisis" className="mt-24 text-center flex flex-col items-center justify-center flex-1">
         <GradientText
           colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
           animationSpeed={5}
@@ -34,6 +38,10 @@ const Home = () => {
         >
           Analisis
         </GradientText>
+        </section>
+
+        {/* Quienes Somos Section */}
+        <section id="quienesomos" className="mt-24 text-center flex flex-col items-center justify-center flex-1">
         <GradientText
           colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
           animationSpeed={5}
@@ -44,7 +52,7 @@ const Home = () => {
           ¿Quienes Somos?
         </GradientText>
         <QuienesSomosContainer />
-      </main>
+        </section>
       <footer className="w-full">
         <Footer />
       </footer>
