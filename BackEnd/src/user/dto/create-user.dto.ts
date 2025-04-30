@@ -1,3 +1,4 @@
+import { IsString } from "class-validator";
 import { User } from "../entities/user.entity";
 import { OmitType } from "@nestjs/swagger";
 
@@ -6,12 +7,8 @@ import { OmitType } from "@nestjs/swagger";
 export class CreateUserDto extends OmitType (User, [
     'userId',
     'createdAt',
-
-    // Relaciones con otras tablas, revisar si son necesarias.
-    /*
-    'decks',
-    'studySessions',
-    'exams',
-    'userStats'
-    */
-] as const){}
+    'passwordHash'
+] as const){
+    @IsString()
+    password: string; 
+}

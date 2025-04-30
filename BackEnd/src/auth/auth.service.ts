@@ -11,6 +11,16 @@ export class AuthService {
       private readonly jwtService: JwtService, // Injecting JwtService for JWT token generation
     ) {}
 
+    // SIGN UP method to register a new user.
+    async signUp(username: string, password: string) {
+      const hashedPassword = await bcrypt.hash(password, 10); // Hash aquí
+      const user = await this.userService.create({
+        username,
+        password: hashedPassword, // Envía el hash
+      });
+      return user;
+    }
+
     // Sign In method to authenticate a user.
     async signIn(username: string, pass: string): Promise<any> {
         const user = await this.userService.findByUsername(username);

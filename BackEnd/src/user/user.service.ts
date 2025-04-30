@@ -25,19 +25,18 @@ export class UserService {
       },
     });
 
-    // add the bcrypt function to hash the password before saving it to the database.
-    const hashedPassword = await bcrypt.hash(createUserDto.passwordHash, 10);
-
     if (!usernameExists) {
       return await this.prisma.user.create({
         // data: createUserDto, 
         // para modificar el password antes de guardarlo
         // data: { ...createUserDto, password: hashedPassword },
-        data: { ...createUserDto, passwordHash: hashedPassword },
+        data: {
+          username: createUserDto.username,
+          passwordHash: createUserDto.password, // ← Ya viene hasheado
+        },
       });
     } else {
       this.logger.error(`Username ${createUserDto.username} already exists`);
-      return 'Username already exists';
       throw new ConflictException('Username already exists');
     }
   }

@@ -24,7 +24,7 @@ async function bootstrap() {
       transform: true, // Transforma los datos al tipo esperado en el DTO
     }),
   );
-
+  app.enableCors()
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
