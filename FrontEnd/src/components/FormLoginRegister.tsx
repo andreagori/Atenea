@@ -129,7 +129,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         setMessage("Inicio de sesión exitoso.");
         setUsername("");
         setPassword("");
-        setTimeout(() => navigate("/HomeLoginIn"), 1000); // redirige a home
+        setTimeout(() => navigate("/home"), 1000); // redirige a home
     } catch (error: any) {
         console.error("Error:", error);
         setMessage("Error en el inicio de sesión. Inténtalo de nuevo.");

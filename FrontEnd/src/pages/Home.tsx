@@ -1,6 +1,6 @@
 import { Navbar } from "../components/Navbar";
 import Banner from "../components/Banner";
-import MetodosCardsHome from "../components/MetodosCardsHome";
+import MetodosCardsHome from "../components/MetodosCardsInfo";
 import AnalisisContainer from "../components/AnalisisContainer";
 import QuienesSomosContainer from "../components/QuienesSomosContainer";
 import GradientText from "../libs/reactbits/GradientText";

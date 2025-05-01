@@ -1,18 +1,41 @@
 // rafce to create page template
 // Imports
-import { NavbarLoginIn } from "../components/Navbar"
+import Footer from "../components/Footer";
+import MazoSesionCardsHome from "../components/MazoSesionCardsHome";
+import { NavbarLoginIn } from "../components/Navbar";
 
 const HomeLoginIn = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-darkBackground">
+    <div className="flex flex-col min-h-screen font-primary bg-darkBackground">
+      {/* Navbar */}
       <NavbarLoginIn />
+      
       {/* Main Content */}
-      <div className="mt-8">
-        <h1 className="text-4xl font-bold text-darkBgText">Bienvenido a Atenea</h1>
-        <p className="text-lg text-darkBgText">Inicia sesión para continuar</p>
-      </div>
-      </div>
-  )
-}
+      <div className="flex-grow flex flex-col items-center mt-15">
+        {/* Title Content */}
+        <div className="mt-8 text-5xl text-center text-darkPSText">
+          <h1>
+            ¡Hola de nuevo
+            <br />
+            <strong>Tu Usuario</strong>!
+          </h1>
+          <p className="text-lg mt-12">¿Qué quieres hacer hoy?</p>
+        </div>
 
-export default HomeLoginIn
+        <MazoSesionCardsHome />
+
+        {/* Análisis Content */}
+        <div className="flex flex-col items-center text-darkPSText text-2xl mt-8">
+          <h1>Resúmen de análisis</h1>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="w-full">
+        <Footer />
+      </footer>
+    </div>
+  );
+};
+
+export default HomeLoginIn;
