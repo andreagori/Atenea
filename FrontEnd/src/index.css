@@ -60,6 +60,7 @@ Revisar si debo de cambiar esto por el plugin de daisyui.
 
 }
 
+
 /* TYPOGRAPHY */
 funnel-sans-<uniquifier> 
 {
@@ -84,6 +85,17 @@ funnel-sans-<uniquifier>
   background-size: 300% 100%;
 }
 
-html {
+html, body {
   scroll-behavior: smooth;
+  background-color: var(--color-darkBackground);
+}
+
+/* Estilos para ocultar scrollbar en navegadores modernos */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Para Firefox */
+.scrollbar-hide {
+  scrollbar-width: none;
 }
