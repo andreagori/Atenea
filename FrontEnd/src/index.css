@@ -32,6 +32,12 @@ Revisar si debo de cambiar esto por el plugin de daisyui.
   --color-darkWarningText: #7C2808;
   --color-darkDangerText: #440607;
 
+  --color-darkCustomStart1: #718298;
+  --color-darkCustomEnd1: #BDDAFE;
+  --color-darkCustomStart2: #A1B1FF;
+  --color-darkCustomEnd2: #F5F5F5;
+  --color-darkCustomEnd3: #A683FF;
+
   /* LIGHT COLORS */
   --color-lightBackground: #E2E5E9;
   --color-lightComponent: #C6D2FF;

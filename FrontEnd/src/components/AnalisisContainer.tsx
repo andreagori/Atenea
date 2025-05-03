@@ -1,5 +1,4 @@
 import GradientText from '../libs/reactbits/GradientText';
-import BasicBars from '../libs/materialUI/chartExample';
 
 function AnalisisContainer() {
   return (
@@ -13,25 +12,24 @@ function AnalisisContainer() {
         >
           Análisis
         </GradientText>
-        <div className="bg-darkNeutralText w-[95vw] h-[30vw] flex items-start p-8 rounded-lg justify-between gap-4">
+        <div className="bg-darkNeutralText w-11/12 h-7/12 flex items-start p-8 rounded-lg justify-between gap-4 overflow-hidden">
           {/* Texto a la izquierda */}
-          <div className="flex flex-col w-1/2">
-            <h1 className="text-darkBgText text-5xl font-bold mb-4">Análisis</h1>
-            <p className="text-darkBgText text-lg">
+          <div className="flex flex-col w-6/8 overflow-hidden">
+            <h1 className="text-darkBgText text-5xl font-bold mb-4 truncate">Análisis</h1>
+            <p className="text-darkBgText text-lg truncate">
               Descubre información valiosa sobre tu progreso con nuestras herramientas de análisis:
             </p>
             <ul className="list-disc list-inside mt-4 text-darkBgText text-lg">
-              <li>Visualiza tu rendimiento académico a lo largo del tiempo.</li>
-              <li>Compara la efectividad de diferentes métodos de estudio y aprendizaje.</li>
-              <li>Revisa tus hábitos de estudio y detecta patrones de mejora.</li>
-              <li>Consulta estadísticas detalladas de sesiones, mazos y tarjetas.</li>
-              <li>Evalúa la relación entre tiempo de estudio y calificaciones obtenidas.</li>
+              <li className="truncate">Visualiza tu rendimiento académico a lo largo del tiempo.</li>
+              <li className="truncate">Compara la efectividad de diferentes métodos de estudio y aprendizaje.</li>
+              <li className="truncate">Revisa tus hábitos de estudio y detecta patrones de mejora.</li>
+              <li className="truncate">Consulta estadísticas detalladas de sesiones, mazos y tarjetas.</li>
+              <li className="truncate">Evalúa la relación entre tiempo de estudio y calificaciones obtenidas.</li>
             </ul>
           </div>
 
           {/* Gráfica a la derecha */}
-          <div className="w-1/2 h-full flex items-center justify-center">
-            <BasicBars />
+          <div className="w-3/8 h-full flex items-center justify-center bg-darkComponent2 rounded-2xl">
           </div>
         </div>
 

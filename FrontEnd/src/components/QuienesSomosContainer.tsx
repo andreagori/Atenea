@@ -11,14 +11,16 @@ function QuienesSomosContainer() {
           className="text-5xl font-bold"> ¿Quiénes somos?
         </GradientText>
         {/* Contenedor con padding-top para dejar espacio para el círculo */}
-        <div className="relative w-[95vw] h-[30vw] bg-darkComponentElement rounded-3xl flex flex-col pt-[6rem] mt-30">
-          {/* Círculo encima del contenedor, con la mitad dentro y la otra mitad fuera */}
+        <div className="relative w-11/12 h-7/12 bg-darkComponentElement rounded-3xl flex flex-col pt-[6rem] mt-30">
+          {/* Círculo encima del contenedor, con la mitad dentro y la otra mitad fuera. Agregar foto. */}
           <div className="absolute top-[-6rem] left-1/2 transform -translate-x-1/2 w-[12rem] h-[12rem] bg-darkAccent rounded-full shadow-xl z-20" />
           {/* Contenido del contenedor */}
-          <h1 className="text-darkBgText text-2xl font-bold mb-8 text-center">Andrea</h1>
+          <h1 className="text-darkBgText text-2xl mb-8 text-center">Creado por: <strong>Andrea</strong></h1>
           {/* Agrega aquí más contenido si deseas */}
           <p className='text-darkBgText text-lg text-center'>
-            Atenea es una plataforma de aprendizaje personalizada que utiliza inteligencia artificial para ofrecer una experiencia educativa única. Nuestro objetivo es ayudar a los estudiantes a alcanzar su máximo potencial mediante un enfoque adaptativo y centrado en el usuario.
+            Atenea es una plataforma de aprendizaje personalizada empleando diferentes métodos de estudio para ofrecer una experiencia educativa única. <br />
+            Nuestro objetivo es ayudar a los estudiantes a alcanzar su máximo potencial mediante un enfoque adaptativo y centrado en el usuario. <br />
+            Con una interfaz intuitiva y el uso de análisis de datos, Atenea brindará las respuestas necesarias para mejorar el rendimiento académico del usuario. <br />
           </p>
         </div>
       </>
