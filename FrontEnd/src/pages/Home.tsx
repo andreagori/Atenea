@@ -1,8 +1,8 @@
 import { Navbar } from "../components/Navbar";
 import Banner from "../components/Banner";
-import MetodosCardsHome from "../components/MetodosCardsInfo";
-import AnalisisContainer from "../components/AnalisisContainer";
-import QuienesSomosContainer from "../components/QuienesSomosContainer";
+import MetodosCardsHome from "../components/CardsMethodsInfo";
+import AnalisisContainer from "../components/AnalisysHomeContainer";
+import QuienesSomosContainer from "../components/WhoareweContainerHome";
 import Footer from "../components/Footer";
 
 const Home = () => {

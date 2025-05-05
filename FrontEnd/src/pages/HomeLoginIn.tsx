@@ -1,8 +1,8 @@
 // rafce to create page template
 // Imports
 import Footer from "../components/Footer";
-import MazoSesionCardsHome from "../components/MazoSesionCardsHome";
-import ResumenAnalisis from "../components/ResumenAnalisis";
+import MazoSesionCardsHome from "../components/CreateStudyDeckMenu";
+import ResumenAnalisis from "../components/AnalisysSummary";
 import { NavbarLoginIn } from "../components/Navbar";
 
 const HomeLoginIn = () => {

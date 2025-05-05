@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import SpotlightCard from "../libs/reactbits/SpotlightCard"
 
 function MazoSesionCardsHome() {
@@ -13,13 +14,15 @@ function MazoSesionCardsHome() {
                     borderColor="var(--color-darkAccent)">
 
                     <div className="flex flex-col h-full p-2 text-darkNeutral">
+                        <img src="/src/assets/createDeckIcon.svg" alt="Mazo" className="w-10 h-10 justify-start mb-2" />
                         <h2 className="text-5xl font-bold">Crear un <br />Mazo.</h2>
                         <p className="mt-2 mb-2 text-xl">
                             Crea un nuevo mazo de cartas para estudiar.
                         </p>
-                        <button className="mt-4 px-4 py-2 bg-gradient-to-b from-darkCustomEnd1 to-darkCustomStart1 text-darkPrimary rounded hover:from-darkNeutral hover:to-darkSecondary transition duration-300">
+                        <Link to="/mazos"
+                            className="flex justify-center items-center mt-4 px-4 py-2 bg-gradient-to-b from-darkCustomEnd1 to-darkCustomStart1 text-darkPrimary rounded hover:from-darkNeutral hover:to-darkSecondary transition duration-300">
                             Ir
-                        </button>
+                        </Link>
                     </div>
                 </SpotlightCard>
 
@@ -32,13 +35,15 @@ function MazoSesionCardsHome() {
                     borderColor="var(--color-white)">
 
                     <div className="flex flex-col h-full p-2 text-white">
+                        <img src="/src/assets/studySessionIcon.svg" alt="Mazo" className="w-10 h-10 justify-start mb-2" />
                         <h2 className="text-5xl font-bold">Estudiar. </h2> <br />
                         <p className="mt-8 mb-2 text-xl">
                             Inicia una sesión de estudio con cualquier mazo.
                         </p>
-                        <button className="mt-4 px-4 py-2 bg-gradient-to-b from-darkCustomEnd2 to-darkCustomStart2 text-darkPrimary rounded hover:from-darkAccent hover:to-darkSecondary transition duration-300">
+                        <Link to="/sesionesEstudio"
+                            className="flex justify-center mt-4 px-4 py-2 bg-gradient-to-b from-darkCustomEnd2 to-darkCustomStart2 text-darkPrimary rounded hover:from-darkAccent hover:to-darkSecondary transition duration-300">
                             Ir
-                        </button>
+                        </Link>
                     </div>
                 </SpotlightCard>
 

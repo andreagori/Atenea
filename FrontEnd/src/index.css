@@ -1,8 +1,6 @@
 @import "tailwindcss";
-/*
 @plugin "daisyui";
-Revisar si debo de cambiar esto por el plugin de daisyui.
-*/
+
 @theme {
   /* FONTS */
   --font-primary: "Funnel Sans", sans-serif;

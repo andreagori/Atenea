@@ -50,7 +50,7 @@ export function NavbarLoginIn() {
         <div className="hidden md:flex space-x-6 justify-end items-center w-full font-primary">
           <Link to="/mazos" className="hover:text-darkAccent">Mazos</Link>
           <Link to="/analisis" className="hover:text-darkAccent">Análisis</Link>
-          <Link to="/sesion-estudio" className="hover:text-darkAccent">Sesión de estudio</Link>
+          <Link to="/sesionesEstudio" className="hover:text-darkAccent">Sesión de estudio</Link>
         </div>
       </nav>
     </header>

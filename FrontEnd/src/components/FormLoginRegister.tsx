@@ -31,7 +31,7 @@ export function FormRegister() {
       setMessage("Registro exitoso. Puedes iniciar sesión ahora.");
       setUsername("");
       setPassword("");
-      setTimeout(() => navigate("/login"), 1000); // redirige a login
+      setTimeout(() => navigate("/inicioSesion"), 1000); // redirige a login
     } catch (error: any) {
       console.error("Error:", error);
       setMessage("Error en el registro. Inténtalo de nuevo.");
@@ -152,7 +152,7 @@ export function FormLogin() {
       setMessage("Inicio de sesión exitoso.");
       setUsername("");
       setPassword("");
-      setTimeout(() => navigate("/home"), 1000); // redirige a home
+      setTimeout(() => navigate("/inicio"), 1000); // redirige a home
     } catch (error: any) {
       console.error("Error:", error);
       setMessage("Error en el inicio de sesión. Inténtalo de nuevo.");
