@@ -92,6 +92,14 @@ funnel-sans-<uniquifier>
 html, body {
   scroll-behavior: smooth;
   background-color: var(--color-darkBackground);
+  scrollbar-width: none; /* Firefox */
+}
+
+html, body {
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari y Edge */
 }
 
 /* Estilos para ocultar scrollbar en navegadores modernos */
@@ -102,4 +110,25 @@ html, body {
 /* Para Firefox */
 .scrollbar-hide {
   scrollbar-width: none;
+}
+
+/* Si usas CSS personalizado */
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro */
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 400px;
+  width: 100%;
 }

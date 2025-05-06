@@ -1,7 +1,7 @@
 // The select for the decks in the study session. Testing the daisyUI select component.
 const SelectDecksStudySession: React.FC = () => {
     return (
-    <select defaultValue="" className="select select-primary bg-darkInfo font-primary font-bold text-lg text-darkPrimary rounded-2xl">
+    <select defaultValue="" className="select select-lg select-primary bg-darkInfo font-primary font-bold text-lg text-darkPrimary rounded-2xl">
         <option disabled value="">
           Nombre del mazo:
         </option>
