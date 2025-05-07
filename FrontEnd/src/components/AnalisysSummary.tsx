@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 function ResumenAnalisis() {
     return (
         <>
@@ -11,9 +12,11 @@ function ResumenAnalisis() {
                         Analiza tus hábitos de estudio y mejora tu aprendizaje.
                     </p>
                     <div className="flex justify-end mt-4 mr-4">
-                        <button className="px-4 py-2 mb-5 bg-gradient-to-b from-darkCustomEnd3 to-darkSecondary text-white rounded hover:from-darkAccent hover:to-darkSecondary transition duration-300">
-                            Ver análisis completo
-                        </button>
+                        <Link to="/analisis">
+                            <button className="px-4 py-2 mb-5 bg-gradient-to-b from-darkCustomEnd3 to-darkSecondary text-white rounded hover:from-darkAccent hover:to-darkSecondary transition duration-300">
+                                Ver análisis completo
+                            </button>
+                        </Link>
                     </div>
                 </div>
             </div>

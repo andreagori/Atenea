@@ -12,8 +12,8 @@ export default function Banner() {
                 <div className="relative flex flex-col items-center justify-center w-[95vw] h-[30vw] rounded-2xl bg-darkAccent overflow-hidden">
                     <GridMotionBanner />
                     <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                        <h1 className="text-4xl font-bold text-darkBgText mb-1">Bienvenido a Atenea</h1>
-                        <p className="text-lg text-darkBgText mb-4">Tu plataforma de aprendizaje personalizada.</p>
+                        <h1 className="text-4xl font-bold text-darkBgText mb-1 text-shadow-strong">Bienvenido a Atenea</h1>
+                        <p className="text-lg text-darkBgText mb-4 text-shadow-strong">Tu plataforma de aprendizaje personalizada.</p>
                         <div className="flex space-x-4">
                             <Link to="/inicioSesion">
                                 <button className="bg-gradient-to-b from-darkPrimary to-darkPrimary2 text-white px-6 py-2 rounded hover:from-darkPrimary2 hover:to-darkPrimary transition duration-300">

@@ -1,4 +1,5 @@
 import GradientText from '../libs/reactbits/GradientText';
+import ExampleChart from '../components/chart/exampleChart';
 
 function AnalisisContainer() {
   return (
@@ -30,6 +31,7 @@ function AnalisisContainer() {
 
           {/* Gráfica a la derecha */}
           <div className="w-3/8 h-full flex items-center justify-center bg-darkComponent2 rounded-2xl">
+          <ExampleChart />
           </div>
         </div>
 

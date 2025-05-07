@@ -1,10 +1,10 @@
 import { useEffect, useRef, FC } from "react";
 import { gsap } from "gsap";
 import "./styles/GridMotion.css"; // Import your CSS file for styles
-
+import React from "react";
 
 interface GridMotionProps {
-  items?: (string | React.ReactNode)[];
+  items?: (string | React.ReactNode)[]; // Items can be strings, JSX, or images
   gradientColor?: string;
 }
 
@@ -75,11 +75,11 @@ const GridMotion: FC<GridMotionProps> = ({
       >
         {/* Noise overlay */}
         <div className="absolute inset-0 pointer-events-none z-[4] bg-[url('../../../assets/noise.png')] bg-[length:250px]"></div>
-        <div className="gap-4 flex-none relative w-[150vw] h-[150vh] grid grid-rows-4 grid-cols-1 rotate-[-15deg] origin-center z-[2]">
+        <div className="flex-none relative w-[150vw] h-[150vh] grid grid-rows-4 grid-cols-1 rotate-[-15deg] origin-center z-[2]">
           {Array.from({ length: 4 }, (_, rowIndex) => (
             <div
               key={rowIndex}
-              className="grid gap-4 grid-cols-7"
+              className="grid gap-3 grid-cols-7"
               style={{ willChange: "transform, filter" }}
               ref={(el) => {
                 rowRefs.current[rowIndex] = el;
@@ -89,17 +89,27 @@ const GridMotion: FC<GridMotionProps> = ({
                 const content = combinedItems[rowIndex * 7 + itemIndex];
                 return (
                   <div key={itemIndex} className="relative">
-                    <div className="relative w-full h-full overflow-hidden rounded-[10px] bg-[#111] flex items-center justify-center text-white text-[1.5rem]">
-                      {typeof content === "string" &&
-                      content.startsWith("http") ? (
-                        <div
-                          className="w-full h-full bg-cover bg-center absolute top-0 left-0"
-                          style={{ backgroundImage: `url(${content})` }}
-                        ></div>
-                      ) : (
+                    {typeof content === "string" &&
+                    content.startsWith("http") ? (
+                      // Render image if content is a URL
+                      <img
+                        src={content}
+                        alt={`Grid item ${rowIndex * 7 + itemIndex}`}
+                        className="absolute top-0 left-0 w-full h-full object-cover rounded-[10px]"
+                      />
+                    ) : typeof content === "object" &&
+                      React.isValidElement(content) &&
+                      content.type === "img" ? (
+                      // Render JSX image if content is a JSX <img> element
+                      <div className="absolute top-0 left-0 w-full h-full">
+                        {content}
+                      </div>
+                    ) : (
+                      // Render text or other JSX content
+                      <div className="relative w-full h-full overflow-hidden rounded-[10px] bg-[#111] flex items-center justify-center text-white text-[1.5rem]">
                         <div className="p-4 text-center z-[1]">{content}</div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

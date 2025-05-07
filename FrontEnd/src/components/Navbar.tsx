@@ -9,7 +9,7 @@ export function Navbar() {
     <nav className="container mx-auto flex justify-between items-center p-4">
       {/* Logo */}
       <Link to="/" className="flex items-center text-xl font-primary font-semibold">
-        <img src="/Atenea logo.svg" alt="Logo" className="h-10 w-auto" />
+        <img src="/AteneaIcon.svg" alt="Logo" className="h-10 w-auto" />
         <span className="ml-2">Atenea</span>
       </Link>
       {/* Navigation Links */}
@@ -29,7 +29,7 @@ export function NavbarForms() {
       <nav className="container mx-auto flex justify-between items-center p-4">
         {/* Logo */}
         <Link to="/" className="flex items-center text-xl font-primary font-semibold">
-          <img src="/Atenea logo.svg" alt="Logo" className="h-10 w-auto" />
+          <img src="/AteneaIcon.svg" alt="Logo" className="h-10 w-auto" />
           <span className="ml-2">Atenea</span>
         </Link>
       </nav>
@@ -43,7 +43,7 @@ export function NavbarLoginIn() {
       <nav className="container mx-auto flex justify-between items-center p-4">
         {/* Logo */}
         <Link to="/" className="flex items-center text-xl font-primary font-semibold">
-          <img src="/Atenea logo.svg" alt="Logo" className="h-10 w-auto" />
+          <img src="/AteneaIcon.svg" alt="Logo" className="h-10 w-auto" />
           <span className="ml-2">Atenea</span>
         </Link>
         {/* Navigation Links */}
