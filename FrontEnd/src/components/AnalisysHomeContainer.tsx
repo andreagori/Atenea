@@ -3,22 +3,24 @@ import ExampleChart from '../components/chart/exampleChart';
 
 function AnalisisContainer() {
   return (
-    <div id="analisis" className='h-full w-full flex flex-col items-center justify-center font-primary'>
+    <div id="analisis" className='h-screen w-full flex flex-col items-center justify-center font-primary' style={{
+      backgroundImage: "radial-gradient(circle at center, #09003E, #1700A4)"
+    }}>
       <>
         <GradientText
-          colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7", "#001144"]}
-          animationSpeed={5}
+          colors={["#A994E9", "#7525FF", "#5E00FF", "#A994E9", "#7525FF", "#5E00FF", "#A994E9"]}
+          animationSpeed={6}
           showBorder={false}
-          className="text-5xl font-bold mb-8"
+          className="text-7xl font-bold mb-8 mt-15"
         >
           Análisis
         </GradientText>
-        <div className="bg-darkNeutralText w-11/12 h-7/12 flex items-start p-8 rounded-lg justify-between gap-4 overflow-hidden">
+        <div className='bg-darkComponentElement rounded-4xl w-11/12 h-8/12 flex items-start p-8 justify-between gap-20 overflow-hidden'>
           {/* Texto a la izquierda */}
-          <div className="flex flex-col w-6/8 overflow-hidden">
+          <div className="flex flex-col overflow-hidden">
             <h1 className="text-darkBgText text-5xl font-bold mb-4 truncate">Análisis</h1>
             <p className="text-darkBgText text-lg truncate">
-              Descubre información valiosa sobre tu progreso con nuestras herramientas de análisis:
+              Descubre información sobre tu progreso con nuestras herramientas de análisis:
             </p>
             <ul className="list-disc list-inside mt-4 text-darkBgText text-lg">
               <li className="truncate">Visualiza tu rendimiento académico a lo largo del tiempo.</li>
@@ -27,11 +29,10 @@ function AnalisisContainer() {
               <li className="truncate">Consulta estadísticas detalladas de sesiones, mazos y tarjetas.</li>
               <li className="truncate">Evalúa la relación entre tiempo de estudio y calificaciones obtenidas.</li>
             </ul>
-          </div>
-
+            </div>
           {/* Gráfica a la derecha */}
-          <div className="w-3/8 h-full flex items-center justify-center bg-darkComponent2 rounded-2xl">
-          <ExampleChart />
+          <div className="aspect-square w-4/13 bg-[#09090B] rounded-4xl">
+            <ExampleChart />
           </div>
         </div>
 

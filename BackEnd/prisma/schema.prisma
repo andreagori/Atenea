@@ -3,7 +3,6 @@
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-// DARLE OTRA LEIDA A MI BASE DE DATOS Y BUSCAR INCONSISTENCIAS.
 
 generator client {
   provider = "prisma-client-js"
@@ -24,6 +23,7 @@ model User {
   studySessions StudySession[]
   exams         Exam[]
   userStats     UserStats?
+  cardReviews   CardReview[]
 }
 
 model Deck {
@@ -41,12 +41,16 @@ model Deck {
 model Card {
   cardId         Int       @id @default(autoincrement())
   deckId         Int
+  title          String    @db.VarChar(100)
   learningMethod LearningMethod
 
   deck          Deck @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
   activeRecall  CardsActiveRecall?
   cornell       CardsCornell?
   visualCard    VisualCard?
+  reviews       CardReview[]
+  testQuestions TestQuestion[] @relation("CorrectAnswers")
+  userAnswers   TestQuestion[] @relation("UserAnswers")
 }
 
 model CardsActiveRecall {
@@ -86,6 +90,70 @@ model StudySession {
   user           User @relation(fields: [userId], references: [userId], onDelete: Cascade)
   deck           Deck @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
   sessionResult  SessionsResult?
+  activeRecall   SessionActiveRecall?
+  pomodoro       SessionPomodoro?
+  simulatedTest  SessionSimulatedTest?
+  cardReviews    CardReview[]
+}
+
+model SessionActiveRecall {
+  sessionId           Int            @id
+  numCards            Int
+  learningMethodFilter LearningMethod[]
+
+  session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+}
+
+model SessionPomodoro {
+  sessionId           Int            @id
+  numCards            Int
+  studyMinutes        Int
+  restMinutes         Int
+  learningMethodFilter LearningMethod[]
+
+  session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+}
+
+model SessionSimulatedTest {
+  sessionId           Int            @id
+  numQuestions        Int
+  testDurationMin     Int
+  learningMethodFilter LearningMethod[]
+  correctAnswers      Int
+  incorrectAnswers    Int
+
+  session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  testQuestions       TestQuestion[]
+}
+
+model TestQuestion {
+  questionId     Int      @id @default(autoincrement())
+  testId         Int
+  cardId         Int      // Carta correcta
+  userAnswer     Int?     // ID de la carta que el usuario seleccionó
+  isCorrect      Boolean?
+  optionsOrder   Int[]    // Orden de opciones [0:correcta, 1:incorrecta1, 2:incorrecta2]
+  timeSpent      Int?     // Tiempo en segundos
+
+  test           SessionSimulatedTest @relation(fields: [testId], references: [sessionId], onDelete: Cascade)
+  correctCard    Card                 @relation("CorrectAnswers", fields: [cardId], references: [cardId])
+  selectedAnswer Card?                @relation("UserAnswers", fields: [userAnswer], references: [cardId])
+}
+
+model CardReview {
+  reviewId      Int       @id @default(autoincrement())
+  sessionId     Int
+  cardId        Int
+  userId        Int
+  evaluation    Evaluation
+  reviewedAt    DateTime  @default(now())
+  nextReviewAt  DateTime
+  intervalDays  Int
+  timeSpent     Int?
+
+  session       StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  card          Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
 }
 
 model SessionsResult {
@@ -121,9 +189,18 @@ enum LearningMethod {
   activeRecall
   cornell
   visualCard
+  all
 }
 
 enum StudyMethod {
   pomodoro
   simulatedTest
+  activeRecall
+}
+
+enum Evaluation {
+  dificil
+  masomenos
+  bien
+  facil
 }

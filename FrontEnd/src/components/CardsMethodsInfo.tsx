@@ -3,71 +3,59 @@ import SpotlightCard from '../libs/reactbits/SpotlightCard';
 
 function MetodosCardsHome() {
   return (
-    <section id="metodos" className="w-full px-6 py-12 flex flex-col items-center bg-darkBg font-primary">
-      {/* Título */}
+    <section
+      id="metodos"
+      className="w-full h-screen px-6 flex flex-col items-center font-primary"
+      style={{
+        backgroundImage: "radial-gradient(circle at center, #09003E, #1700A4)"
+      }}
+    >
       <GradientText
-        colors={["#193AB7", "#001144", "#193AB7", "#001144", "#193AB7"]}
-        animationSpeed={4}
+        colors={["#A994E9", "#7525FF", "#5E00FF", "#A994E9", "#7525FF", "#5E00FF", "#A994E9"]}
+        animationSpeed={6}
         showBorder={false}
-        className="text-5xl md:text-6xl lg:text-7xl font-bold mb-10 lg:mb-16 text-center"
+        className="text-7xl font-bold text-center mb-5 mt-20"
       >
         Métodos
       </GradientText>
+      <p className='text-white text-2xl font-bold mb-5 text-center'>
+        Estos son los métodos de estudio que puedes usar en la aplicación
+      </p>
 
-      {/* Contenedor principal - ahora con 3 breakpoints */}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(440px,1fr)_auto] lg:grid-cols-[minmax(550px,1fr)_auto] gap-6 w-full max-w-7xl">
-        {/* Carta grande - tamaños escalables */}
-        <SpotlightCard
-          className="aspect-square w-full min-h-[440px] lg:min-h-[550px]"
-          spotlightColor="var(--color-darkPrimary)"
-          backgroundColor="var(--color-darkComponent2)"
-        >
-          <div className="flex flex-col justify-between h-full p-6 lg:p-8">
-            <h2 className="text-darkBgText text-3xl md:text-4xl lg:text-5xl font-bold mb-4 lg:mb-6 text-left">
-              Memorización Espaciada
-            </h2>
-            <p className="text-darkBgText text-base md:text-lg lg:text-xl text-left">
-              Active Recall es una técnica de estudio que se basa en la recuperación activa de información.
-              El usuario intentará responder preguntas o recordar conceptos sin mirar las respuestas, obligándose a recuperar información de su memoria.
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center mb-10">
+        {[
+          {
+            title: "Memorización espaciada",
+            text: "Memorización Espaciada: Técnica que fortalece la memoria repasando información en intervalos crecientes.",
+            backgroundColor: "#027CE6",
+          },
+          {
+            title: "Pomodoro",
+            text: "Técnica para gestionar el tiempo de estudio, alternando entre períodos de trabajo y descanso.",
+            backgroundColor: "#002FE1",
+          },
+          {
+            title: "Pruebas simuladas",
+            text: "Simula exámenes para evaluar tus conocimientos antes de una evaluación real.",
+            backgroundColor: "#5311F8",
+          },
+        ].map(({ title, text, backgroundColor }, index) => (
+          <SpotlightCard
+            key={index}
+            className="aspect-square max-w-[300px] justify-between overflow-hidden"
+            withBorder={true}
+            spotlightColor="var(--color-white)"
+            backgroundColor={backgroundColor}
+            borderColor="var(--color-white)"
+          >
+            <h3 className="text-white text-2xl font-bold mb-3">
+              {title}
+            </h3>
+            <p className="text-white text-xl line-clamp-5">
+              {text}
             </p>
-          </div>
-        </SpotlightCard>
-
-        {/* Cartas pequeñas - con tamaño escalable */}
-        <div className="grid grid-cols-2 gap-4 lg:gap-6 h-fit">
-          {[
-            {
-              title: 'Método de Cornell',
-              text: 'Le permitirá al usuario tomar notas organizadas en tres columnas diferentes (notas principales, preguntas derivadas de las notas y resumen).',
-            },
-            {
-              title: 'Pomodoro',
-              text: 'Técnica para gestionar el tiempo de estudio, alternando entre períodos de trabajo y descanso.',
-            },
-            {
-              title: 'Pruebas Simuladas',
-              text: 'Simula exámenes para evaluar tus conocimientos antes de una evaluación real.',
-            },
-            {
-              title: 'Tarjetas Visuales',
-              text: 'Tarjetas con imágenes y texto que ayudan a memorizar conceptos clave.',
-            },
-          ].map(({ title, text }, index) => (
-            <SpotlightCard
-              key={index}
-              className="w-[220px] h-[220px] lg:w-[275px] lg:h-[275px] p-4 lg:p-5 flex flex-col justify-between"
-              spotlightColor="var(--color-darkPrimary)"
-              backgroundColor="var(--color-darkComponent2)"
-            >
-              <h3 className="text-darkBgText text-lg lg:text-xl font-bold mb-2 lg:mb-3 leading-tight">
-                {title}
-              </h3>
-              <p className="text-darkBgText text-sm lg:text-base line-clamp-5">
-                {text}
-              </p>
-            </SpotlightCard>
-          ))}
-        </div>
+          </SpotlightCard>
+        ))}
       </div>
     </section>
   );

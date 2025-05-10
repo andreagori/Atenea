@@ -17,13 +17,13 @@ const sesionEstudio = () => {
   
     switch (selectedOption) {
       case "regular":
-        navigate("/estudio/regular");
+        navigate("/sesionesEstudio/regular");
         break;
       case "pomodoro":
-        navigate("/estudio/pomodoro");
+        navigate("/sesionesEstudio/pomodoro");
         break;
       case "simuladas":
-        navigate("/estudio/simuladas");
+        navigate("/sesionesEstudio/simuladas");
         break;
       default:
         alert("Opción no válida.");

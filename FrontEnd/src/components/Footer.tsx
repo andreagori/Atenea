@@ -6,7 +6,7 @@ rfc se recomienda si tengo varios componentes en el mismo archivo y rfce si teng
 
 function Footer() {
   return (
-    <footer className="bg-darkComponent2 text-darkBgText mt-10 py-6 px-4 flex flex-col md:flex-row justify-between items-center text-sm">
+    <footer className="text-darkBgText py-6 px-4 flex flex-col md:flex-row justify-between items-center text-sm">
       <div className="mb-4 md:mb-0 text-center md:text-left">
         <h2 className="text-lg font-semibold mb-1">Atenea</h2>
         <p>© {new Date().getFullYear()} Todos los derechos reservados.</p>

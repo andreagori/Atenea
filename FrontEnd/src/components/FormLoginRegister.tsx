@@ -1,6 +1,7 @@
 // Components for Login and Register forms.
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ButtonCustom } from "./Buttons";
 
 export function FormRegister() {
   // Logic to handle form submission and state management can be added here.
@@ -39,10 +40,9 @@ export function FormRegister() {
   };
 
   return (
-    <div className="bg-darkInfo rounded-lg shadow-lg w-4/12 font-primary mt-10">
-      {/* Encabezado con fondo distinto */}
-      <div className="bg-darkAccent rounded-t-lg p-4">
-        <h2 className="text-2xl font-bold text-center text-darkInfoText">
+    <div className="bg-darkSecondary2 rounded-lg shadow-lg w-4/12 font-primary mt-10">
+      <div className="bg-darkPrimary2 rounded-t-lg p-4">
+        <h2 className="text-2xl font-bold font-primary text-center text-white">
           Registro
         </h2>
       </div>
@@ -61,7 +61,7 @@ export function FormRegister() {
             <div className="flex-1">
               <label
                 htmlFor="username"
-                className="block text-base font-bold text-darkInfoText"
+                className="block text-base font-bold text-darkComponent"
               >
                 Ingresa un nombre de usuario:
               </label>
@@ -86,7 +86,7 @@ export function FormRegister() {
             <div className="flex-1">
               <label
                 htmlFor="password"
-                className="block text-base font-bold text-darkInfoText"
+                className="block text-base font-bold text-darkComponent"
               >
                 Ingresa una contraseña:
               </label>
@@ -110,12 +110,19 @@ export function FormRegister() {
 
           {/* Botón */}
           <div className="flex justify-center">
-            <button
+            <ButtonCustom
               type="submit"
-              className="w-40 bg-gradient-to-b from-darkSecondary to-darkPrimary2 text-white px-6 py-2 rounded hover:from-darkPrimary2 hover:to-darkSecondary transition duration-300"
-            >
-              Registrarse
-            </button>
+              text="Registro"
+              onClick={() => { }}
+              isGradient={true}
+              gradientDirection="to bottom"
+              gradientColors={['#0C3BEB', '#1A368B']}
+              color="#fff"
+              hoverColor="#fff"
+              hoverBackground="#0C3BEB"
+              width="150px"
+              height="35px"
+            />
           </div>
         </form>
       </div>
@@ -161,9 +168,9 @@ export function FormLogin() {
 
 
   return (
-    <div className="bg-darkInfo rounded-lg shadow-lg w-4/12 font-primary mt-10">
-      <div className="bg-darkAccent rounded-t-lg p-4">
-        <h2 className="text-2xl font-bold font-primary text-center text-darkInfoText">
+    <div className="bg-darkSecondaryPurple rounded-lg shadow-lg w-4/12 font-primary mt-10">
+      <div className="bg-darkPrimaryPurple rounded-t-lg p-4">
+        <h2 className="text-2xl font-bold font-primary text-center text-white">
           Iniciar Sesión
         </h2>
       </div>
@@ -181,7 +188,7 @@ export function FormLogin() {
             <div className="flex-1">
               <label
                 htmlFor="username"
-                className="block text-2m font-bold text-darkInfoText mb-1"
+                className="block text-2m font-bold text-darkPrimaryPurple2 mb-1"
               >
                 Ingresa un nombre de usuario:
               </label>
@@ -210,7 +217,7 @@ export function FormLogin() {
             <div className="flex-1">
               <label
                 htmlFor="password"
-                className="block text-2m font-bold text-darkInfoText mb-1"
+                className="block text-2m font-bold text-darkPrimaryPurple2 mb-1"
               >
                 Ingresa una contraseña:
               </label>
@@ -232,13 +239,20 @@ export function FormLogin() {
             </div>
           )}
 
-          <div className="flex justify-center mt-6">
-            <button
+          <div className="flex justify-center">
+            <ButtonCustom
               type="submit"
-              className="w-40 bg-gradient-to-b from-darkSecondary to-darkPrimary2 text-white px-6 py-2 rounded hover:from-darkPrimary2 hover:to-darkSecondary transition duration-300"
-            >
-              Iniciar Sesión
-            </button>
+              text="Iniciar sesión"
+              onClick={() => { }}
+              isGradient={true}
+              gradientDirection="to bottom"
+              gradientColors={['#8C4FFF', '#1700A4']}
+              color="#fff"
+              hoverColor="#fff"
+              hoverBackground="#8C4FFF"
+              width="150px"
+              height="35px"
+            />
           </div>
         </form>
       </div >

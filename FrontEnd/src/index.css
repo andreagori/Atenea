@@ -5,33 +5,44 @@
 @plugin "daisyui";
 
 @theme {
-  /* FONTS */
+  /* FONTS ----------------------------------- */
   --font-primary: "Funnel Sans", sans-serif;
   --breakpoint-3xl: 120rem;
 
-    /* DARK COLORS */
-  --color-darkBackground:#0D1529;
-  --color-darkComponent: #1A2734;
-  --color-darkComponent2: #010515;
-  --color-darkComponentElement: #314157;
-  --color-darkPrimary: #1A368B;
-  --color-darkPrimary2: #001144;
-  --color-darkSecondary: #193AB7;
-  --color-darkAccent: #A1B1FF;
-  --color-darkNeutral: #BDDAFE;
-  --color-darkInfo: #D4D4D8;
-  --color-darkSuccess: #00BA7B;
-  --color-darkWarning: #FF8904;
-  --color-darkDanger: #F82834;
+    /* DARK COLORS ----------------------------- */
+  --color-darkBackground:#000416;
+  --color-darkBackgroundRadial: #0D1529;
+  --color-darkComponent: #001357; 
+  --color-darkComponent2: #002456;
+  --color-darkComponentElement: #09003E;
+  --color-darkComponentElement2: #1700A4;
+  --color-darkPrimary: #002FE1;
+  --color-darkPrimary2: #0C3BEB;
+  --color-darkSecondary: #027CE6;
+  --color-darkSecondary2: #729BCE;
+  --color-darkPrimaryPurple: #5311F8;
+  --color-darkPrimaryPurple2: #2A0B7B;
+  --color-darkSecondaryPurple: #A683FF;
+  --color-darkSecondaryPurple2: #8C4FFF;
+  
+  --color-darkAccent: #027CE6;
+  --color-darkNeutral: #061D7B;
+  --color-darkInfo: #C6B3F8;
+  --color-darkSuccess: #23DC41;
+  --color-darkSuccess2: #AAFF60;
+  --color-darkWarning: #F7B42F;
+  --color-darkDanger: #FF2F2F;
 
-  --color-darkBgText: #E0E2DB;
-  --color-darkPSText: #C6D2FF;
-  --color-darkAccentText: #1C184B;
-  --color-darkNeutralText: #162455;
+  --color-darkBgText: #FFFFFF;
+  --color-darkPSText: #75CDF8;
+  --color-darkGradientBlueText2: #027CE6;
+  --color-darkGradientBlueText3: #002FE1;
+  --color-darkComponentText: #BDDAFE;
   --color-darkInfoText: #010515;
-  --color-darkSuccessText: #002C21;
-  --color-darkWarningText: #7C2808;
-  --color-darkDangerText: #440607;
+  --color-darkSuccessText: #094E15;
+  --color-darkSuccessText2: #456827;
+  --color-darkWarningText: #745311;
+  --color-darkDangerText: #650707;
 
   --color-darkCustomStart1: #718298;
   --color-darkCustomEnd1: #BDDAFE;
@@ -39,7 +50,7 @@
   --color-darkCustomEnd2: #F5F5F5;
   --color-darkCustomEnd3: #A683FF;
 
-  /* LIGHT COLORS */
+  /* LIGHT COLORS ---------------------- */
   --color-lightBackground: #E2E5E9;
   --color-lightComponent: #C6D2FF;
   --color-lightComponentElement: #8C4FFF;
@@ -66,7 +77,7 @@
 
 }
 
-/* TYPOGRAPHY */
+/* TYPOGRAPHY ----------------------------- */
 funnel-sans-<uniquifier> 
 {
   font-family: "Funnel Sans", sans-serif;
@@ -75,7 +86,7 @@ funnel-sans-<uniquifier>
   font-style: normal;
 }
 
-/* ANIMATION */
+/* ANIMATION ----------------------------- */
 @keyframes gradientMove {
   0% {
     background-position: 0% 50%;
@@ -96,24 +107,20 @@ html, body {
   scrollbar-width: none; /* Firefox */
 }
 
-html, body {
-}
-
+/* hide scrollbars --------------------- */
 html::-webkit-scrollbar, body::-webkit-scrollbar {
   display: none; /* Chrome, Safari y Edge */
 }
 
-/* Estilos para ocultar scrollbar en navegadores modernos */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
-/* Para Firefox */
 .scrollbar-hide {
   scrollbar-width: none;
 }
 
-/* Si usas CSS personalizado */
+/* Modal styles ------------------------------ */
 .modal {
   display: flex;
   justify-content: center;
@@ -123,7 +130,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro */
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
@@ -138,6 +145,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   text-shadow: 6px 6px 11px rgba(0, 0, 0, 1); /* sombra más grande y oscura */
 }
 
+/* Chadcn UI charts ------------------------------ */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
