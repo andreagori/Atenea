@@ -10,24 +10,24 @@ interface Props {
 const options = [
   {
     id: "regular",
-    title: "Regular",
+    title: "Memorización espaciada",
     description:
       "En esta sesión de estudio, puedes comenzar a estudiar a tu propio ritmo, utilizando memorización activa y repeticiones espaciadas.",
-    background: "var(--color-darkInfo)",
+    background: "var(--color-darkSecondary)",
   },
   {
     id: "pomodoro",
     title: "Pomodoro",
     description:
       "En esta sesión puedes estudiar utilizando la técnica Pomodoro: trabajar durante 25 minutos y tomar un descanso de 5 minutos.",
-    background: "var(--color-darkNeutral)",
+    background: "var(--color-darkPrimary2)",
   },
   {
     id: "simuladas",
-    title: "Pruebas Simuladas",
+    title: "Pruebas simuladas",
     description:
       "En esta sesión puedes practicar con preguntas de opción múltiple y de verdadero o falso. Puedes personalizar cantidad y tiempo.",
-    background: "var(--color-darkAccent)",
+    background: "var(--color-darkComponent2)",
   },
 ];
 
@@ -49,7 +49,7 @@ function StudySessionsOptions({ selectedOption, setSelectedOption }: Props) {
   };
 
   return (
-    <div className="w-11/12 min-h-full flex flex-col gap-4 font-primary px-4 mt-5 relative">
+    <div className="w-11/12 min-h-full flex flex-col gap-4 font-primary px-4 relative">
       {options.map(({ id, title, description, background }) => (
         <div
           key={id}
@@ -81,9 +81,9 @@ function StudySessionsOptions({ selectedOption, setSelectedOption }: Props) {
               withBorder={true}
               borderColor="var(--color-darkAccent)"
             >
-              <div className="flex flex-col p-4 text-darkSecondary">
-                <h2 className="text-4xl font-bold">{title}</h2>
-                <p className="mt-2 text-xl">{description}</p>
+              <div className="flex flex-col p-2 text-white">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="mt-2 text-m">{description}</p>
               </div>
             </SpotlightCard>
           </div>

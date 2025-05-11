@@ -2,7 +2,7 @@ import { NavbarStudySession } from "@/components/Navbar"
 
 const PomodoroStudySession = () => {
     return (
-        <div className="font-primary scroll-smooth scrollbar-hide bg-lightNeutral text-lightNeutralText">
+        <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
             <NavbarStudySession />
             <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden">
                 <h1 className="text-4xl font-bold text-center mt-25 mb-10">

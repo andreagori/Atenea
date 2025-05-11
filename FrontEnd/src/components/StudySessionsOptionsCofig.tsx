@@ -1,3 +1,5 @@
+import { ButtonCustom } from "./Buttons";
+
 interface ModalProps {
   onClose: () => void;
 }
@@ -5,25 +7,23 @@ interface ModalProps {
 export function StudySessionsOptionsConfig_Regular({ onClose }: ModalProps) {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
-      <div className="bg-darkComponent p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center">
-          {/* Settings Form */}
-
+      <div className="bg-darkSecondary p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-2xl font-bold text-center text-white">
           Configura tu sesión regular de estudio:
         </h2>
-        <p className="mt-4">Ingresa el número de cartas a revisar en la sesión: </p>
+        <p className="mt-4 text-white">Ingresa el número de cartas a revisar en la sesión: </p>
         <input
-          className="input-primary input validator mt-3 w-full bg-darkComponentElement"
+          className="input-primary input validator mt-2 w-full bg-white"
           type="number"
           placeholder="Debe ser un número entre 1 y 99"
           min="1"
           max="99"
         />
 
-        <p className="mt-4">Selecciona el tipo de cartas que deseas estudiar:</p>
+        <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
         <select
           defaultValue="Tipo de cartas"
-          className="select select-m select-primary w-full bg-darkComponentElement mt-3">
+          className="select select-m select-primary w-full bg-white mt-2 text-black/50">
           <option disabled={true}>Tipo de cartas</option>
           <option>Repaso Activo</option>
           <option>Método de cornell</option>
@@ -32,51 +32,65 @@ export function StudySessionsOptionsConfig_Regular({ onClose }: ModalProps) {
         </select>
 
         {/* Buttons Form */}
-        <div className="flex justify-between">
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-darkPrimary2 text-white rounded hover:bg-darkAccent hover:text-darkAccentText transition"
-          >
-            Guardar
-          </button>
+        <div className="flex justify-between mt-4">
+          <ButtonCustom
+            type="button"
+            text="Cerrar"
+            onClick={() => { onClose() }}
+            isGradient={true}
+            gradientDirection="to bottom"
+            gradientColors={['#FF2F2F', '#650707']}
+            color="#fff"
+            hoverColor="#fff"
+            hoverBackground="#FF2F2F"
+            width="80px"
+            height="35px"
+          />
+          <ButtonCustom
+            type="button"
+            text="Guardar"
+            onClick={() => { onClose() }}
+            isGradient={true}
+            gradientDirection="to bottom"
+            gradientColors={['#0C3BEB', '#1A368B']}
+            color="#fff"
+            hoverColor="#fff"
+            hoverBackground="#0C3BEB"
+            width="80px"
+            height="35px"
+          />
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 
 export function StudySessionsOptionsConfig_Pomodoro({ onClose }: ModalProps) {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
-      <div className="bg-darkComponent p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center">
+      <div className="bg-darkPrimary2 p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-2xl font-bold text-center text-white">
           Configura tu sesión pomodoro de estudio:
         </h2>
-        <p className="mt-4">Ingresa el número de cartas a revisar en la sesión: </p>
+        <p className="mt-4 text-white">Ingresa el número de cartas a revisar en la sesión: </p>
         <input
-          className="input-primary input validator mt-3 w-full bg-darkComponentElement"
+          className="input-primary input validator mt-2 w-full bg-white"
           type="number"
           placeholder="Debe ser un número entre 1 y 99"
           min="1"
           max="99"
         />
-        <p className="mt-4">Ingresa el número de minutos de estudio en la sesión: </p>
+        <p className="mt-4 text-white">Ingresa el número de minutos de estudio en la sesión: </p>
         <input
-          className="input-primary input validator mt-3 w-full bg-darkComponentElement"
+          className="input-primary input validator mt-2 w-full bg-white"
           type="number"
           placeholder="Debe ser un número entre 1 y 60"
           min="1"
           max="60"
         />
-        <p className="mt-4">Ingresa el número de minutos de descanso en la sesión: </p>
+        <p className="mt-4 text-white">Ingresa el número de minutos de descanso en la sesión: </p>
         <input
-          className="input-primary input validator mt-3 w-full bg-darkComponentElement"
+          className="input-primary input validator mt-2 w-full bg-white"
           type="number"
           placeholder="Debe ser un número entre 1 y 60"
           min="1"
@@ -84,10 +98,10 @@ export function StudySessionsOptionsConfig_Pomodoro({ onClose }: ModalProps) {
         />
 
         {/* Settings Form */}
-        <p className="mt-4">Selecciona el tipo de cartas que deseas estudiar:</p>
+        <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
         <select
           defaultValue="Tipo de cartas"
-          className="select select-m select-primary w-full bg-darkComponentElement mt-3">
+          className="select select-m select-primary w-full bg-white mt-3 text-black/50">
           <option disabled={true}>Tipo de cartas</option>
           <option>Repaso Activo</option>
           <option>Método de cornell</option>
@@ -96,19 +110,33 @@ export function StudySessionsOptionsConfig_Pomodoro({ onClose }: ModalProps) {
         </select>
 
         {/* Buttons Form */}
-        <div className="flex justify-between">
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-darkPrimary2 text-white rounded hover:bg-darkAccent hover:text-darkAccentText transition"
-          >
-            Guardar
-          </button>
+        <div className="flex justify-between mt-4">
+          <ButtonCustom
+            type="button"
+            text="Cerrar"
+            onClick={() => { onClose() }}
+            isGradient={true}
+            gradientDirection="to bottom"
+            gradientColors={['#FF2F2F', '#650707']}
+            color="#fff"
+            hoverColor="#fff"
+            hoverBackground="#FF2F2F"
+            width="80px"
+            height="35px"
+          />
+          <ButtonCustom
+            type="button"
+            text="Guardar"
+            onClick={() => { onClose() }}
+            isGradient={true}
+            gradientDirection="to bottom"
+            gradientColors={['#0C3BEB', '#1A368B']}
+            color="#fff"
+            hoverColor="#fff"
+            hoverBackground="#0C3BEB"
+            width="80px"
+            height="35px"
+          />
         </div>
       </div>
     </div>
@@ -118,21 +146,21 @@ export function StudySessionsOptionsConfig_Pomodoro({ onClose }: ModalProps) {
 export function StudySessionsOptionsConfig_SimulatedTests({ onClose }: ModalProps) {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
-      <div className="bg-darkComponent p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center">
+      <div className="bg-darkComponent2 p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-2xl font-bold text-center text-white">
           Configura tu sesión regular de estudio:
         </h2>
-        <p className="mt-4">Ingresa el número de preguntas a revisar en la sesión: </p>
+        <p className="mt-4 text-white">Ingresa el número de preguntas a revisar en la sesión: </p>
         <input
-          className="input-primary input validator mt-3 w-full bg-darkComponentElement"
+          className="input-primary input validator mt-2 w-full bg-white"
           type="number"
           placeholder="Debe ser un número entre 1 y 40"
           min="1"
           max="40"
         />
-        <p className="mt-4">Ingresa el tiempo de la prueba: </p>
+        <p className="mt-4 text-white">Ingresa el tiempo de la prueba: </p>
         <input
-          className="input-primary input validator mt-3 w-full bg-darkComponentElement"
+          className="input-primary input validator mt-2 w-full bg-white"
           type="number"
           placeholder="Debe ser un número entre 1 y 60"
           min="1"
@@ -140,10 +168,10 @@ export function StudySessionsOptionsConfig_SimulatedTests({ onClose }: ModalProp
         />
 
         {/* Settings Form */}
-        <p className="mt-4">Selecciona el tipo de cartas que deseas estudiar:</p>
+        <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
         <select
           defaultValue="Tipo de cartas"
-          className="select select-m select-primary w-full bg-darkComponentElement mt-3">
+          className="select select-m select-primary w-full bg-white mt-2 text-black/50">
           <option disabled={true}>Tipo de cartas</option>
           <option>Repaso Activo</option>
           <option>Método de cornell</option>
@@ -152,19 +180,33 @@ export function StudySessionsOptionsConfig_SimulatedTests({ onClose }: ModalProp
         </select>
 
         {/* Buttons Form */}
-        <div className="flex justify-between">
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-darkPrimary2 text-white rounded hover:bg-darkAccent hover:text-darkAccentText transition"
-          >
-            Guardar
-          </button>
+        <div className="flex justify-between mt-4">
+          <ButtonCustom
+            type="button"
+            text="Cerrar"
+            onClick={() => { onClose() }}
+            isGradient={true}
+            gradientDirection="to bottom"
+            gradientColors={['#FF2F2F', '#650707']}
+            color="#fff"
+            hoverColor="#fff"
+            hoverBackground="#FF2F2F"
+            width="80px"
+            height="35px"
+          />
+          <ButtonCustom
+            type="button"
+            text="Guardar"
+            onClick={() => { onClose() }}
+            isGradient={true}
+            gradientDirection="to bottom"
+            gradientColors={['#0C3BEB', '#1A368B']}
+            color="#fff"
+            hoverColor="#fff"
+            hoverBackground="#0C3BEB"
+            width="80px"
+            height="35px"
+          />
         </div>
       </div>
     </div>

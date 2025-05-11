@@ -1,21 +1,19 @@
 import { NavbarLoginIn } from "../../components/Navbar"
-import { DecksTable } from "../../libs/daisyUI/DeckTables"
+import { CardsTable } from "../../libs/daisyUI/DeckTables"
 import { ButtonCustom } from '@/components/Buttons';
-import { CreateDeckModal } from "@/components/CreateDeckModal";
+import { CreateCardModal } from "@/components/CreateDeckModal";
 import { ChevronRight } from 'lucide-react';
 import Footer from "../../components/Footer";
 import { useState } from "react";
 
-const MisMazos = () => {
+const OneDeck = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const exampleData = [
-        { title: "Mazo 1", body: "Tema: Biología" },
-        { title: "Mazo 2", body: "Tema: Historia Mundial" },
-        { title: "Mazo 3", body: "Tema: Álgebra" },
-        { title: "Mazo 4", body: "Tema: Álgebra" },
-        { title: "Mazo 5", body: "Tema: Álgebra" },
-        { title: "Mazo 6", body: "Tema: Álgebra" },
-        { title: "Mazo 7", body: "Tema: Álgebra" },
+        { title: "¿Cómo se llama el nombre de la libreria..?", body: "React", cardType: "flashcard" },
+        { title: "Mazo 2", body: "Tema: Historia Mundial", cardType: "flashcard"},
+        { title: "Mazo 3", body: "Tema: Álgebra", cardType: "flashcard" },
+        { title: "Mazo 4", body: "Tema: Álgebra", cardType: "flashcard" },
+        { title: "Mazo 5", body: "Tema: Álgebra", cardType: "flashcard" },
     ];
 
     return (
@@ -25,25 +23,25 @@ const MisMazos = () => {
                 style={{
                     backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
                 }}>
-                <h1 className="mt-20 text-6xl font-bold text-lightComponent">
-                    Mis mazos
+                <h1 className="mt-20 text-6xl font-bold text-darkSecondaryPurple">
+                    Nombre de mazo
                 </h1>
-                <p className="text-lightComponent mt-2 text-xl">
-                    Selecciona el mazo para editarlo o acceder a las cartas
-                </p>
                 <div className="flex flex-col justify-center items-center mt-10 w-10/12 h-full">
-                    <DecksTable data={exampleData} />
+                <p className="text-darkSecondaryPurple mt-2 text-3xl font-semibold">
+                    Cartas del mazo:
+                </p>
+                    <CardsTable data={exampleData} />
                     <div className="flex justify-end mt-4 gap-2 self-end">
                         <ButtonCustom
                             type="button"
-                            text="Crear nuevo mazo"
+                            text="Agregar nueva carta"
                             onClick={() => setIsModalOpen(true)}
                             isGradient={true}
                             gradientDirection="to bottom"
-                            gradientColors={['#0C3BEB', '#1A368B']}
+                            gradientColors={['#9625FF', '#1700A4']}
                             color="#fff"
                             hoverColor="#fff"
-                            hoverBackground="#0C3BEB"
+                            hoverBackground="#9625FF"
                             width="180px"
                             height="35px"
                         />
@@ -54,10 +52,10 @@ const MisMazos = () => {
                             onClick={() => console.log("Siguiente")}
                             isGradient={true}
                             gradientDirection="to bottom"
-                            gradientColors={['#0C3BEB', '#0C3BEB']}
+                            gradientColors={['#8C4FFF', '#8C4FFF']}
                             color="#fff"
                             hoverColor="#fff"
-                            hoverBackground="#0C3BEB"
+                            hoverBackground="#9625FF"
                             width="150px"
                             height="35px"
                             icon={< ChevronRight />}
@@ -68,9 +66,9 @@ const MisMazos = () => {
                     <Footer />
                 </footer>
             </div>
-            {isModalOpen && <CreateDeckModal onClose={() => setIsModalOpen(false)} />}
+            {isModalOpen && <CreateCardModal onClose={() => setIsModalOpen(false)} />}
         </>
     )
 }
 
-export default MisMazos
+export default OneDeck

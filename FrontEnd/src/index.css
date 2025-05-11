@@ -33,7 +33,7 @@
   --color-darkWarning: #F7B42F;
   --color-darkDanger: #FF2F2F;
 
-  --color-darkBgText: #FFFFFF;
+  --color-darkBgText: #D9D9D9;
   --color-darkPSText: #75CDF8;
   --color-darkGradientBlueText2: #027CE6;
   --color-darkGradientBlueText3: #002FE1;
@@ -43,12 +43,7 @@
   --color-darkSuccessText2: #456827;
   --color-darkWarningText: #745311;
   --color-darkDangerText: #650707;
-
-  --color-darkCustomStart1: #718298;
-  --color-darkCustomEnd1: #BDDAFE;
-  --color-darkCustomStart2: #A1B1FF;
-  --color-darkCustomEnd2: #F5F5F5;
-  --color-darkCustomEnd3: #A683FF;
+  --color-darkGradientBlueText: #072285;
 
   /* LIGHT COLORS ---------------------- */
   --color-lightBackground: #E2E5E9;

@@ -8,7 +8,7 @@ function AnalisisContainer() {
     }}>
       <>
         <GradientText
-          colors={["#A994E9", "#7525FF", "#5E00FF", "#A994E9", "#7525FF", "#5E00FF", "#A994E9"]}
+          colors={["#C6B3F8", "#A683FF", "#7525FF", "#C6B3F8", "#A683FF", "#7525FF", "#C6B3F8"]}
           animationSpeed={6}
           showBorder={false}
           className="text-7xl font-bold mb-8 mt-15"

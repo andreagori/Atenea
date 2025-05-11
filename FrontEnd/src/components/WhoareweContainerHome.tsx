@@ -16,7 +16,7 @@ function QuienesSomosContainer() {
           ¿Quiénes somos?
         </GradientText>
         {/* Contenedor con padding-top para dejar espacio para el círculo */}
-        <div className="relative w-11/12 bg-darkComponentElement rounded-3xl flex flex-col pt-[6rem] mt-35">
+        <div className="relative w-11/12 bg-darkComponentElement rounded-3xl flex flex-col pt-[6rem] mt-25">
           {/* Círculo encima del contenedor, con la mitad dentro y la otra mitad fuera. Agregar foto. */}
           <div className="absolute top-[-6rem] left-1/2 transform -translate-x-1/2 w-[12rem] h-[12rem] bg-darkAccent rounded-full shadow-xl z-20" />
           {/* Contenido del contenedor */}

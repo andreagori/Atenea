@@ -1,11 +1,12 @@
 import { NavbarStudySession } from "@/components/Navbar"
+import StudySessionsUserLevelsMenu from "@/libs/daisyUI/StudySessionsUserLevelsMenu"
 
 const RegularStudySession = () => {
     return (
-        <div className="font-primary scroll-smooth scrollbar-hide bg-lightNeutral text-lightNeutralText">
+        <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
             <NavbarStudySession />
             <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden">
-                <h1 className="text-4xl font-bold text-center mt-25 mb-10">
+                <h1 className="text-4xl font-semibold text-center mt-25 mb-10">
                     Titulo de la carta
                 </h1>
 
@@ -13,6 +14,9 @@ const RegularStudySession = () => {
                 
                 <div className="flex flex-col items-center">
                     <button className="btn btn-primary mt-40">Mostrar respuesta</button>
+                </div>
+                <div className="flex flex-col items-center mt-10">
+                    <StudySessionsUserLevelsMenu />
                 </div>
                 {/* The distance of the menu being mt-40 <StudySessionsUserLevelsMenu />*/}
                 

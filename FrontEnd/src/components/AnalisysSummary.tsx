@@ -1,21 +1,28 @@
 import { Link } from "react-router-dom"
+import { ButtonCustom } from "./Buttons"
+import StatsAnalysisSummary from "./StatsAnalysisSummary"
+
 function ResumenAnalisis() {
     return (
         <>
-            <div className="mt-5 w-10/12 h-full rounded-2xl bg-darkInfo font-primary">
-                <h1 className="text-2xl text-darkInfoText font-bold mt-2 ml-4">
-                    Último análisis de resultados
-                </h1>
-                <div className="h-11/12">
-                    <p className="text-lg text-darkInfoText mt-4 ml-4">
-                        Aquí puedes ver un resumen de tu progreso y rendimiento en el uso de la aplicación.
-                        Analiza tus hábitos de estudio y mejora tu aprendizaje.
-                    </p>
-                    <div className="flex justify-end mt-4 mr-4">
+            <div className="mt-5 w-8/14 h-full rounded-2xl bg-darkPrimaryPurple font-primary border-2 border-darkSecondaryPurple shadow-lg">
+                <div className="h-11/12 flex flex-col items-center justify-center mt-5">
+                    <StatsAnalysisSummary />
+                    <div className="flex justify-end mt-4 mr-4 mb-3">
                         <Link to="/analisis">
-                            <button className="px-4 py-2 mb-5 bg-gradient-to-b from-darkCustomEnd3 to-darkSecondary text-white rounded hover:from-darkAccent hover:to-darkSecondary transition duration-300">
-                                Ver análisis completo
-                            </button>
+                            <ButtonCustom
+                                type="button"
+                                text="Ver análisis completo"
+                                onClick={() => { }}
+                                isGradient={true}
+                                gradientDirection="to bottom"
+                                gradientColors={['#E9D7F9', '#774CFB']}
+                                color="#400CC2"
+                                hoverColor="#E9D7F9"
+                                hoverBackground="#774CFB"
+                                width="280px"
+                                height="35px"
+                            />
                         </Link>
                     </div>
                 </div>

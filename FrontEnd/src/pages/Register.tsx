@@ -17,7 +17,7 @@ const Register = () => {
       <FormRegister />
       <div className="h-10 mt-25"></div>
       <img
-        src="./public/AteneaFullBlue.svg"
+        src="./AteneaFullBlue.svg"
         alt="Atenea Logo"
         className="absolute bottom-0 left-0 w-1/4 h-1/4 mb-10 ml-10"
       />
