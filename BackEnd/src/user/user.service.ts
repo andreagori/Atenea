@@ -10,13 +10,13 @@ export class UserService {
   // Logger for the UserService class, which is used to log messages and errors.
   private readonly logger = new Logger(UserService.name);
   // PrismaService instance for database operations.
-  constructor(private readonly prisma: PrismaService){}
+  constructor(private readonly prisma: PrismaService) { }
 
-    /**
-   * Crea un usuario y valida que el username no se repita
-   * @param createUserDto 
-   * @returns Usuario creado o mensaje de error
-   */
+  /**
+ * Crea un usuario y valida que el username no se repita
+ * @param createUserDto 
+ * @returns Usuario creado o mensaje de error
+ */
 
   async create(createUserDto: CreateUserDto) {
     const usernameExists = await this.prisma.user.findUnique({
@@ -25,20 +25,19 @@ export class UserService {
       },
     });
 
-    if (!usernameExists) {
-      return await this.prisma.user.create({
-        // data: createUserDto, 
-        // para modificar el password antes de guardarlo
-        // data: { ...createUserDto, password: hashedPassword },
-        data: {
-          username: createUserDto.username,
-          passwordHash: createUserDto.password, // ← Ya viene hasheado
-        },
-      });
-    } else {
+    if (usernameExists) {
       this.logger.error(`Username ${createUserDto.username} already exists`);
       throw new ConflictException('Username already exists');
     }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10); 
+
+    return await this.prisma.user.create({
+      data: {
+        username: createUserDto.username,
+        passwordHash: hashedPassword, 
+      },
+    });
   }
 
   async findAll(): Promise<User[]> {
@@ -54,7 +53,7 @@ export class UserService {
   async findOne(id: number) {
     return this.prisma.user.findUnique({
       where: { userId: id },
-      });
+    });
   }
 
   /**
@@ -80,19 +79,19 @@ export class UserService {
   }
 
   async remove(id: number): Promise<string> {
-  // ensure the user exists before attempting to delete
-  const user = await this.prisma.user.findUnique({ where: { userId: id } });
-  if (!user) {
-    this.logger.error(`User with id ${id} not found`);
-    throw new Error(`User with id ${id} not found`);
-  }
-  // delete the user and return the deleted user object
-  const deletedUser = await this.prisma.user.delete(
-    { 
-      where: { userId: id } 
-    });
-  this.logger.log(`User with id ${id} deleted`);
+    // ensure the user exists before attempting to delete
+    const user = await this.prisma.user.findUnique({ where: { userId: id } });
+    if (!user) {
+      this.logger.error(`User with id ${id} not found`);
+      throw new Error(`User with id ${id} not found`);
+    }
+    // delete the user and return the deleted user object
+    const deletedUser = await this.prisma.user.delete(
+      {
+        where: { userId: id }
+      });
+    this.logger.log(`User with id ${id} deleted`);
 
-  return `El usuario con ID ${id} ha sido eliminado correctamente`;
+    return `El usuario con ID ${id} ha sido eliminado correctamente`;
   }
 }

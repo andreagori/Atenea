@@ -13,26 +13,37 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   // CREATE USER
+  @ApiResponse({ status: 201, description: 'User created successfully', type: User })
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
+  @ApiResponse({ status: 200, description: 'User found', type: User })
   @Get()
   findAll() {
     return this.userService.findAll();
   }
 
+  @ApiResponse({ status: 200, description: 'User found', type: User })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
 
+  @ApiResponse({ status: 200, description: 'User updated successfully', type: User })
+  @Get('username/:username')
+  findByUsername(@Param('username') username: string) {
+    return this.userService.findByUsername(username);
+  }
+
+  @ApiResponse({ status: 200, description: 'User updated successfully', type: User })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
   }
 
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);

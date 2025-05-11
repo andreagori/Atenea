@@ -13,10 +13,9 @@ export class AuthService {
 
     // SIGN UP method to register a new user.
     async signUp(username: string, password: string) {
-      const hashedPassword = await bcrypt.hash(password, 10); // Hash aquí
       const user = await this.userService.create({
         username,
-        password: hashedPassword, // Envía el hash
+        password, // Envía el hash
       });
       return user;
     }
