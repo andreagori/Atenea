@@ -1,42 +1,21 @@
 // Components for Login and Register forms.
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRegister } from "../hooks/useRegister";
+import { useLogin } from "../hooks/useLogin";
 import { ButtonCustom } from "./Buttons";
 
 export function FormRegister() {
   // Logic to handle form submission and state management can be added here.
-  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const {register, message} = useRegister();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Logic to send data to the backend
-    try {
-      const response = await fetch("http://localhost:3000/auth/sign-up", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Error en el registro");
-      }
-
-      setMessage("Registro exitoso. Puedes iniciar sesión ahora.");
-      setUsername("");
-      setPassword("");
-      setTimeout(() => navigate("/inicioSesion"), 1000); // redirige a login
-    } catch (error: any) {
-      console.error("Error:", error);
-      setMessage("Error en el registro. Inténtalo de nuevo.");
-    }
+    e.preventDefault();
+    register(username, password);
+    setUsername("");
+    setPassword("");
   };
 
   return (
@@ -126,7 +105,6 @@ export function FormRegister() {
           </div>
         </form>
       </div>
-
     </div>
   )
 }
@@ -135,37 +113,15 @@ export function FormLogin() {
   // Logic to handle form submission and state management can be added here.
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const navigate = useNavigate();
+  const {login, message} = useLogin();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Logic to send data to the backend
-    try {
-      const response = await fetch("http://localhost:3000/auth/sign-in", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Error en el inicio de sesión");
-      }
-
-      setMessage("Inicio de sesión exitoso.");
-      setUsername("");
-      setPassword("");
-      setTimeout(() => navigate("/inicio"), 1000); // redirige a home
-    } catch (error: any) {
-      console.error("Error:", error);
-      setMessage("Error en el inicio de sesión. Inténtalo de nuevo.");
-    }
-  }
-
+    e.preventDefault();
+    login(username, password);
+    setUsername("");
+    setPassword("");
+  };
 
   return (
     <div className="bg-darkSecondaryPurple rounded-lg shadow-lg w-4/12 font-primary mt-10">

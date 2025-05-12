@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { PrivateRoute } from "./PrivateRoute";
 
 import Home from "../pages/Home";
 import Login from "../pages/Login";
@@ -17,16 +18,69 @@ const AppRouter = () => {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/inicioSesion" element= {<Login />} />
+        <Route path="/inicioSesion" element={<Login />} />
         <Route path="/registro" element={<Register />} />
-        <Route path="/inicio" element={<HomeLoginIn />} />
-        <Route path="/mazos" element={<MisMazos />} />
-        <Route path="/mazos/:id" element={<UnMazo />} />
-        <Route path="/analisis" element={<Analisis />} />
-        <Route path="/sesionesEstudio" element={<SesionEstudio />} />
-        <Route path="/sesionesEstudio/regular" element={<RegularStudySession />} />
-        <Route path="/sesionesEstudio/pomodoro" element={<PomodoroStudySession />} />
-        <Route path="/sesionesEstudio/simuladas" element={<SimulatedTestStudySession />} />
+        <Route path="/inicio" element={
+          <PrivateRoute>
+            <HomeLoginIn />
+          </PrivateRoute>
+        } />
+        <Route
+          path="/mazos"
+          element={
+            <PrivateRoute>
+              <MisMazos />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/mazos/:id"
+          element={
+            <PrivateRoute>
+              <UnMazo />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/analisis"
+          element={
+            <PrivateRoute>
+              <Analisis />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/sesionesEstudio"
+          element={
+            <PrivateRoute>
+              <SesionEstudio />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/sesionesEstudio/regular"
+          element={
+            <PrivateRoute>
+              <RegularStudySession />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/sesionesEstudio/pomodoro"
+          element={
+            <PrivateRoute>
+              <PomodoroStudySession />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/sesionesEstudio/simuladas"
+          element={
+            <PrivateRoute>
+              <SimulatedTestStudySession />
+            </PrivateRoute>
+          }
+        />
         {/* Add more routes as needed */}
       </Routes>
     </Router>

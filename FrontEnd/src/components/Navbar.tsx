@@ -1,5 +1,7 @@
 // Objective: Create a component to render the navbar. Make different navbar for different states.
 
+import { useLogout } from "@/hooks/useLogin";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 export function Navbar() {
@@ -40,15 +42,27 @@ export function NavbarForms() {
 }
 
 export function NavbarLoginIn() {
+  const { logout } = useLogout();
+  const [showLogout, setShowLogout] = useState(false);
+
+  const handleImageClick = () => {
+    setShowLogout(!showLogout);
+  };
+
   return (
+    <>
     <header className="text-darkBgText w-full fixed top-0 left-0 z-50"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
       <nav className="container mx-auto flex justify-between items-center p-3.5">
         {/* Logo */}
-        <Link to="/" className="flex items-center text-xl font-primary font-semibold">
-          <img src="/AteneaIcon.svg" alt="Logo" className="h-8 w-auto" />
-          <span className="ml-2">Atenea</span>
-        </Link>
+          <div className="flex items-center text-xl font-primary font-semibold">
+            <img
+              src="/AteneaIcon.svg"
+              alt="Logo"
+              className="h-8 w-auto cursor-pointer"
+            />
+          <span className="ml-2 cursor-pointer" onClick={handleImageClick}>Atenea</span>
+          </div>
         {/* Navigation Links */}
         <div className="hidden md:flex space-x-6 justify-end items-center w-full font-primary">
           <Link to="/mazos" className="hover:text-darkAccent">Mazos</Link>
@@ -57,6 +71,13 @@ export function NavbarLoginIn() {
         </div>
       </nav>
     </header>
+      {showLogout && (
+        <div className="fixed bottom-0 left-0 w-full text-white p-4 flex justify-center items-center z-50"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+          <button onClick={logout} className="hover:text-darkAccent">Cerrar sesión</button>
+        </div>
+      )}
+    </>
   );
 }
 
