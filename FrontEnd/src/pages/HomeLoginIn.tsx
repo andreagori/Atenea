@@ -4,8 +4,18 @@ import Footer from "../components/Footer";
 import MazoSesionCardsHome from "../components/CreateStudyDeckMenu";
 import ResumenAnalisis from "../components/AnalisysSummary";
 import { NavbarLoginIn } from "../components/Navbar";
+import { useUser } from "@/hooks/useUser";
 
 const HomeLoginIn = () => {
+  // Custom hook to fetch user data
+  const { user, loading } = useUser();
+  // Check if user data is still loading
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen text-lightComponent">Cargando...</div>;
+  }
+  if (!user) {
+    return <div className="flex justify-center items-center h-screen text-lightComponent">No se pudo cargar el usuario.</div>;
+  }
   return (
     <div className="min-h-screen w-full font-primary bg-darkBackground flex flex-col overflow-y-auto scroll-smooth scrollbar-hide"
       style={{
@@ -21,7 +31,7 @@ const HomeLoginIn = () => {
           <h1>
             ¡Hola de nuevo
             <br />
-            <strong>Tu Usuario</strong>!
+            <strong>{user.username}</strong>!
           </h1>
           <p className="text-3xl mt-15 text-darkSecondaryPurple">¿Qué quieres hacer hoy?</p>
         </div>
