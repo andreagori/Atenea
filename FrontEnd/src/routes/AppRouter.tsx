@@ -6,7 +6,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import HomeLoginIn from "../pages/HomeLoginIn";
 import MisMazos from "../pages/decks/MyDecks";
-import UnMazo from "../pages/decks/OneDeck";
+import OneDeck from "../pages/decks/OneDeck";
 import Analisis from "../pages/Analysis";
 import SesionEstudio from "../pages/studySessions/StudySession";
 import RegularStudySession from "../pages/studySessions/RegularStudySession";
@@ -34,10 +34,10 @@ const AppRouter = () => {
           }
         />
         <Route
-          path="/mazos/:id"
+          path="/mazos/:title"
           element={
             <PrivateRoute>
-              <UnMazo />
+              <OneDeck />
             </PrivateRoute>
           }
         />

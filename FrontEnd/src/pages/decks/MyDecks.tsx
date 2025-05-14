@@ -1,22 +1,18 @@
+import { useState } from "react";
 import { NavbarLoginIn } from "../../components/Navbar"
 import { DecksTable } from "../../libs/daisyUI/DeckTables"
+import { useDecks } from "@/hooks/useDeck";
 import { ButtonCustom } from '@/components/Buttons';
 import { CreateDeckModal } from "@/components/CreateDeckModal";
 import { ChevronRight } from 'lucide-react';
 import Footer from "../../components/Footer";
-import { useState } from "react";
 
 const MisMazos = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const exampleData = [
-        { title: "Mazo 1", body: "Tema: Biología" },
-        { title: "Mazo 2", body: "Tema: Historia Mundial" },
-        { title: "Mazo 3", body: "Tema: Álgebra" },
-        { title: "Mazo 4", body: "Tema: Álgebra" },
-        { title: "Mazo 5", body: "Tema: Álgebra" },
-        { title: "Mazo 6", body: "Tema: Álgebra" },
-        { title: "Mazo 7", body: "Tema: Álgebra" },
-    ];
+    const { decks, loading, error, deleteDeck, createDeck, refetch } = useDecks();
+
+    if (loading) return <p className="text-white mt-20">Cargando mazos...</p>;
+    if (error) return <p className="text-red-500 mt-20">Error: {error}</p>;
 
     return (
         <>
@@ -32,7 +28,15 @@ const MisMazos = () => {
                     Selecciona el mazo para editarlo o acceder a las cartas
                 </p>
                 <div className="flex flex-col justify-center items-center mt-10 w-10/12 h-full">
-                    <DecksTable data={exampleData} />
+                    <DecksTable
+                        data={decks}
+                        onDelete={(index) => {
+                            const deckId = decks[index].id;
+                            deleteDeck(deckId);
+                        }}
+                        onEdit={(index) => console.log(`Edit deck at index: ${index}`)}
+                        onStudy={(index) => console.log(`Study deck at title: ${decks[index].title}`)}
+                    />
                     <div className="flex justify-end mt-4 gap-2 self-end">
                         <ButtonCustom
                             type="button"
@@ -68,7 +72,16 @@ const MisMazos = () => {
                     <Footer />
                 </footer>
             </div>
-            {isModalOpen && <CreateDeckModal onClose={() => setIsModalOpen(false)} />}
+            {isModalOpen && (
+                <CreateDeckModal
+                    onClose={() => setIsModalOpen(false)}
+                    onCreate={async (title, body) => {
+                        await createDeck(title, body); // crea el mazo
+                        await refetch(); // refetch después de crear
+                        setIsModalOpen(false); // cierra el modal
+                    }}
+                />
+            )}
         </>
     )
 }

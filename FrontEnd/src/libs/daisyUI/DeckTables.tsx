@@ -1,5 +1,6 @@
 // Here i'll put the two tables that show the decks and the cards in the decks.
 // import { BookOpenIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import StudyIcon from '../../assets/studyIcon.svg';
 import EditIcon from '../../assets/editIcon.svg';
 import DeleteIcon from '../../assets/deleteIcon.svg';
@@ -12,24 +13,18 @@ interface TableRow {
 
 interface DaisyTableProps {
   data: TableRow[];
+  onDelete?: (index: number) => void;
+  onEdit?: (index: number) => void;
+  onStudy?: (index: number) => void;
 }
 
-const DecksTable: React.FC<DaisyTableProps> = ({ data }) => {
-  function onStudy(index: number): void {
-    console.log(`Studying deck at index: ${index}`);
-    // Here you could navigate to a study page or trigger a study mode for the selected deck.
-    // Example: navigate(`/study/${data[index].title}`);
-  }
 
-  function onEdit(index: number): void {
-    console.log(`Editing deck at index: ${index}`);
-    // Here you could open a modal or navigate to an edit page for the selected deck.
-  }
-
-  function onDelete(index: number): void {
-    console.log(`Deleting deck at index: ${index}`);
-    // Here you could trigger a delete action for the selected deck.
-  }
+const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onEdit, onStudy }) => {
+  const navigate = useNavigate(); // 👈 Hook de navegación
+  const handleRowClick = (index: number) => {
+    const titleSlug = encodeURIComponent(data[index].title); // Sanitiza para URL
+    navigate(`/mazos/${titleSlug}`); // 👈 Navega a la página del mazo
+  };
 
   return (
     <div className="overflow-x-auto w-full rounded-4xl">
@@ -45,9 +40,10 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data }) => {
         <tbody className="text-white bg-darkComponent">
           {data.map((row, index) => (
             <tr
-              key={row.title}
+              key={index}
               className="hover:bg-darkComponentElement transition-all duration-200"
               style={{ height: '60px' }}
+              onClick={() => handleRowClick(index)} // 👈 Maneja el clic en la fila
             >
               <td>{index + 1}</td>
               <td>{row.title}</td>

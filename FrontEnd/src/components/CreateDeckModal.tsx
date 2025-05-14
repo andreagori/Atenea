@@ -1,21 +1,44 @@
+import { useState } from "react";
 import { ButtonCustom } from "./Buttons";
 import { X } from 'lucide-react';
 import { Plus } from 'lucide-react';
-import { useState } from "react";
 import { ActiveRecall, CornellMethod, VisualCard } from "./CardTypesForm";
 
 interface ModalProps {
     onClose: () => void;
+    onCreate: (title: string, body: string) => Promise<void>;
+    isVisible?: boolean;
 }
 
-export function CreateDeckModal({ onClose }: ModalProps) {
+export function CreateDeckModal({ onClose, onCreate }: ModalProps) {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!title || !description) return;
+
+        try {
+            setIsSubmitting(true);
+            await onCreate(title, description);
+            onClose(); // Cierra el modal tras éxito
+        } catch (error) {
+            console.error("Error al crear el mazo:", error);
+            // Aquí podrías mostrar un mensaje de error si deseas
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30">
+        <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30 ">
             <div className="bg-darkComponent2 rounded-lg shadow-lg w-4/12 h-7/13 border-2 border-darkComponentText">
                 <h1 className="text-3xl font-bold mt-4 text-center text-darkComponentText">
                     Crear un mazo
                 </h1>
-                <form className="m-4">
+                <form className="m-4" onSubmit={handleSubmit}>
                     <div className="flex items-start w-full">
                         <div className="flex-1">
                             <label
@@ -26,6 +49,8 @@ export function CreateDeckModal({ onClose }: ModalProps) {
                             <input
                                 className="h-8 block w-full bg-white text-darkAccentText rounded-md shadow-sm px-2"
                                 required
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
                             />
                         </div>
                     </div>
@@ -40,6 +65,8 @@ export function CreateDeckModal({ onClose }: ModalProps) {
                             <input
                                 className="mt-1 text-sm h-8 block w-full bg-white text-darkAccentText rounded-md shadow-sm px-2"
                                 required
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
                             />
                         </div>
                     </div>
@@ -62,9 +89,9 @@ export function CreateDeckModal({ onClose }: ModalProps) {
                         />
                         <ButtonCustom
                             type="submit"
-                            text="Crear nuevo mazo"
+                            text={isSubmitting ? "Creando..." : "Crear nuevo mazo"}
                             icon={<Plus />}
-                            onClick={() => console.log("Crear nuevo mazo")}
+                            onClick={() => { }}
                             isGradient={true}
                             gradientDirection="to bottom"
                             gradientColors={['#0C3BEB', '#1A368B']}
@@ -73,6 +100,7 @@ export function CreateDeckModal({ onClose }: ModalProps) {
                             hoverBackground="#0C3BEB"
                             width="201px"
                             height="35px"
+                            disabled={isSubmitting}
                         />
                     </div>
                 </form>
