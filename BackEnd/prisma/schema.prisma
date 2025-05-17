@@ -189,7 +189,6 @@ enum LearningMethod {
   activeRecall
   cornell
   visualCard
-  all
 }
 
 enum StudyMethod {
