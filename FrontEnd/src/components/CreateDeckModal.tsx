@@ -3,10 +3,17 @@ import { ButtonCustom } from "./Buttons";
 import { X } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import { ActiveRecall, CornellMethod, VisualCard } from "./CardTypesForm";
+import { CreateCardPayload } from "@/types/card.types";
 
 interface ModalProps {
     onClose: () => void;
     onCreate: (title: string, body: string) => Promise<void>;
+    isVisible?: boolean;
+}
+
+export interface CreateCardModalProps {
+    onClose: () => void;
+    onCreateCard: (cardData: CreateCardPayload) => Promise<void>;
     isVisible?: boolean;
 }
 
@@ -110,8 +117,53 @@ export function CreateDeckModal({ onClose, onCreate }: ModalProps) {
 }
 
 
-export function CreateCardModal({ onClose }: ModalProps) {
+export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps) {
     const [cardType, setCardType] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formData, setFormData] = useState<CreateCardPayload>({
+        title: '',
+        learningMethod: 'activeRecall'
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!onCreateCard) return;
+
+        // Validar que todos los campos necesarios estén presentes
+        if (!validateFormData(formData)) {
+            console.error("Faltan campos requeridos");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            await onCreateCard(formData);
+            onClose();
+        } catch (error) {
+            console.error("Error creating card:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const updateFormData = (data: Partial<CreateCardPayload>) => {
+        setFormData(prev => ({ ...prev, ...data }));
+    };
+
+    const validateFormData = (data: CreateCardPayload): boolean => {
+        if (!data.title) return false;
+
+        switch (data.learningMethod) {
+            case 'activeRecall':
+                return !!(data.questionTitle && data.answer);
+            case 'cornell':
+                return !!(data.principalNote && data.noteQuestions && data.shortNote);
+            case 'visualCard':
+                return !!(data.urlImage);
+            default:
+                return false;
+        }
+    };
 
     return (
         <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30">
@@ -119,7 +171,7 @@ export function CreateCardModal({ onClose }: ModalProps) {
             <div className="mt-15 bg-darkPrimaryPurple2 rounded-lg shadow-lg w-5/12 border-2 border-darkSecondaryPurple text-darkSecondaryPurple flex flex-col max-h-[90vh] overflow-y-auto">
                 <h1 className="text-3xl font-bold mt-4 text-center">Agregar una carta</h1>
 
-                <form className="m-4 flex-grow">
+                <form className="m-4 flex-grow" onSubmit={handleSubmit}>
                     <div className="flex items-start w-full">
                         <div className="flex-1">
                             <label className="block text-m font-bold text-darkBgText mb-1">
@@ -137,45 +189,57 @@ export function CreateCardModal({ onClose }: ModalProps) {
                                 <option value="visualCard">Carta visual</option>
                             </select>
                             <div className="mt-2">
-                                {cardType === "activeRecall" && <ActiveRecall />}
-                                {cardType === "cornellMethod" && <CornellMethod />}
-                                {cardType === "visualCard" && <VisualCard />}
+                                {cardType === "activeRecall" &&
+                                    <ActiveRecall
+                                        onChange={updateFormData}
+                                        data={formData}
+                                    />}
+                                {cardType === "cornellMethod" &&
+                                    <CornellMethod
+                                        onChange={updateFormData}
+                                        data={formData}
+                                    />}
+                                {cardType === "visualCard" &&
+                                    <VisualCard
+                                        onChange={updateFormData}
+                                        data={formData}
+                                    />}
                             </div>
                         </div>
                     </div>
+                    <div className="flex justify-between m-4">
+                        <ButtonCustom
+                            type="button"
+                            text="Cerrar"
+                            fontSize="18px"
+                            icon={<X />}
+                            onClick={onClose}
+                            isGradient={true}
+                            gradientDirection="to bottom"
+                            gradientColors={['#FF2F2F', '#FF2F2F']}
+                            color="#fff"
+                            hoverColor="#fff"
+                            hoverBackground="#650707"
+                            width="120px"
+                            height="35px"
+                        />
+                        <ButtonCustom
+                            type="submit"
+                            text={isSubmitting ? "Creando..." : "Crear carta"}
+                            disabled={isSubmitting}
+                            icon={<Plus />}
+                            onClick={() => { }}
+                            isGradient={true}
+                            gradientDirection="to bottom"
+                            gradientColors={['#0C3BEB', '#1A368B']}
+                            color="#fff"
+                            hoverColor="#fff"
+                            hoverBackground="#0C3BEB"
+                            width="201px"
+                            height="35px"
+                        />
+                    </div>
                 </form>
-
-                <div className="flex justify-between m-4">
-                    <ButtonCustom
-                        type="button"
-                        text="Cerrar"
-                        fontSize="18px"
-                        icon={<X />}
-                        onClick={onClose}
-                        isGradient={true}
-                        gradientDirection="to bottom"
-                        gradientColors={['#FF2F2F', '#FF2F2F']}
-                        color="#fff"
-                        hoverColor="#fff"
-                        hoverBackground="#650707"
-                        width="120px"
-                        height="35px"
-                    />
-                    <ButtonCustom
-                        type="submit"
-                        text="Crear nuevo mazo"
-                        icon={<Plus />}
-                        onClick={() => console.log("Crear nuevo mazo")}
-                        isGradient={true}
-                        gradientDirection="to bottom"
-                        gradientColors={['#0C3BEB', '#1A368B']}
-                        color="#fff"
-                        hoverColor="#fff"
-                        hoverBackground="#0C3BEB"
-                        width="201px"
-                        height="35px"
-                    />
-                </div>
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Deck } from './entities/deck.entity';
 import { CreateDeckDto } from './dto/create-deck.dto';
@@ -72,6 +72,29 @@ async findAll(userId: number): Promise<Deck[]> {
       throw new ConflictException('Deck not found');
     }
     return deck;
+  }
+
+  /**
+   * Obtener el ID de un mazo por su título
+   * @param userId ID del usuario propietario del mazo
+   * @param title Título del mazo a buscar
+   * @returns Mazo encontrado o mensaje de error
+   */
+
+  async getDeckIdByTitle(userId: number, title: string): Promise<Deck["deckId"]> {
+    const deck = await this.prisma.deck.findFirst({
+      where: {
+        title,
+        userId,
+      },
+    });
+
+    if (!deck) {
+      this.logger.error(`Deck with title ${title} not found`);
+      throw new NotFoundException('Deck not found');
+    }
+
+    return deck.deckId;
   }
 
   /**

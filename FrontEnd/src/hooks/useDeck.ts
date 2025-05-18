@@ -33,7 +33,7 @@ export const useDecks = () => {
             });
             setDecks(response.data);
         } catch (err: any) {
-            setError(err.message || 'Error al obtener los decks');
+            setError(err.message || 'Error al obtener los mazos');
             setDecks([]);
         } finally {
             setLoading(false);

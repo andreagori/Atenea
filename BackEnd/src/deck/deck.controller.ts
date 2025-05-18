@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Logger, UseGuards, NotFoundException } from '@nestjs/common';
 import { DeckService } from './deck.service';
 import { Deck } from './entities/deck.entity';
 import { CreateDeckDto } from './dto/create-deck.dto';
@@ -35,6 +35,18 @@ export class DeckController {
   @Get(':deckId')
   findOne(@GetUser() user: any, @Param('deckId') deckId: string) {
     return this.deckService.findOne(user.userId, +deckId);
+  }
+
+  // GET DECK ID BY TITLE
+  @ApiResponse({ status: 200, description: 'Deck id found', type: Number })
+  @UseGuards(JwtAuthGuard)
+  @Get('by-title/:title')
+  async getDeckIdByTitle(@GetUser() user: any, @Param('title') title: string) {
+    const deck = await this.deckService.getDeckIdByTitle(user.userId, title);
+    if (!deck) {
+      throw new NotFoundException(`Deck with title ${title} not found`);
+    }
+    return { deckId: deck };
   }
 
   // UPDATE DECK BY ID
