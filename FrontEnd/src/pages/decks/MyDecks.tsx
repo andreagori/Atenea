@@ -29,13 +29,19 @@ const MisMazos = () => {
                 </p>
                 <div className="flex flex-col justify-center items-center mt-10 w-10/12 h-full">
                     <DecksTable
-                        data={decks}
-                        onDelete={(index) => {
-                            const deckId = decks[index].id;
-                            deleteDeck(deckId);
+                        data={decks.map(deck => ({
+                            deckId: deck.deckId, // Use deckId consistently
+                            title: deck.title,
+                            body: deck.body
+                        }))}
+                        onDelete={async (deckId: number) => {
+                            try {
+                                await deleteDeck(deckId);
+                                await refetch();
+                            } catch (error) {
+                                console.error("Error deleting deck:", error);
+                            }
                         }}
-                        onEdit={(index) => console.log(`Edit deck at index: ${index}`)}
-                        onStudy={(index) => console.log(`Study deck at title: ${decks[index].title}`)}
                     />
                     <div className="flex justify-end mt-4 gap-2 self-end">
                         <ButtonCustom

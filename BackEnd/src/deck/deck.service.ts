@@ -48,11 +48,11 @@ export class DeckService {
    * Busca todos los mazos
    * @returns Lista de mazos
    */
-async findAll(userId: number): Promise<Deck[]> {
-  return this.prisma.deck.findMany({
-    where: { userId },
-  });
-}
+  async findAll(userId: number): Promise<Deck[]> {
+    return this.prisma.deck.findMany({
+      where: { userId },
+    });
+  }
 
   /**
    * Busca un mazo por su ID
@@ -103,8 +103,50 @@ async findAll(userId: number): Promise<Deck[]> {
    * @param updateDeckDto Datos a actualizar
    * @returns Mazo actualizado o mensaje de error
    */
-  async update(id: number, updateDeckDto: UpdateDeckDto) {
-    return `This action updates a #${id} deck`;
+  async update(id: number, updateDeckDto: UpdateDeckDto, userId: number): Promise<Deck> {
+    const existingDeck = await this.prisma.deck.findFirst({
+      where: {
+        deckId: id,
+        userId: userId,
+      },
+    });
+
+    if (!existingDeck) {
+      this.logger.error(`Deck with ID ${id} not found or does not belong to user`);
+      throw new NotFoundException('Deck not found or unauthorized');
+    }
+
+    // If title is being updated, check if it already exists for the user
+    if (updateDeckDto.title) {
+      const deckWithSameTitle = await this.prisma.deck.findFirst({
+        where: {
+          title: updateDeckDto.title,
+          userId: userId,
+          deckId: { not: id }, // Exclude the current deck from the check
+        },
+      });
+
+      if (deckWithSameTitle) {
+        this.logger.error(`Deck name ${updateDeckDto.title} already exists`);
+        throw new ConflictException('Deck name already exists');
+      }
+    }
+
+    // update the deck
+    try {
+      const updatedDeck = await this.prisma.deck.update({
+        where: {
+          deckId: id,
+        },
+        data: updateDeckDto,
+      });
+
+      this.logger.log(`Deck with ID ${id} updated successfully`);
+      return updatedDeck;
+    } catch (error) {
+      this.logger.error(`Error updating deck with ID ${id}:`, error);
+      throw new ConflictException('Error updating deck');
+    }
   }
 
   /**

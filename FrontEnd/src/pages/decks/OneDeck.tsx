@@ -14,7 +14,7 @@ const OneDeck = () => {
     const navigate = useNavigate();
     const { title } = useParams<{ title: string }>();
     const { deckId, loading: loadingDeckId, error: deckError } = useDeckIdByTitle(title);
-    const { cards, loading: loadingCards, error: cardsError, createCard, refetchCards } = useCards(deckId ?? undefined);
+    const { cards, loading: loadingCards, error: cardsError, createCard } = useCards(deckId ?? undefined);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Loading state

@@ -8,24 +8,44 @@ import DeleteIcon from '../../assets/deleteIcon.svg';
 
 // DECKS TABLE. For now, it is an example of how it would look.
 interface TableRow {
+  deckId: number;
   title: string;
   body: string;
 }
 
 interface DaisyTableProps {
   data: TableRow[];
-  onDelete?: (index: number) => void;
-  onEdit?: (index: number) => void;
-  onStudy?: (index: number) => void;
+  onDelete?: (deckId: number) => Promise<void>;
 }
 
 
-const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onEdit, onStudy }) => {
+const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete }) => {
   const navigate = useNavigate();
+
   const handleRowClick = (index: number) => {
-    const titleSlug = encodeURIComponent(data[index].title); // Sanitiza para URL
+    const titleSlug = encodeURIComponent(data[index].title);
     navigate(`/mazos/${titleSlug}`);
   };
+
+  function onEdit(index: number): void {
+    // Implementa la lógica de edición
+    console.log('Editing deck:', data[index]);
+  }
+
+  async function handleDelete(deck: TableRow, event: React.MouseEvent): Promise<void> {
+    event.stopPropagation();
+    try {
+      if (window.confirm(`¿Estás seguro de eliminar el mazo "${deck.title}"?`)) {
+        onDelete && await onDelete(deck.deckId);
+      }
+    } catch (error: any) {
+      console.error('Error al eliminar el mazo:', error.message);
+    }
+  }
+
+  async function onStudy(index: number) {
+    console.log('Estudiando mazo:', data[index]);
+  }
 
   return (
     <div className="overflow-x-auto w-full rounded-4xl">
@@ -39,7 +59,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onEdit, onStudy
           </tr>
         </thead>
         <tbody className="text-white bg-darkComponent">
-          {data.map((row, index) => (
+          {data.map((deck, index) => (
             <tr
               key={index}
               className="hover:bg-darkComponentElement transition-all duration-200"
@@ -47,8 +67,8 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onEdit, onStudy
               onClick={() => handleRowClick(index)}
             >
               <td>{index + 1}</td>
-              <td>{row.title}</td>
-              <td>{row.body}</td>
+              <td>{deck.title}</td>
+              <td>{deck.body}</td>
               <td>
                 <div className="flex justify-center gap-2">
                   <button
@@ -79,7 +99,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onEdit, onStudy
                   </button>
                   <button
                     className="btn btn-sm btn-error"
-                    onClick={() => onDelete?.(index)}
+                    onClick={(e) => handleDelete(deck, e)}
                     title='Eliminar mazo'
                   >
                     <img

@@ -3,11 +3,16 @@ import axios from 'axios';
 import Cookies from "js-cookie";
 
 export interface Deck {
-    id: number;
+    deckId: number;
     title: string;
     body: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface UpdateDeckDto {
+    title?: string;
+    body?: string;
 }
 
 export const useDecks = () => {
@@ -65,21 +70,52 @@ export const useDecks = () => {
     };
 
     // Delete a deck
-    const deleteDeck = async (id: number) => {
+    const deleteDeck = async (deckId: number) => {
         const token = Cookies.get("auth_token");
         if (!token) {
             throw new Error("No authentication token found");
         }
 
         try {
-            await axios.delete(`http://localhost:3000/deck/${id}`, {
+            await axios.delete(`http://localhost:3000/deck/${deckId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            setDecks(prevDecks => prevDecks.filter(deck => deck.id !== id));
+            setDecks(prevDecks => prevDecks.filter(deck => deck.deckId !== deckId));
         } catch (err: any) {
             throw new Error(err.message || 'Error al eliminar el deck');
+        }
+    };
+
+    // Update a deck
+    const updateDeck = async (id: number, data: UpdateDeckDto) => {
+        const token = Cookies.get("auth_token");
+        if (!token) {
+            throw new Error("No authentication token found");
+        }
+
+        try {
+            const response = await axios.patch<Deck>(
+                `http://localhost:3000/deck/${id}`,
+                data,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            // Actualizar el estado local
+            setDecks(prevDecks =>
+                prevDecks.map(deck =>
+                    deck.deckId === id ? { ...deck, ...response.data } : deck
+                )
+            );
+
+            return response.data;
+        } catch (err: any) {
+            throw new Error(err.response?.data?.message || 'Error al actualizar el mazo');
         }
     };
 
@@ -93,6 +129,7 @@ export const useDecks = () => {
         error,
         refetch: fetchDecks,
         createDeck,
-        deleteDeck
+        deleteDeck,
+        updateDeck
     };
 };

@@ -53,15 +53,15 @@ export class DeckController {
   @ApiResponse({ status: 200, description: 'Deck updated successfully', type: Deck })
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDeckDto: UpdateDeckDto) {
-    return this.deckService.update(+id, updateDeckDto);
+  update( @Param('id') id: string, @Body() updateDeckDto: UpdateDeckDto, @GetUser() user: any) {
+    return this.deckService.update(+id, updateDeckDto, user.userId);
   }
 
   // DELETE DECK BY ID
   @ApiResponse({ status: 200, description: 'Deck deleted successfully' })
   @UseGuards(JwtAuthGuard)
   @Delete(':deckId')
-  remove(@Param('deckId') deckId: string,  @GetUser() user: any) {
+  remove(@Param('deckId') deckId: string, @GetUser() user: any) {
     return this.deckService.remove(+deckId, user);
   }
 }
