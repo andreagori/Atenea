@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ButtonCustom } from "./Buttons";
 import { X } from 'lucide-react';
 import { Plus } from 'lucide-react';
@@ -8,7 +8,11 @@ import { CreateCardPayload } from "@/types/card.types";
 interface ModalProps {
     onClose: () => void;
     onCreate: (title: string, body: string) => Promise<void>;
+    onUpdate?: (title: string, body: string) => Promise<void>;
     isVisible?: boolean;
+    initialTitle?: string;
+    initialDescription?: string;
+    editMode?: boolean;
 }
 
 export interface CreateCardModalProps {
@@ -17,10 +21,22 @@ export interface CreateCardModalProps {
     isVisible?: boolean;
 }
 
-export function CreateDeckModal({ onClose, onCreate }: ModalProps) {
+export function CreateDeckModal({
+    onClose,
+    onCreate,
+    onUpdate,
+    initialTitle = '',
+    initialDescription = '',
+    editMode = false
+}: ModalProps) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        setTitle(initialTitle);
+        setDescription(initialDescription);
+    }, [initialTitle, initialDescription]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,11 +45,18 @@ export function CreateDeckModal({ onClose, onCreate }: ModalProps) {
 
         try {
             setIsSubmitting(true);
-            await onCreate(title, description);
-            onClose(); // Cierra el modal tras éxito
+            if (editMode) {
+                if (onUpdate) {
+                    await onUpdate(title, description);
+                }
+            } else {
+                if (onCreate) {
+                    await onCreate(title, description);
+                }
+            }
+            onClose();
         } catch (error) {
-            console.error("Error al crear el mazo:", error);
-            // Aquí podrías mostrar un mensaje de error si deseas
+            console.error(editMode ? "Error al actualizar el mazo:" : "Error al crear el mazo:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -43,7 +66,7 @@ export function CreateDeckModal({ onClose, onCreate }: ModalProps) {
         <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30 ">
             <div className="bg-darkComponent2 rounded-lg shadow-lg w-4/12 h-7/13 border-2 border-darkComponentText">
                 <h1 className="text-3xl font-bold mt-4 text-center text-darkComponentText">
-                    Crear un mazo
+                    {editMode ? 'Editar mazo' : 'Crear un mazo'}
                 </h1>
                 <form className="m-4" onSubmit={handleSubmit}>
                     <div className="flex items-start w-full">
@@ -96,7 +119,10 @@ export function CreateDeckModal({ onClose, onCreate }: ModalProps) {
                         />
                         <ButtonCustom
                             type="submit"
-                            text={isSubmitting ? "Creando..." : "Crear nuevo mazo"}
+                            text={isSubmitting 
+                                ? (editMode ? "Guardando..." : "Creando...") 
+                                : (editMode ? "Guardar cambios" : "Crear nuevo mazo")
+                            }
                             icon={<Plus />}
                             onClick={() => { }}
                             isGradient={true}
@@ -125,6 +151,14 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
         learningMethod: 'activeRecall'
     });
 
+    const resetForm = () => {
+        setCardType('');
+        setFormData({
+            title: '',
+            learningMethod: 'activeRecall'
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!onCreateCard) return;
@@ -138,7 +172,7 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
         try {
             setIsSubmitting(true);
             await onCreateCard(formData);
-            onClose();
+            resetForm();
         } catch (error) {
             console.error("Error creating card:", error);
         } finally {

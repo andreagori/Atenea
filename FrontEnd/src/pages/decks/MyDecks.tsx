@@ -9,7 +9,7 @@ import Footer from "../../components/Footer";
 
 const MisMazos = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { decks, loading, error, deleteDeck, createDeck, refetch } = useDecks();
+    const { decks, loading, error, deleteDeck, createDeck, updateDeck, refetch, } = useDecks();
 
     if (loading) return <p className="text-white mt-20">Cargando mazos...</p>;
     if (error) return <p className="text-red-500 mt-20">Error: {error}</p>;
@@ -40,6 +40,14 @@ const MisMazos = () => {
                                 await refetch();
                             } catch (error) {
                                 console.error("Error deleting deck:", error);
+                            }
+                        }}
+                        onUpdate={async (deckId: number, title: string, body: string) => {
+                            try {
+                                await updateDeck(deckId, { title, body });
+                                await refetch();
+                            } catch (error) {
+                                console.error("Error updating deck:", error);
                             }
                         }}
                     />

@@ -165,8 +165,97 @@ export class CardService {
     return card;
   }
 
-  update(id: number, updateCardDto: UpdateCardDto) {
-    return `This action updates a #${id} card`;
+  async update(id: number, deckId: number, userId: number, updateCardDto: UpdateCardDto): Promise<Card> {
+    // 1. Verificar que el deck pertenezca al usuario
+    const deck = await this.prisma.deck.findFirst({
+      where: { deckId, userId },
+    });
+
+    if (!deck) {
+      throw new NotFoundException('El mazo no pertenece al usuario');
+    }
+
+    // 2. Verificar que la carta exista
+    const existingCard = await this.prisma.card.findFirst({
+      where: { cardId: id, deckId },
+      include: {
+        activeRecall: true,
+        cornell: true,
+        visualCard: true,
+      },
+    });
+
+    if (!existingCard) {
+      throw new NotFoundException(`Carta con ID ${id} no encontrada`);
+    }
+
+    // 3. Actualizar la carta base (solo el título)
+    const updatedCard = await this.prisma.$transaction(async (prisma) => {
+      const card = await prisma.card.update({
+        where: { cardId: id },
+        data: {
+          title: updateCardDto.title,
+          // Ya no actualizamos learningMethod
+        },
+      });
+
+      // 4. Actualizar el contenido específico según el método existente
+      switch (existingCard.learningMethod) {
+        case LearningMethod.ACTIVE_RECALL:
+          if (existingCard.activeRecall && updateCardDto.questionTitle && updateCardDto.answer) {
+            await prisma.cardsActiveRecall.update({
+              where: { cardId: id },
+              data: {
+                questionTitle: updateCardDto.questionTitle,
+                answer: updateCardDto.answer,
+              },
+            });
+          }
+          break;
+
+        case LearningMethod.CORNELL:
+          if (existingCard.cornell &&
+            updateCardDto.principalNote &&
+            updateCardDto.noteQuestions &&
+            updateCardDto.shortNote) {
+            await prisma.cardsCornell.update({
+              where: { cardId: id },
+              data: {
+                principalNote: updateCardDto.principalNote,
+                noteQuestions: updateCardDto.noteQuestions,
+                shortNote: updateCardDto.shortNote,
+              },
+            });
+          }
+          break;
+
+        case LearningMethod.VISUAL_CARD:
+          if (existingCard.visualCard && updateCardDto.urlImage) {
+            await prisma.visualCard.update({
+              where: { cardId: id },
+              data: {
+                urlImage: updateCardDto.urlImage,
+              },
+            });
+          }
+          break;
+      }
+
+      return prisma.card.findFirst({
+        where: { cardId: id },
+        include: {
+          activeRecall: true,
+          cornell: true,
+          visualCard: true,
+        },
+      });
+    });
+
+    if (!updatedCard) {
+      throw new NotFoundException(`Error actualizando la carta con ID ${id}`);
+    }
+
+    return updatedCard;
   }
 
   /**

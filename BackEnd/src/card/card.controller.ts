@@ -44,9 +44,15 @@ export class CardController {
     return this.cardService.findOne(+id, +deckId, user.userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCardDto: UpdateCardDto) {
-    return this.cardService.update(+id, updateCardDto);
+  @ApiResponse({ status: 200, description: 'Card updated successfully', type: Card })
+  @Patch(':id/deck/:deckId')
+  update(
+    @Param('id') id: string,
+    @Param('deckId') deckId: string,
+    @Body() updateCardDto: UpdateCardDto,
+    @GetUser() user: any,
+  ) {
+    return this.cardService.update(+id, +deckId, user.userId, updateCardDto);
   }
 
   // DELETE CARD BY ID

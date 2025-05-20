@@ -1,10 +1,13 @@
 // Here i'll put the two tables that show the decks and the cards in the decks.
 // import { BookOpenIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useCards } from '@/hooks/useCards';
+import { Card, useCards } from '@/hooks/useCards';
+import { CreateDeckModal } from '@/components/CreateDeckModal';
 import StudyIcon from '../../assets/studyIcon.svg';
 import EditIcon from '../../assets/editIcon.svg';
 import DeleteIcon from '../../assets/deleteIcon.svg';
+import { useState } from 'react';
+import { EditCardModal } from '@/components/EditCardModal';
 
 // DECKS TABLE. For now, it is an example of how it would look.
 interface TableRow {
@@ -16,20 +19,24 @@ interface TableRow {
 interface DaisyTableProps {
   data: TableRow[];
   onDelete?: (deckId: number) => Promise<void>;
+  onUpdate?: (deckId: number, title: string, body: string) => Promise<void>;
 }
 
 
-const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete }) => {
+const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deckToEdit, setDeckToEdit] = useState<TableRow | null>(null);
 
   const handleRowClick = (index: number) => {
     const titleSlug = encodeURIComponent(data[index].title);
     navigate(`/mazos/${titleSlug}`);
   };
 
-  function onEdit(index: number): void {
-    // Implementa la lógica de edición
-    console.log('Editing deck:', data[index]);
+  function onEdit(index: number, event: React.MouseEvent): void {
+    event.stopPropagation();
+    setDeckToEdit(data[index]);
+    setIsModalOpen(true);
   }
 
   async function handleDelete(deck: TableRow, event: React.MouseEvent): Promise<void> {
@@ -86,7 +93,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete }) => {
                   </button>
                   <button
                     className="btn btn-sm btn-accent"
-                    onClick={() => onEdit?.(index)}
+                    onClick={(e) => onEdit?.(index, e)}
                     title='Editar mazo'
                   >
                     <img
@@ -116,6 +123,21 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete }) => {
           ))}
         </tbody>
       </table>
+      {isModalOpen && (
+        <CreateDeckModal
+          onClose={() => setIsModalOpen(false)}
+          onCreate={async (title, body) => {
+            if (deckToEdit) {
+              await onUpdate?.(deckToEdit.deckId, title, body);
+              setDeckToEdit(null);
+            }
+            setIsModalOpen(false);
+          }}
+          initialTitle={deckToEdit?.title || ''}
+          initialDescription={deckToEdit?.body || ''}
+          editMode={!!deckToEdit}
+        />
+      )}
     </div>
   );
 };
@@ -124,6 +146,13 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete }) => {
 // Actualiza la interfaz para incluir el deckId
 interface DaisyTableProps2 {
   deckId: number;
+  displayedCards: Card[];
+  pageSize: number | 'Todas';
+  onPageSizeChange: (size: number | 'Todas') => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  totalCards: number;
 }
 
 const formatLearningMethod = (method: string): string => {
@@ -137,8 +166,18 @@ const formatLearningMethod = (method: string): string => {
   return methodMap[method] || method;
 };
 
-const CardsTable: React.FC<DaisyTableProps2> = ({ deckId }) => {
-  const { cards, loading, error, deleteCard } = useCards(deckId);
+const CardsTable: React.FC<DaisyTableProps2> = ({
+  deckId,
+  displayedCards,
+  pageSize,
+  totalCards,
+  currentPage,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
+}) => {
+  const { cards, loading, error, deleteCard, updateCard } = useCards(deckId);
+  const [editingCard, setEditingCard] = useState<Card | null>(null);
 
   // Check the time. 
   if (loading) {
@@ -156,8 +195,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({ deckId }) => {
 
 
   function onEdit(index: number): void {
-    // Implementa la lógica de edición
-    console.log('Editing card:', cards[index]);
+    setEditingCard(cards[index]);
   }
 
   async function onDelete(index: number) {
@@ -222,6 +260,20 @@ const CardsTable: React.FC<DaisyTableProps2> = ({ deckId }) => {
           ))}
         </tbody>
       </table>
+      {editingCard && (
+        <EditCardModal
+          card={editingCard}
+          onClose={() => setEditingCard(null)}
+          onUpdate={async (cardId, cardData) => {
+            try {
+              await updateCard(cardId, cardData);
+              setEditingCard(null);
+            } catch (error) {
+              console.error("Error updating card:", error);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDeckIdByTitle } from "../../hooks/useDeckIdByTitle";
 import { useCards } from "../../hooks/useCards";
@@ -10,12 +10,33 @@ import { ChevronRight } from 'lucide-react';
 import { CreateCardPayload } from "@/types/card.types";
 import Footer from "../../components/Footer";
 
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 'Todas'] as const;
+type PageSize = typeof PAGE_SIZE_OPTIONS[number];
+
 const OneDeck = () => {
     const navigate = useNavigate();
     const { title } = useParams<{ title: string }>();
     const { deckId, loading: loadingDeckId, error: deckError } = useDeckIdByTitle(title);
     const { cards, loading: loadingCards, error: cardsError, createCard } = useCards(deckId ?? undefined);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pageSize, setPageSize] = useState<PageSize>(PAGE_SIZE_OPTIONS[0]);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const displayedCards = useMemo(() => {
+        if (!cards) return [];
+        if (pageSize === 'Todas') return cards;
+
+        const start = (currentPage - 1) * Number(pageSize);
+        const end = start + Number(pageSize);
+        return cards.slice(start, end);
+    }, [cards, pageSize, currentPage]);
+
+    // Calcular el número total de páginas
+    const totalPages = useMemo(() => {
+        if (!cards) return 0;
+        if (pageSize === 'Todas') return 1;
+        return Math.ceil(cards.length / Number(pageSize));
+    }, [cards, pageSize]);
 
     // Loading state
     if (loadingDeckId || (deckId && loadingCards)) {
@@ -73,7 +94,72 @@ const OneDeck = () => {
                     {cardsError ? (
                         <p className="text-red-500 mt-4">{cardsError}</p>
                     ) : cards && cards.length > 0 ? (
-                        <CardsTable deckId={deckId} />
+                        <>
+                            <div className="flex justify-between items-center w-full mb-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white">Mostrar:</span>
+                                    <select
+                                        className="select select-bordered select-sm bg-darkPrimaryPurple text-white"
+                                        value={pageSize.toString()}
+                                        onChange={(e) => {
+                                            setPageSize(e.target.value as PageSize);
+                                            setCurrentPage(1);
+                                        }}
+                                    >
+                                        {PAGE_SIZE_OPTIONS.map((size) => (
+                                            <option key={size} value={size}>{size}</option>
+                                        ))}
+                                    </select>
+                                    <span className="text-white">cartas</span>
+                                </div>
+                                <div className="text-white">
+                                    Mostrando {displayedCards.length} de {cards.length} cartas
+                                </div>
+                            </div>
+
+                            <CardsTable
+                                deckId={deckId}
+                                displayedCards={displayedCards}
+                                pageSize={pageSize}
+                                totalCards={cards.length}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                                onPageSizeChange={(size) => {
+                                    setPageSize(size as PageSize);
+                                    setCurrentPage(1); // Reiniciar página
+                                }}
+                            />
+
+                            {pageSize !== 'Todas' && totalPages > 1 && (
+                                <div className="flex justify-center gap-2 mt-4">
+                                    <button
+                                        className="btn btn-sm btn-circle"
+                                        onClick={() => setCurrentPage(prev => prev - 1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        «
+                                    </button>
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                        <button
+                                            key={page}
+                                            className={`btn btn-sm btn-circle ${page === currentPage ? 'btn-primary' : ''
+                                                }`}
+                                            onClick={() => setCurrentPage(page)}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                    <button
+                                        className="btn btn-sm btn-circle"
+                                        onClick={() => setCurrentPage(prev => prev + 1)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        »
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <p className="text-white mt-4">No hay cartas en este mazo</p>
                     )}

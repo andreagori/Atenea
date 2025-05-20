@@ -44,6 +44,19 @@ interface CreateCardPayload {
     urlImage?: string;
 }
 
+interface UpdateCardPayload {
+    title: string;
+    // Active Recall fields
+    questionTitle?: string;
+    answer?: string;
+    // Cornell fields
+    principalNote?: string;
+    noteQuestions?: string;
+    shortNote?: string;
+    // Visual Card fields
+    urlImage?: string;
+}
+
 export const useCards = (deckId: number | undefined) => {
     const [cards, setCards] = useState<Card[]>([]);
     const [loading, setLoading] = useState(true);
@@ -156,6 +169,31 @@ export const useCards = (deckId: number | undefined) => {
         }
     };
 
+    // Update a card
+    const updateCard = async (cardId: number, cardData: UpdateCardPayload) => {
+        const token = Cookies.get("auth_token");
+        if (!token || !deckId) {
+            throw new Error("No auth token found or invalid deck ID");
+        }
+
+        try {
+            const response = await axios.patch(
+                `http://localhost:3000/card/${cardId}/deck/${deckId}`,
+                cardData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            await fetchCards(); // Refresh cards after update
+            return response.data;
+        } catch (err: any) {
+            console.error('Error updating card:', err.response?.data);
+            throw new Error(err.response?.data?.message || 'Error updating card');
+        }
+    };
+
     useEffect(() => {
         fetchCards();
     }, [deckId]);
@@ -166,6 +204,7 @@ export const useCards = (deckId: number | undefined) => {
         error,
         createCard,
         deleteCard,
+        updateCard,
         refetchCards: fetchCards,
     };
 };

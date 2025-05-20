@@ -4,20 +4,21 @@ import { CreateCardPayload } from "@/types/card.types";
 interface CardFormProps {
     onChange: (data: Partial<CreateCardPayload>) => void;
     data: CreateCardPayload;
+    isEditing?: boolean;
 }
 
 export function ActiveRecall({ onChange, data }: CardFormProps) {
     return (
         <div className="font-primary text-white">
             <label className="block text-m mb-1 font-semibold">
-                Pregunta:
+                Título/Pregunta:
             </label>
             <input 
                 className="w-full bg-darkInfo h-10 rounded p-2 text-darkPrimaryPurple2"
-                value={data.title || ''}
+                value={data.title || data.questionTitle || ''}
                 onChange={(e) => onChange({ 
                     title: e.target.value,
-                    questionTitle: e.target.value, // Sincronizar título y pregunta
+                    questionTitle: e.target.value, // Mantener sincronizados
                     learningMethod: 'activeRecall'
                 })}
                 placeholder="Escribe tu pregunta aquí"
