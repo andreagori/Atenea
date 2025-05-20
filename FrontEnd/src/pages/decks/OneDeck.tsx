@@ -16,10 +16,10 @@ type PageSize = typeof PAGE_SIZE_OPTIONS[number];
 const OneDeck = () => {
     const navigate = useNavigate();
     const { title } = useParams<{ title: string }>();
-    const { deckId, loading: loadingDeckId, error: deckError } = useDeckIdByTitle(title);
-    const { cards, loading: loadingCards, error: cardsError, createCard } = useCards(deckId ?? undefined);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [pageSize, setPageSize] = useState<PageSize>(PAGE_SIZE_OPTIONS[0]);
+    const { deckId, loading: loadingDeckId, error: deckError } = useDeckIdByTitle(title);
+    const { cards, loading, error, createCard, updateCard, deleteCard, refetchCards } = useCards(deckId ?? undefined);
+    const [pageSize, setPageSize] = useState<PageSize>(10);
     const [currentPage, setCurrentPage] = useState(1);
 
     const displayedCards = useMemo(() => {
@@ -31,15 +31,13 @@ const OneDeck = () => {
         return cards.slice(start, end);
     }, [cards, pageSize, currentPage]);
 
-    // Calcular el número total de páginas
     const totalPages = useMemo(() => {
         if (!cards) return 0;
         if (pageSize === 'Todas') return 1;
         return Math.ceil(cards.length / Number(pageSize));
     }, [cards, pageSize]);
 
-    // Loading state
-    if (loadingDeckId || (deckId && loadingCards)) {
+    if (loadingDeckId || loading) {
         return (
             <div className="w-full h-screen flex bg-darkBackground font-primary flex-col items-center justify-center">
                 <span className="loading loading-spinner loading-lg text-darkSecondaryPurple"></span>
@@ -48,15 +46,38 @@ const OneDeck = () => {
     }
 
     const handleCreateCard = async (cardData: CreateCardPayload) => {
+        if (!deckId) return;
         try {
             await createCard(cardData);
-            // Refresh cards or handle success
+            await refetchCards();
         } catch (error) {
             console.error('Error creating card:', error);
         }
     };
 
-    // Error states
+    const handleDeleteCard = async (cardId: number) => {
+        try {
+            await deleteCard(cardId);
+            await refetchCards();
+        } catch (error) {
+            console.error("Error deleting card:", error);
+        }
+    };
+
+    const handleUpdateCard = async (cardId: number, cardData: any) => {
+        try {
+            await updateCard(cardId, cardData);
+            await refetchCards();
+        } catch (error) {
+            console.error("Error updating card:", error);
+        }
+    };
+
+    const handlePageSizeChange = (newSize: PageSize) => {
+        setPageSize(newSize);
+        setCurrentPage(1); // Reset to first page when changing page size
+    };
+
     if (deckError || !deckId) {
         return (
             <div className="w-full h-screen flex bg-darkBackground font-primary flex-col items-center justify-center">
@@ -76,12 +97,10 @@ const OneDeck = () => {
     return (
         <>
             <NavbarLoginIn />
-            <div
-                className="w-full min-h-screen flex bg-darkBackground font-primary flex-col items-center overflow-y-auto scrollbar-hide scroll-smooth"
+            <div className="w-full min-h-screen flex bg-darkBackground font-primary flex-col items-center overflow-y-auto scrollbar-hide scroll-smooth"
                 style={{
                     backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
-                }}
-            >
+                }}>
                 <h1 className="mt-20 text-6xl font-bold text-darkSecondaryPurple">
                     {decodeURIComponent(title || "Nombre de mazo")}
                 </h1>
@@ -91,8 +110,8 @@ const OneDeck = () => {
                         Cartas del mazo:
                     </p>
 
-                    {cardsError ? (
-                        <p className="text-red-500 mt-4">{cardsError}</p>
+                    {error ? (
+                        <p className="text-red-500 mt-4">{error}</p>
                     ) : cards && cards.length > 0 ? (
                         <>
                             <div className="flex justify-between items-center w-full mb-4">
@@ -102,12 +121,15 @@ const OneDeck = () => {
                                         className="select select-bordered select-sm bg-darkPrimaryPurple text-white"
                                         value={pageSize.toString()}
                                         onChange={(e) => {
-                                            setPageSize(e.target.value as PageSize);
+                                            const value = e.target.value === 'Todas' ? 'Todas' : Number(e.target.value);
+                                            setPageSize(value as PageSize);
                                             setCurrentPage(1);
                                         }}
                                     >
                                         {PAGE_SIZE_OPTIONS.map((size) => (
-                                            <option key={size} value={size}>{size}</option>
+                                            <option key={size.toString()} value={size}>
+                                                {size}
+                                            </option>
                                         ))}
                                     </select>
                                     <span className="text-white">cartas</span>
@@ -121,14 +143,13 @@ const OneDeck = () => {
                                 deckId={deckId}
                                 displayedCards={displayedCards}
                                 pageSize={pageSize}
-                                totalCards={cards.length}
                                 currentPage={currentPage}
                                 totalPages={totalPages}
                                 onPageChange={setCurrentPage}
-                                onPageSizeChange={(size) => {
-                                    setPageSize(size as PageSize);
-                                    setCurrentPage(1); // Reiniciar página
-                                }}
+                                onPageSizeChange={handlePageSizeChange}
+                                totalCards={cards?.length ?? 0}
+                                onDeleteCard={handleDeleteCard}
+                                onUpdateCard={handleUpdateCard}
                             />
 
                             {pageSize !== 'Todas' && totalPages > 1 && (

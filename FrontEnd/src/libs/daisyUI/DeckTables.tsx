@@ -1,13 +1,15 @@
 // Here i'll put the two tables that show the decks and the cards in the decks.
 // import { BookOpenIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card, useCards } from '@/hooks/useCards';
+import { Card } from '@/hooks/useCards';
 import { CreateDeckModal } from '@/components/CreateDeckModal';
 import StudyIcon from '../../assets/studyIcon.svg';
 import EditIcon from '../../assets/editIcon.svg';
 import DeleteIcon from '../../assets/deleteIcon.svg';
 import { useState } from 'react';
 import { EditCardModal } from '@/components/EditCardModal';
+
+type PageSize = 5 | 10 | 25 | 50 | 'Todas';
 
 // DECKS TABLE. For now, it is an example of how it would look.
 interface TableRow {
@@ -125,13 +127,21 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
       </table>
       {isModalOpen && (
         <CreateDeckModal
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setDeckToEdit(null);
+          }}
           onCreate={async (title, body) => {
-            if (deckToEdit) {
-              await onUpdate?.(deckToEdit.deckId, title, body);
+            try {
+              if (deckToEdit && onUpdate) {
+                await onUpdate(deckToEdit.deckId, title, body);
+              }
+            } catch (error) {
+              console.error('Error updating deck:', error);
+            } finally {
+              setIsModalOpen(false);
               setDeckToEdit(null);
             }
-            setIsModalOpen(false);
           }}
           initialTitle={deckToEdit?.title || ''}
           initialDescription={deckToEdit?.body || ''}
@@ -144,70 +154,61 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
 
 // CARDS TABLE. For now, it is an example of how it would look.
 // Actualiza la interfaz para incluir el deckId
+// ... imports existentes ...
+
 interface DaisyTableProps2 {
   deckId: number;
   displayedCards: Card[];
   pageSize: number | 'Todas';
-  onPageSizeChange: (size: number | 'Todas') => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (size: PageSize) => void;
   totalCards: number;
+  onDeleteCard: (cardId: number) => Promise<void>;
+  onUpdateCard: (cardId: number, cardData: any) => Promise<void>;
 }
 
 const formatLearningMethod = (method: string): string => {
   const methodMap: { [key: string]: string } = {
     activeRecall: "Repaso Activo",
     cornell: "Método de Cornell",
-    visual: "Carta Visual",
-    // Add more methods as needed
+    visualCard: "Carta Visual",
   };
-
   return methodMap[method] || method;
 };
 
 const CardsTable: React.FC<DaisyTableProps2> = ({
-  deckId,
   displayedCards,
   pageSize,
-  totalCards,
   currentPage,
-  totalPages,
-  onPageChange,
-  onPageSizeChange,
+  onDeleteCard,
+  onUpdateCard
 }) => {
-  const { cards, loading, error, deleteCard, updateCard } = useCards(deckId);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
 
-  // Check the time. 
-  if (loading) {
-    return (
-      <div className="w-full rounded-4xl mt-2 animate-fade-in">
-        <div className="flex items-center justify-center p-8">
-          <div className="loading loading-spinner loading-lg text-darkSecondaryPurple"></div>
-        </div>
-      </div>
-    );
-  }
-  if (error) return <div>Error: {error}</div>;
-  if (!cards || cards.length === 0) return <div>No hay cartas en este mazo</div>;
-
-
-
-  function onEdit(index: number): void {
-    setEditingCard(cards[index]);
+  if (!displayedCards || displayedCards.length === 0) {
+    return <div>No hay cartas en este mazo</div>;
   }
 
-  async function onDelete(index: number) {
+  function onEdit(card: Card): void {
+    setEditingCard(card);
+  }
+
+  async function onDelete(card: Card) {
     try {
-      const card = cards[index];
       if (window.confirm(`¿Estás seguro de eliminar la carta "${card.title}"?`)) {
-        await deleteCard(card.cardId);  // Usar la función deleteCard del hook
+        await onDeleteCard(card.cardId);
       }
     } catch (error: any) {
       console.error('Error al eliminar la carta:', error.message);
     }
   }
+
+  const getCardNumber = (index: number): number => {
+    if (pageSize === 'Todas') return index + 1;
+    return (currentPage - 1) * Number(pageSize) + index + 1;
+  };
 
   return (
     <div className="overflow-x-auto w-full rounded-4xl mt-2">
@@ -221,20 +222,20 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
           </tr>
         </thead>
         <tbody className="text-white bg-darkPrimaryPurple2">
-          {cards.map((card, index) => (
+          {displayedCards.map((card, index) => (
             <tr
               key={card.cardId}
               className="hover:bg-darkComponentElement transition-all duration-200"
               style={{ height: '60px' }}
             >
-              <td>{index + 1}</td>
+              <td>{getCardNumber(index)}</td>
               <td className='text-start'>{card.title}</td>
               <td>{formatLearningMethod(card.learningMethod)}</td>
               <td>
                 <div className="flex justify-center gap-2">
                   <button
                     className="btn btn-sm btn-accent"
-                    onClick={() => onEdit(index)}
+                    onClick={() => onEdit(card)}
                     title='Editar carta'
                   >
                     <img
@@ -245,7 +246,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
                   </button>
                   <button
                     className="btn btn-sm btn-error"
-                    onClick={() => onDelete(index)}
+                    onClick={() => onDelete(card)}
                     title='Eliminar carta'
                   >
                     <img
@@ -266,7 +267,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
           onClose={() => setEditingCard(null)}
           onUpdate={async (cardId, cardData) => {
             try {
-              await updateCard(cardId, cardData);
+              await onUpdateCard(cardId, cardData);
               setEditingCard(null);
             } catch (error) {
               console.error("Error updating card:", error);
@@ -276,6 +277,6 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
       )}
     </div>
   );
-}
+};
 
 export { DecksTable, CardsTable };

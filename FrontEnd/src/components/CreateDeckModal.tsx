@@ -45,10 +45,8 @@ export function CreateDeckModal({
 
         try {
             setIsSubmitting(true);
-            if (editMode) {
-                if (onUpdate) {
-                    await onUpdate(title, description);
-                }
+            if (editMode && onUpdate) {
+                await onUpdate(title, description);
             } else {
                 if (onCreate) {
                     await onCreate(title, description);
@@ -119,8 +117,8 @@ export function CreateDeckModal({
                         />
                         <ButtonCustom
                             type="submit"
-                            text={isSubmitting 
-                                ? (editMode ? "Guardando..." : "Creando...") 
+                            text={isSubmitting
+                                ? (editMode ? "Guardando..." : "Creando...")
                                 : (editMode ? "Guardar cambios" : "Crear nuevo mazo")
                             }
                             icon={<Plus />}
