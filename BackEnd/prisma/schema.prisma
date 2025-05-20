@@ -98,7 +98,7 @@ model StudySession {
 
 model SessionActiveRecall {
   sessionId           Int            @id
-  numCards            Int
+  numCardsSpaced      Int
   learningMethodFilter LearningMethod[]
 
   session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
@@ -119,8 +119,8 @@ model SessionSimulatedTest {
   numQuestions        Int
   testDurationMin     Int
   learningMethodFilter LearningMethod[]
-  correctAnswers      Int
-  incorrectAnswers    Int
+  correctAnswers      Int?
+  incorrectAnswers    Int?
 
   session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
   testQuestions       TestQuestion[]
@@ -194,7 +194,7 @@ enum LearningMethod {
 enum StudyMethod {
   pomodoro
   simulatedTest
-  activeRecall
+  spacedRepetition
 }
 
 enum Evaluation {
