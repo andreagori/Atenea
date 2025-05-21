@@ -1,6 +1,6 @@
 import { ApiOperation, ApiProperty } from "@nestjs/swagger";
 import { StudySession as Modelo } from "@prisma/client";
-import { IsDate, IsInt, IsNotEmpty, IsPositive, IsString } from "class-validator";
+import { IsDate, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
 
 export class StudySession implements StudySession {
     @ApiProperty(
@@ -52,7 +52,7 @@ export class StudySession implements StudySession {
             example: '2023-10-01T13:00:00Z',
         }
     )
-    @IsNotEmpty({ message: 'endTime no puede estar vacío' })
+    @IsOptional()
     @IsDate({ message: 'endTime debe ser una fecha' })
     endTime: Date;
 

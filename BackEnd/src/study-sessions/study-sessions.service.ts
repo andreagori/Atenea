@@ -1,26 +1,177 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateStudySessionDto } from './dto/create-study-session.dto';
 import { UpdateStudySessionDto } from './dto/update-study-session.dto';
+import { StudySession } from './entities/study-session.entity';
+import { StudyMethod, LearningMethod } from '@prisma/client';
 
 @Injectable()
 export class StudySessionsService {
-  create(createStudySessionDto: CreateStudySessionDto) {
-    return 'This action adds a new studySession';
+  // Logger for the StudySessionsService class, which is used to log messages and errors.
+  private readonly logger = new Logger(StudySessionsService.name);
+  // PrismaService instance for database operations.
+  constructor(private readonly prisma: PrismaService) { }
+
+  // Valores por defecto para cada tipo de sesión
+  private readonly defaultValues = {
+    pomodoro: {
+      numCards: 10,
+      studyMinutes: 25,
+      restMinutes: 5,
+      learningMethodFilter: [LearningMethod.activeRecall, LearningMethod.cornell, LearningMethod.visualCard]
+    },
+    simulatedTest: {
+      numQuestions: 10,
+      testDurationMin: 15,
+      learningMethodFilter: [LearningMethod.activeRecall, LearningMethod.cornell, LearningMethod.visualCard]
+    },
+    spacedRepetition: {
+      numCardsSpaced: 10,
+      learningMethodFilter: [LearningMethod.activeRecall, LearningMethod.cornell, LearningMethod.visualCard]
+    }
+  };
+  /**
+   * Crea una nueva sesión de estudio
+   * @param createStudySessionDto
+   * @returns Sesión de estudio creada o mensaje de error
+   */
+  async create(createStudySessionDto: CreateStudySessionDto, userId: number, deckId: number) {
+    const deck = await this.prisma.deck.findFirst({
+      where: {
+        deckId,
+        userId
+      },
+      include: {
+        cards: true
+      }
+    });
+
+    if (!deck) {
+      throw new NotFoundException(`Deck con ID ${deckId} no encontrado o no pertenece al usuario`);
+    }
+
+    if (deck.cards.length === 0) {
+      throw new BadRequestException('El deck no tiene cartas para estudiar');
+    }
+
+    const duration = this.calculateSessionDuration(createStudySessionDto);
+    
+    const sessionData = {
+      userId,
+      deckId,
+      startTime: new Date(),
+      endTime: null, // Duración en minutos convertida a milisegundos
+      // endtime: new Date() -- Con esto ya se puede crear con postman, pero revisar la lógica porque no debería estar aquí.
+      minDuration: duration,
+      learningMethod: createStudySessionDto.learningMethod,
+      studyMethod: createStudySessionDto.studyMethod
+    };
+
+    const session = await this.prisma.studySession.create({
+      data: sessionData
+    });
+
+    switch (createStudySessionDto.studyMethod) {
+      case StudyMethod.pomodoro:
+        await this.createPomodoroSession(session.sessionId, createStudySessionDto);
+        break;
+      case StudyMethod.simulatedTest:
+        await this.createSimulatedTestSession(session.sessionId, createStudySessionDto);
+        break;
+      case StudyMethod.spacedRepetition:
+        await this.createSpacedRepetitionSession(session.sessionId, createStudySessionDto);
+        break;
+    }
+
+    return this.findOne(session.sessionId, userId);
   }
 
-  findAll() {
+  private calculateSessionDuration(dto: CreateStudySessionDto): number {
+    switch (dto.studyMethod) {
+      case StudyMethod.pomodoro:
+        const studyMinutes = dto.studyMinutes || this.defaultValues.pomodoro.studyMinutes;
+        const restMinutes = dto.restMinutes || this.defaultValues.pomodoro.restMinutes;
+        return studyMinutes + restMinutes;
+      case StudyMethod.simulatedTest:
+        return dto.testDurationMinutes || this.defaultValues.simulatedTest.testDurationMin;
+      case StudyMethod.spacedRepetition:
+        const numCards = dto.numCardsSpaced || this.defaultValues.spacedRepetition.numCardsSpaced;
+        return numCards * 2;
+      default:
+        return 30;
+    }
+  }
+
+  private async createPomodoroSession(sessionId: number, dto: CreateStudySessionDto) {
+    const data = {
+      sessionId,
+      numCards: dto.numCards || this.defaultValues.pomodoro.numCards,
+      studyMinutes: dto.studyMinutes || this.defaultValues.pomodoro.studyMinutes,
+      restMinutes: dto.restMinutes || this.defaultValues.pomodoro.restMinutes,
+      learningMethodFilter: dto.learningMethodFilter || this.defaultValues.pomodoro.learningMethodFilter
+    };
+    return this.prisma.sessionPomodoro.create({ data });
+  }
+
+  private async createSimulatedTestSession(sessionId: number, dto: CreateStudySessionDto) {
+    const data = {
+      sessionId,
+      numQuestions: dto.numQuestions || this.defaultValues.simulatedTest.numQuestions,
+      testDurationMin: dto.testDurationMinutes || this.defaultValues.simulatedTest.testDurationMin,
+      learningMethodFilter: dto.learningMethodFilterTest || this.defaultValues.simulatedTest.learningMethodFilter
+    };
+    return this.prisma.sessionSimulatedTest.create({ data });
+  }
+
+  private async createSpacedRepetitionSession(sessionId: number, dto: CreateStudySessionDto) {
+    const data = {
+      sessionId,
+      numCardsSpaced: dto.numCardsSpaced || this.defaultValues.spacedRepetition.numCardsSpaced,
+      learningMethodFilter: dto.learningMethodFilterSpaced || this.defaultValues.spacedRepetition.learningMethodFilter
+    };
+    return this.prisma.sessionActiveRecall.create({ data });
+  }
+
+  async findAll() {
     return `This action returns all studySessions`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} studySession`;
+  /**
+   * Encuentra una sesión de estudio por su ID y el ID del usuario
+   * @param sessionId ID de la sesión de estudio
+   * @param userId ID del usuario
+   * @returns Sesión de estudio encontrada o mensaje de error
+   */
+  async findOne(sessionId: number, userId: number) {
+    const session = await this.prisma.studySession.findFirst({
+      where: {
+        sessionId,
+        userId
+      },
+      include: {
+        pomodoro: true,
+        simulatedTest: true,
+        activeRecall: true,
+        deck: {
+          include: {
+            cards: true
+          }
+        }
+      }
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Sesión con ID ${sessionId} no encontrada`);
+    }
+
+    return session;
   }
 
-  update(id: number, updateStudySessionDto: UpdateStudySessionDto) {
-    return `This action updates a #${id} studySession`;
-  }
+  async update(id: number, updateStudySessionDto: UpdateStudySessionDto) {
+  return `This action updates a #${id} studySession`;
+}
 
-  remove(id: number) {
-    return `This action removes a #${id} studySession`;
-  }
+  async remove(id: number) {
+  return `This action removes a #${id} studySession`;
+}
 }

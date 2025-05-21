@@ -81,8 +81,8 @@ model StudySession {
   sessionId      Int       @id @default(autoincrement())
   userId         Int
   deckId         Int
-  startTime      DateTime
-  endTime        DateTime
+  startTime      DateTime @default(now())
+  endTime        DateTime?
   minDuration    Int?
   learningMethod LearningMethod
   studyMethod    StudyMethod

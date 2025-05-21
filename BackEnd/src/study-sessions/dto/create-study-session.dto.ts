@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { StudySession } from "../entities/study-session.entity";
-import { IsNotEmpty, IsDate, IsInt, IsPositive, IsString } from "class-validator";
+import { IsNotEmpty, IsDate, IsInt, IsPositive, IsString, ValidateIf, IsArray, IsEnum } from "class-validator";
+import { StudyMethod } from "@prisma/client";
 
 export enum LearningMethod {
     ACTIVE_RECALL = 'activeRecall',
@@ -18,26 +19,9 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     'sessionId',
     'userId',
     'deckId',
+    'startTime',
+    'endTime',
 ]) {
-    @ApiProperty(
-        {
-            description: 'Tiempo de inicio de la sesión de estudio',
-            example: '2023-10-01T12:00:00Z',
-        }
-    )
-    @IsNotEmpty({ message: 'startTime no puede estar vacío' })
-    @IsDate({ message: 'startTime debe ser una fecha' })
-    startTime: Date;
-
-    @ApiProperty(
-        {
-            description: 'Tiempo de fin de la sesión de estudio',
-            example: '2023-10-01T13:00:00Z',
-        }
-    )
-    @IsNotEmpty({ message: 'endTime no puede estar vacío' })
-    @IsDate({ message: 'endTime debe ser una fecha' })
-    endTime: Date;
 
     @ApiProperty(
         {
@@ -71,6 +55,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     studyMethod: 'pomodoro' | 'simulatedTest' | 'spacedRepetition';
 
     // POMODORO DATA:
+    @ValidateIf((o) => o.studyMethod === StudyMethod.pomodoro)
     @ApiProperty(
         {
             description: 'Número de tarjetas a estudiar',
@@ -82,6 +67,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     @IsNotEmpty({ message: 'numCards no puede estar vacío' })
     numCards: number;
 
+    @ValidateIf((o) => o.studyMethod === StudyMethod.pomodoro)
     @ApiProperty(
         {
             description: 'Número de minutos de estudio',
@@ -93,6 +79,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     @IsNotEmpty({ message: 'studyMinutes no puede estar vacío' })
     studyMinutes: number;
 
+    @ValidateIf((o) => o.studyMethod === StudyMethod.pomodoro)
     @ApiProperty(
         {
             description: 'Número de minutos de descanso',
@@ -104,6 +91,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     @IsNotEmpty({ message: 'restMinutes no puede estar vacío' })
     restMinutes: number;
 
+    @ValidateIf((o) => o.studyMethod === StudyMethod.pomodoro)
     @ApiProperty(
         {
             description: 'Tipos de cartas a estudiar',
@@ -111,10 +99,12 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
         }
     )
     @IsNotEmpty({ message: 'learningMethodFilter no puede estar vacío' })
-    @IsString({ message: 'learningMethodFilter debe ser una cadena de texto' })
-    learningMethodFilter: LearningMethod;
+    @IsArray({ message: 'learningMethodFilter debe ser un array' })
+    @IsEnum(LearningMethod, { each: true, message: 'learningMethodFilter debe ser un array de LearningMethod' })
+    learningMethodFilter: LearningMethod[];
 
     // SIMULATED TEST DATA:
+    @ValidateIf((o) => o.studyMethod === StudyMethod.simulatedTest)
     @ApiProperty(
         {
             description: 'Número de preguntas a responder',
@@ -126,6 +116,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     @IsNotEmpty({ message: 'numQuestions no puede estar vacío' })
     numQuestions: number;
 
+    @ValidateIf((o) => o.studyMethod === StudyMethod.simulatedTest)
     @ApiProperty(
         {
             description: 'Duración de la prueba en minutos',
@@ -137,6 +128,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     @IsNotEmpty({ message: 'testDuration no puede estar vacío' })
     testDurationMinutes: number;
 
+    @ValidateIf((o) => o.studyMethod === StudyMethod.simulatedTest)
     @ApiProperty(
         {
             description: 'Método de aprendizaje de cartas utilizado en la prueba',
@@ -144,31 +136,12 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
         }
     )
     @IsNotEmpty({ message: 'learningMethodFilterTest no puede estar vacío' })
-    @IsString({ message: 'learningMethodFilterTest debe ser una cadena de texto' })
-    learningMethodFilterTest: LearningMethod;
-
-    /* CHECK THIS:
-    @ApiProperty(
-        {
-            description: 'Número de respuestas correctas',
-            example: 8,
-        }
-    )
-    @IsInt({ message: 'correctAnswers debe ser un número entero' })
-    @IsPositive({ message: 'correctAnswers debe ser un número positivo' })
-    correctAnswers: number;
-    @ApiProperty(
-        {
-            description: 'Número de respuestas incorrectas',
-            example: 2,
-        }
-    )
-    @IsInt({ message: 'incorrectAnswers debe ser un número entero' })
-    @IsPositive({ message: 'incorrectAnswers debe ser un número positivo' })
-    incorrectAnswers: number;
-    */
+    @IsArray({ message: 'learningMethodFilter debe ser un array' })
+    @IsEnum(LearningMethod, { each: true, message: 'learningMethodFilterTest debe ser un array de LearningMethod' })
+    learningMethodFilterTest: LearningMethod[];
 
     // SPACED REPETITION DATA:
+    @ValidateIf((o) => o.studyMethod === StudyMethod.spacedRepetition)
     @ApiProperty(
         {
             description: 'Número de tarjetas a estudiar',
@@ -179,6 +152,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
     @IsPositive({ message: 'numCardsSpaced debe ser un número positivo' })
     numCardsSpaced: number;
 
+    @ValidateIf((o) => o.studyMethod === StudyMethod.spacedRepetition)
     @ApiProperty(
         {
             description: 'Método de aprendizaje de cartas utilizado en la prueba',
@@ -186,7 +160,7 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
         }
     )
     @IsNotEmpty({ message: 'learningMethodFilterTest no puede estar vacío' })
-    @IsString({ message: 'learningMethodFilterTest debe ser una cadena de texto' })
-    learningMethodFilterSpaced: LearningMethod;
+    @IsArray({ message: 'learningMethodFilter debe ser un array' })
+    @IsEnum(LearningMethod, { each: true, message: 'learningMethodFilterSpaced debe ser un array de LearningMethod' })
+    learningMethodFilterSpaced: LearningMethod[];
 }
-
