@@ -9,6 +9,7 @@ export interface CreateCardPayload {
     noteQuestions?: string;
     shortNote?: string;
     // Visual Card fields
+    file?: File;
     urlImage?: string;
 }
 

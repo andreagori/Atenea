@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Card } from "../entities/card.entity";
-import { IsEnum, IsNotEmpty, IsString, MaxLength, MinLength, ValidateIf } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from "class-validator";
 
 
 export enum LearningMethod {
@@ -86,6 +86,16 @@ export class CreateCardDto extends OmitType(Card, [
     shortNote: string;
 
     // VISUAL CARD DATA:
+    // Multer filter to validate image types
+    @ValidateIf((o) => o.learningMethod === LearningMethod.VISUAL_CARD)
+    @ApiProperty({
+        description: 'Archivo de imagen',
+        type: 'string',
+        format: 'binary',
+        required: false
+    })
+    file?: Express.Multer.File;
+
     @ValidateIf((o) => o.learningMethod === LearningMethod.VISUAL_CARD)
     @ApiProperty(
         {
@@ -94,7 +104,6 @@ export class CreateCardDto extends OmitType(Card, [
         }
     )
     @IsString({ message: 'urlImage debe ser una cadena de texto' })
-    @IsNotEmpty({ message: 'urlImage no puede estar vacío' })
-    @MaxLength(250, { message: 'urlImage no puede tener más de 250 caracteres' })
-    urlImage: string;
+    @IsOptional()
+    urlImage?: string;
 }

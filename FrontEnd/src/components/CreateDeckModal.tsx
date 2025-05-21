@@ -157,11 +157,27 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
         });
     };
 
+    const handleCardTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedType = e.target.value;
+        setCardType(selectedType);
+
+        // Map the selected value to the correct learningMethod
+        const learningMethodMap: { [key: string]: 'activeRecall' | 'cornell' | 'visualCard' } = {
+            'activeRecall': 'activeRecall',
+            'cornell': 'cornell',
+            'visualCard': 'visualCard'
+        };
+
+        setFormData(prev => ({
+            ...prev,
+            learningMethod: learningMethodMap[selectedType]
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!onCreateCard) return;
 
-        // Validar que todos los campos necesarios estén presentes
         if (!validateFormData(formData)) {
             console.error("Faltan campos requeridos");
             return;
@@ -169,8 +185,28 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
 
         try {
             setIsSubmitting(true);
-            await onCreateCard(formData);
+
+            // Crear el payload adecuado según el tipo de carta
+            const payload: CreateCardPayload = {
+                title: formData.title,
+                learningMethod: formData.learningMethod,
+                ...(formData.learningMethod === 'activeRecall' && {
+                    questionTitle: formData.questionTitle,
+                    answer: formData.answer
+                }),
+                ...(formData.learningMethod === 'cornell' && {
+                    principalNote: formData.principalNote,
+                    noteQuestions: formData.noteQuestions,
+                    shortNote: formData.shortNote
+                }),
+                ...(formData.learningMethod === 'visualCard' && {
+                    file: formData.file
+                })
+            };
+
+            await onCreateCard(payload);
             resetForm();
+            onClose();
         } catch (error) {
             console.error("Error creating card:", error);
         } finally {
@@ -183,7 +219,10 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
     };
 
     const validateFormData = (data: CreateCardPayload): boolean => {
-        if (!data.title) return false;
+        if (!data.title || data.title.length < 3 || data.title.length > 100) {
+            console.error("El título debe tener entre 3 y 100 caracteres");
+            return false;
+        }
 
         switch (data.learningMethod) {
             case 'activeRecall':
@@ -191,7 +230,7 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
             case 'cornell':
                 return !!(data.principalNote && data.noteQuestions && data.shortNote);
             case 'visualCard':
-                return !!(data.urlImage);
+                return !!(data.title && data.file);
             default:
                 return false;
         }
@@ -213,11 +252,11 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
                                 className="h-8 block w-4/12 bg-darkSecondaryPurple2 text-white rounded-md shadow-sm px-2"
                                 required
                                 value={cardType}
-                                onChange={(e) => setCardType(e.target.value)}
+                                onChange={handleCardTypeChange}
                             >
                                 <option value="" disabled>Selecciona el tipo de carta</option>
                                 <option value="activeRecall">Repaso activo</option>
-                                <option value="cornellMethod">Método Cornell</option>
+                                <option value="cornell">Método Cornell</option>
                                 <option value="visualCard">Carta visual</option>
                             </select>
                             <div className="mt-2">
@@ -226,7 +265,7 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
                                         onChange={updateFormData}
                                         data={formData}
                                     />}
-                                {cardType === "cornellMethod" &&
+                                {cardType === "cornell" &&
                                     <CornellMethod
                                         onChange={updateFormData}
                                         data={formData}

@@ -42,6 +42,7 @@ interface CreateCardPayload {
     shortNote?: string;
     // Visual Card fields
     urlImage?: string;
+    file?: File;
 }
 
 interface UpdateCardPayload {
@@ -99,51 +100,66 @@ export const useCards = (deckId: number | undefined) => {
             throw new Error("No auth token found or invalid deck ID");
         }
 
-        // Transformar los datos según el tipo de carta
-        const payload = {
-            title: cardData.title,
-            learningMethod: cardData.learningMethod,
-            ...getMethodSpecificFields(cardData)
-        };
-
         try {
-            const response = await axios.post(
-                `http://localhost:3000/card/deck/${deckId}`,
-                payload,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            await fetchCards(); // Refresh cards after creation
-            return response.data;
+            let formData = new FormData();
+            let payload: any = {
+                title: cardData.title,
+                learningMethod: cardData.learningMethod
+            };
+
+            // Agregar campos específicos según el método
+            switch (cardData.learningMethod) {
+                case 'activeRecall':
+                    payload.questionTitle = cardData.questionTitle;
+                    payload.answer = cardData.answer;
+                    break;
+                case 'cornell':
+                    payload.principalNote = cardData.principalNote;
+                    payload.noteQuestions = cardData.noteQuestions;
+                    payload.shortNote = cardData.shortNote;
+                    break;
+                case 'visualCard':
+                    if (cardData.file) {
+                        formData.append('file', cardData.file);
+                    }
+                    break;
+            }
+
+            // Para visual cards con archivo, usar FormData
+            if (cardData.learningMethod === 'visualCard' && cardData.file) {
+                formData.append('title', cardData.title);
+                formData.append('learningMethod', cardData.learningMethod);
+
+                const response = await axios.post(
+                    `http://localhost:3000/card/deck/${deckId}`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
+                await fetchCards();
+                return response.data;
+            } else {
+                // Para otros tipos, enviar como JSON normal
+                const response = await axios.post(
+                    `http://localhost:3000/card/deck/${deckId}`,
+                    payload,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                );
+                await fetchCards();
+                return response.data;
+            }
         } catch (err: any) {
             console.error('Error creating card:', err.response?.data);
             throw new Error(err.response?.data?.message || 'Error creating card');
-        }
-    };
-
-    // Función auxiliar para obtener los campos específicos según el método
-    const getMethodSpecificFields = (cardData: CreateCardPayload) => {
-        switch (cardData.learningMethod) {
-            case 'activeRecall':
-                return {
-                    questionTitle: cardData.questionTitle,
-                    answer: cardData.answer
-                };
-            case 'cornell':
-                return {
-                    principalNote: cardData.principalNote,
-                    noteQuestions: cardData.noteQuestions,
-                    shortNote: cardData.shortNote
-                };
-            case 'visualCard':
-                return {
-                    urlImage: cardData.urlImage
-                };
-            default:
-                return {};
         }
     };
 
