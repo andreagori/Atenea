@@ -230,11 +230,11 @@ export class CardService {
           break;
 
         case LearningMethod.VISUAL_CARD:
-          if (existingCard.visualCard && updateCardDto.urlImage) {
+          if (existingCard.visualCard) {
             await prisma.visualCard.update({
               where: { cardId: id },
               data: {
-                urlImage: updateCardDto.urlImage,
+                urlImage: updateCardDto.urlImage || existingCard.visualCard.urlImage,
               },
             });
           }

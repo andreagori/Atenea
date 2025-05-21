@@ -56,16 +56,25 @@ export class CardController {
     return this.cardService.findOne(+id, +deckId, user.userId);
   }
 
+  // UPDATE CARD BY ID
   @ApiResponse({ status: 200, description: 'Card updated successfully', type: Card })
-  @Patch(':id/deck/:deckId')
-  update(
-    @Param('id') id: string,
-    @Param('deckId') deckId: string,
-    @Body() updateCardDto: UpdateCardDto,
-    @GetUser() user: any,
-  ) {
-    return this.cardService.update(+id, +deckId, user.userId, updateCardDto);
-  }
+    @UseInterceptors(FileInterceptor('file'))
+    @Patch(':id/deck/:deckId')
+    async update(
+        @Param('id') id: string,
+        @Param('deckId') deckId: string,
+        @Body() updateCardDto: UpdateCardDto,
+        @GetUser() user: any,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        // Si hay archivo, es una actualización de imagen
+        if (file) {
+            const uploadResult = await this.cloudinaryService.uploadImage(file);
+            updateCardDto.urlImage = uploadResult.secure_url;
+        }
+
+        return this.cardService.update(+id, +deckId, user.userId, updateCardDto);
+    }
 
   // DELETE CARD BY ID
   @ApiResponse({ status: 200, description: 'Card deleted successfully' })

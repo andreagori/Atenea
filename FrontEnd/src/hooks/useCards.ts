@@ -56,6 +56,7 @@ interface UpdateCardPayload {
     shortNote?: string;
     // Visual Card fields
     urlImage?: string;
+    file?: File;
 }
 
 export const useCards = (deckId: number | undefined) => {
@@ -186,24 +187,41 @@ export const useCards = (deckId: number | undefined) => {
     };
 
     // Update a card
-    const updateCard = async (cardId: number, cardData: UpdateCardPayload) => {
+    const updateCard = async (cardId: number, cardData: UpdateCardPayload | FormData) => {
         const token = Cookies.get("auth_token");
         if (!token || !deckId) {
             throw new Error("No auth token found or invalid deck ID");
         }
 
         try {
-            const response = await axios.patch(
-                `http://localhost:3000/card/${cardId}/deck/${deckId}`,
-                cardData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-            await fetchCards(); // Refresh cards after update
-            return response.data;
+            // Si es FormData (para actualizar imagen)
+            if (cardData instanceof FormData) {
+                const response = await axios.patch(
+                    `http://localhost:3000/card/${cardId}/deck/${deckId}`,
+                    cardData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
+                await fetchCards();
+                return response.data;
+            } else {
+                // Para actualización normal
+                const response = await axios.patch(
+                    `http://localhost:3000/card/${cardId}/deck/${deckId}`,
+                    cardData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                await fetchCards();
+                return response.data;
+            }
         } catch (err: any) {
             console.error('Error updating card:', err.response?.data);
             throw new Error(err.response?.data?.message || 'Error updating card');

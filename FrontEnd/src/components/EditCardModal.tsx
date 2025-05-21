@@ -14,6 +14,7 @@ interface FormData {
     noteQuestions?: string;
     shortNote?: string;
     urlImage?: string;
+    file?: File;
 }
 
 interface EditCardModalProps {
@@ -50,24 +51,33 @@ export function EditCardModal({ card, onClose, onUpdate }: EditCardModalProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         try {
             setIsSubmitting(true);
-            await onUpdate(card.cardId, {
-                title: formData.title,
-                ...(card.activeRecall && {
-                    questionTitle: formData.questionTitle,
-                    answer: formData.answer,
-                }),
-                ...(card.cornell && {
-                    principalNote: formData.principalNote,
-                    noteQuestions: formData.noteQuestions,
-                    shortNote: formData.shortNote,
-                }),
-                ...(card.visualCard && {
-                    urlImage: formData.urlImage,
-                }),
-            });
+
+            // Crear FormData si es una visual card con nueva imagen
+            if (card.visualCard && formData.file) {
+                const formDataToSend = new FormData();
+                formDataToSend.append('title', formData.title);
+                formDataToSend.append('urlImage', formData.urlImage || '');
+                formDataToSend.append('file', formData.file);
+
+                await onUpdate(card.cardId, formDataToSend);
+            } else {
+                // Para otros casos normal
+                await onUpdate(card.cardId, {
+                    title: formData.title,
+                    ...(card.activeRecall && {
+                        questionTitle: formData.questionTitle,
+                        answer: formData.answer,
+                    }),
+                    ...(card.cornell && {
+                        principalNote: formData.principalNote,
+                        noteQuestions: formData.noteQuestions,
+                        shortNote: formData.shortNote,
+                    }),
+                });
+            }
             onClose();
         } catch (error) {
             console.error("Error updating card:", error);
@@ -137,7 +147,7 @@ export function EditCardModal({ card, onClose, onUpdate }: EditCardModalProps) {
                         <ButtonCustom
                             type="submit"
                             text={isSubmitting ? "Guardando..." : "Guardar cambios"}
-                            onClick={() => {}}
+                            onClick={() => { }}
                             icon={<Plus />}
                             disabled={isSubmitting}
                             isGradient={true}

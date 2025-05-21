@@ -76,7 +76,7 @@ export function CornellMethod({ onChange, data }: CardFormProps) {
     );
 }
 
-export function VisualCard({ onChange, data }: CardFormProps) {
+export function VisualCard({ onChange, data, isEditing }: CardFormProps) {
     const [previewUrl, setPreviewUrl] = useState<string>(data.urlImage || '');
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +96,8 @@ export function VisualCard({ onChange, data }: CardFormProps) {
             onChange({
                 file,
                 learningMethod: 'visualCard',
-                title: data.title || ''
+                title: data.title || '',
+                urlImage: data.urlImage // Mantener la URL existente
             });
         }
     };
@@ -117,7 +118,7 @@ export function VisualCard({ onChange, data }: CardFormProps) {
             />
 
             <label className="block text-m mb-1 font-semibold">
-                Imagen:
+                {isEditing ? 'Cambiar imagen (opcional)' : 'Imagen:'}
             </label>
             <input
                 type="file"
@@ -125,10 +126,12 @@ export function VisualCard({ onChange, data }: CardFormProps) {
                 onChange={handleFileChange}
                 className="file-input file-input-bordered w-full bg-darkInfo text-darkPrimaryPurple2"
             />
-            {previewUrl && (
+            
+            {/* Mostrar preview de la imagen existente o nueva */}
+            {(previewUrl || data.urlImage) && (
                 <div className="mt-4">
                     <img
-                        src={previewUrl}
+                        src={previewUrl || data.urlImage}
                         alt="Preview"
                         className="max-w-xs rounded-lg shadow-lg"
                     />
