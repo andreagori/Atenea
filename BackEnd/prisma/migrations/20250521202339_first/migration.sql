@@ -2,7 +2,10 @@
 CREATE TYPE "LearningMethod" AS ENUM ('activeRecall', 'cornell', 'visualCard');
 
 -- CreateEnum
-CREATE TYPE "StudyMethod" AS ENUM ('pomodoro', 'simulatedTest');
+CREATE TYPE "StudyMethod" AS ENUM ('pomodoro', 'simulatedTest', 'spacedRepetition');
+
+-- CreateEnum
+CREATE TYPE "Evaluation" AS ENUM ('dificil', 'masomenos', 'bien', 'facil');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -29,6 +32,7 @@ CREATE TABLE "Deck" (
 CREATE TABLE "Card" (
     "cardId" SERIAL NOT NULL,
     "deckId" INTEGER NOT NULL,
+    "title" VARCHAR(100) NOT NULL,
     "learningMethod" "LearningMethod" NOT NULL,
 
     CONSTRAINT "Card_pkey" PRIMARY KEY ("cardId")
@@ -66,13 +70,70 @@ CREATE TABLE "StudySession" (
     "sessionId" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
     "deckId" INTEGER NOT NULL,
-    "startTime" TIMESTAMP(3) NOT NULL,
-    "endTime" TIMESTAMP(3) NOT NULL,
+    "startTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endTime" TIMESTAMP(3),
     "minDuration" INTEGER,
-    "learningMethod" "LearningMethod" NOT NULL,
+    "learningMethod" "LearningMethod"[],
     "studyMethod" "StudyMethod" NOT NULL,
 
     CONSTRAINT "StudySession_pkey" PRIMARY KEY ("sessionId")
+);
+
+-- CreateTable
+CREATE TABLE "SessionActiveRecall" (
+    "sessionId" INTEGER NOT NULL,
+    "numCardsSpaced" INTEGER NOT NULL,
+
+    CONSTRAINT "SessionActiveRecall_pkey" PRIMARY KEY ("sessionId")
+);
+
+-- CreateTable
+CREATE TABLE "SessionPomodoro" (
+    "sessionId" INTEGER NOT NULL,
+    "numCards" INTEGER NOT NULL,
+    "studyMinutes" INTEGER NOT NULL,
+    "restMinutes" INTEGER NOT NULL,
+
+    CONSTRAINT "SessionPomodoro_pkey" PRIMARY KEY ("sessionId")
+);
+
+-- CreateTable
+CREATE TABLE "SessionSimulatedTest" (
+    "sessionId" INTEGER NOT NULL,
+    "numQuestions" INTEGER NOT NULL,
+    "testDurationMin" INTEGER NOT NULL,
+    "correctAnswers" INTEGER,
+    "incorrectAnswers" INTEGER,
+
+    CONSTRAINT "SessionSimulatedTest_pkey" PRIMARY KEY ("sessionId")
+);
+
+-- CreateTable
+CREATE TABLE "TestQuestion" (
+    "questionId" SERIAL NOT NULL,
+    "testId" INTEGER NOT NULL,
+    "cardId" INTEGER NOT NULL,
+    "userAnswer" INTEGER,
+    "isCorrect" BOOLEAN,
+    "optionsOrder" INTEGER[],
+    "timeSpent" INTEGER,
+
+    CONSTRAINT "TestQuestion_pkey" PRIMARY KEY ("questionId")
+);
+
+-- CreateTable
+CREATE TABLE "CardReview" (
+    "reviewId" SERIAL NOT NULL,
+    "sessionId" INTEGER NOT NULL,
+    "cardId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "evaluation" "Evaluation" NOT NULL,
+    "reviewedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "nextReviewAt" TIMESTAMP(3) NOT NULL,
+    "intervalDays" INTEGER NOT NULL,
+    "timeSpent" INTEGER,
+
+    CONSTRAINT "CardReview_pkey" PRIMARY KEY ("reviewId")
 );
 
 -- CreateTable
@@ -133,6 +194,33 @@ ALTER TABLE "StudySession" ADD CONSTRAINT "StudySession_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "StudySession" ADD CONSTRAINT "StudySession_deckId_fkey" FOREIGN KEY ("deckId") REFERENCES "Deck"("deckId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionActiveRecall" ADD CONSTRAINT "SessionActiveRecall_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "StudySession"("sessionId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionPomodoro" ADD CONSTRAINT "SessionPomodoro_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "StudySession"("sessionId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionSimulatedTest" ADD CONSTRAINT "SessionSimulatedTest_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "StudySession"("sessionId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestQuestion" ADD CONSTRAINT "TestQuestion_testId_fkey" FOREIGN KEY ("testId") REFERENCES "SessionSimulatedTest"("sessionId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestQuestion" ADD CONSTRAINT "TestQuestion_cardId_fkey" FOREIGN KEY ("cardId") REFERENCES "Card"("cardId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TestQuestion" ADD CONSTRAINT "TestQuestion_userAnswer_fkey" FOREIGN KEY ("userAnswer") REFERENCES "Card"("cardId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardReview" ADD CONSTRAINT "CardReview_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "StudySession"("sessionId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardReview" ADD CONSTRAINT "CardReview_cardId_fkey" FOREIGN KEY ("cardId") REFERENCES "Card"("cardId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardReview" ADD CONSTRAINT "CardReview_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SessionsResult" ADD CONSTRAINT "SessionsResult_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "StudySession"("sessionId") ON DELETE CASCADE ON UPDATE CASCADE;

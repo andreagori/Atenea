@@ -1,6 +1,6 @@
 import { ApiOperation, ApiProperty } from "@nestjs/swagger";
-import { StudySession as Modelo } from "@prisma/client";
-import { IsDate, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
+import { LearningMethod, StudySession as Modelo } from "@prisma/client";
+import { IsArray, IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
 
 export class StudySession implements StudySession {
     @ApiProperty(
@@ -64,18 +64,21 @@ export class StudySession implements StudySession {
     )
     @IsInt({ message: 'duration debe ser un número entero' })
     @IsPositive({ message: 'duration debe ser un número positivo' })
-    @IsNotEmpty({ message: 'duration no puede estar vacío' })
+    @IsOptional()
     minDuration: number;
 
     @ApiProperty(
         {
             description: 'Método de aprendizaje de cartas utilizado en la sesión de estudio',
-            example: 'activeRecall',
+            example: ['activeRecall', 'cornell', 'visualCard'],
+            isArray: true,
+            enum: ['activeRecall', 'cornell', 'visualCard'],
         }
     )
     @IsNotEmpty({ message: 'learningMethod no puede estar vacío' })
-    @IsString({ message: 'learningMethod debe ser una cadena de texto' })
-    learningMethod: 'activeRecall' | 'cornell' | 'visualCard';
+    @IsArray({ message: 'learningMethod debe ser un arreglo' })
+    @IsEnum(['activeRecall', 'cornell', 'visualCard'], { each: true, message: 'learningMethod debe ser uno de los siguientes: activeRecall, cornell, visualCard' })
+    learningMethod: LearningMethod[];
 
     @ApiProperty(
         {

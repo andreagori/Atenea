@@ -18,16 +18,13 @@ export class StudySessionsService {
       numCards: 10,
       studyMinutes: 25,
       restMinutes: 5,
-      learningMethodFilter: [LearningMethod.activeRecall, LearningMethod.cornell, LearningMethod.visualCard]
     },
     simulatedTest: {
       numQuestions: 10,
       testDurationMin: 15,
-      learningMethodFilter: [LearningMethod.activeRecall, LearningMethod.cornell, LearningMethod.visualCard]
     },
     spacedRepetition: {
       numCardsSpaced: 10,
-      learningMethodFilter: [LearningMethod.activeRecall, LearningMethod.cornell, LearningMethod.visualCard]
     }
   };
   /**
@@ -42,7 +39,13 @@ export class StudySessionsService {
         userId
       },
       include: {
-        cards: true
+        cards: {
+          where: {
+            learningMethod: {
+              in: createStudySessionDto.learningMethod
+            }
+          }
+        }
       }
     });
 
@@ -54,15 +57,11 @@ export class StudySessionsService {
       throw new BadRequestException('El deck no tiene cartas para estudiar');
     }
 
-    const duration = this.calculateSessionDuration(createStudySessionDto);
-    
     const sessionData = {
       userId,
       deckId,
       startTime: new Date(),
-      endTime: null, // Duración en minutos convertida a milisegundos
-      // endtime: new Date() -- Con esto ya se puede crear con postman, pero revisar la lógica porque no debería estar aquí.
-      minDuration: duration,
+      // endTime: null, // Duración en minutos convertida a milisegundos
       learningMethod: createStudySessionDto.learningMethod,
       studyMethod: createStudySessionDto.studyMethod
     };
@@ -86,21 +85,6 @@ export class StudySessionsService {
     return this.findOne(session.sessionId, userId);
   }
 
-  private calculateSessionDuration(dto: CreateStudySessionDto): number {
-    switch (dto.studyMethod) {
-      case StudyMethod.pomodoro:
-        const studyMinutes = dto.studyMinutes || this.defaultValues.pomodoro.studyMinutes;
-        const restMinutes = dto.restMinutes || this.defaultValues.pomodoro.restMinutes;
-        return studyMinutes + restMinutes;
-      case StudyMethod.simulatedTest:
-        return dto.testDurationMinutes || this.defaultValues.simulatedTest.testDurationMin;
-      case StudyMethod.spacedRepetition:
-        const numCards = dto.numCardsSpaced || this.defaultValues.spacedRepetition.numCardsSpaced;
-        return numCards * 2;
-      default:
-        return 30;
-    }
-  }
 
   private async createPomodoroSession(sessionId: number, dto: CreateStudySessionDto) {
     const data = {
@@ -108,7 +92,6 @@ export class StudySessionsService {
       numCards: dto.numCards || this.defaultValues.pomodoro.numCards,
       studyMinutes: dto.studyMinutes || this.defaultValues.pomodoro.studyMinutes,
       restMinutes: dto.restMinutes || this.defaultValues.pomodoro.restMinutes,
-      learningMethodFilter: dto.learningMethodFilter || this.defaultValues.pomodoro.learningMethodFilter
     };
     return this.prisma.sessionPomodoro.create({ data });
   }
@@ -118,7 +101,6 @@ export class StudySessionsService {
       sessionId,
       numQuestions: dto.numQuestions || this.defaultValues.simulatedTest.numQuestions,
       testDurationMin: dto.testDurationMinutes || this.defaultValues.simulatedTest.testDurationMin,
-      learningMethodFilter: dto.learningMethodFilterTest || this.defaultValues.simulatedTest.learningMethodFilter
     };
     return this.prisma.sessionSimulatedTest.create({ data });
   }
@@ -127,7 +109,6 @@ export class StudySessionsService {
     const data = {
       sessionId,
       numCardsSpaced: dto.numCardsSpaced || this.defaultValues.spacedRepetition.numCardsSpaced,
-      learningMethodFilter: dto.learningMethodFilterSpaced || this.defaultValues.spacedRepetition.learningMethodFilter
     };
     return this.prisma.sessionActiveRecall.create({ data });
   }
@@ -164,14 +145,21 @@ export class StudySessionsService {
       throw new NotFoundException(`Sesión con ID ${sessionId} no encontrada`);
     }
 
-    return session;
+    // Filtramos las cartas para mostrar solo las que coinciden con los métodos de aprendizaje de la sesión
+    if (session.deck) {
+      session.deck.cards = session.deck.cards.filter(card =>
+        session.learningMethod.includes(card.learningMethod)
+      );
+    }
+
+    return session; // Añadimos el return que faltaba
   }
 
   async update(id: number, updateStudySessionDto: UpdateStudySessionDto) {
-  return `This action updates a #${id} studySession`;
-}
+    return `This action updates a #${id} studySession`;
+  }
 
   async remove(id: number) {
-  return `This action removes a #${id} studySession`;
-}
+    return `This action removes a #${id} studySession`;
+  }
 }
