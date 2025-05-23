@@ -145,7 +145,7 @@ model CardReview {
   evaluation    Evaluation
   reviewedAt    DateTime  @default(now())
   nextReviewAt  DateTime
-  intervalDays  Int
+  intervalMinutes  Int
   timeSpent     Int?
 
   session       StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)

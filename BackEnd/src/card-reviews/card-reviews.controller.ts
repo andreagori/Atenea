@@ -1,34 +1,37 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Param, Request } from '@nestjs/common';
 import { CardReviewsService } from './card-reviews.service';
 import { CreateCardReviewDto } from './dto/create-card-review.dto';
-import { UpdateCardReviewDto } from './dto/update-card-review.dto';
+import { JwtAuthGuard } from 'src/jwt/JwtAuthGuard';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('card-reviews')
+@UseGuards(JwtAuthGuard)
 @Controller('card-reviews')
 export class CardReviewsController {
-  constructor(private readonly cardReviewsService: CardReviewsService) {}
+  constructor(private readonly cardReviewsService: CardReviewsService) { }
 
+  @ApiResponse({ status: 201, description: 'Revisión de carta creada' })
   @Post()
-  create(@Body() createCardReviewDto: CreateCardReviewDto) {
-    return this.cardReviewsService.create(createCardReviewDto);
+  create(
+    @Param('sessionId') sessionId: string,
+    @Param('cardId') cardId: string,
+    @Body() createCardReviewDto: CreateCardReviewDto,
+    @Request() req
+  ) {
+    return this.cardReviewsService.create(
+      +sessionId,
+      +cardId,
+      req.user.userId,
+      createCardReviewDto
+    );
   }
 
-  @Get()
-  findAll() {
-    return this.cardReviewsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cardReviewsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCardReviewDto: UpdateCardReviewDto) {
-    return this.cardReviewsService.update(+id, updateCardReviewDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cardReviewsService.remove(+id);
+  @ApiResponse({ status: 200, description: 'Revisión de carta encontrada' })
+  @Get('session/:sessionId')
+  findAllBySession(
+    @Param('sessionId') sessionId: string,
+    @Request() req
+  ) {
+    return this.cardReviewsService.findBySession(+sessionId, req.user.userId);
   }
 }
