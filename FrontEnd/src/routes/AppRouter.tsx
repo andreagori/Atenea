@@ -58,7 +58,7 @@ const AppRouter = () => {
           }
         />
         <Route
-          path="/sesionesEstudio/regular"
+          path="/sesionesEstudio/regular/:sessionId"
           element={
             <PrivateRoute>
               <RegularStudySession />

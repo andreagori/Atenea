@@ -11,7 +11,7 @@ export class CardReviewsController {
   constructor(private readonly cardReviewsService: CardReviewsService) { }
 
   @ApiResponse({ status: 201, description: 'Revisión de carta creada' })
-  @Post()
+  @Post('session/:sessionId/card/:cardId')
   create(
     @Param('sessionId') sessionId: string,
     @Param('cardId') cardId: string,

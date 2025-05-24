@@ -5,6 +5,8 @@ import { StudySessionsOptionsConfig_Regular, StudySessionsOptionsConfig_Pomodoro
 interface Props {
   selectedOption: string | null;
   setSelectedOption: (id: string) => void;
+  deckId: number | null;
+  disabled?: boolean;
 }
 
 const options = [
@@ -31,18 +33,20 @@ const options = [
   },
 ];
 
-function StudySessionsOptions({ selectedOption, setSelectedOption }: Props) {
+function StudySessionsOptions({ selectedOption, setSelectedOption, deckId, disabled }: Props) {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [modalOptionId, setModalOptionId] = useState<string | null>(null);
 
   const renderConfigModal = () => {
+    if (!deckId) return null;
+
     switch (modalOptionId) {
       case "regular":
-        return <StudySessionsOptionsConfig_Regular onClose={() => setShowConfigModal(false)} />;
+        return <StudySessionsOptionsConfig_Regular onClose={() => setShowConfigModal(false)} deckId={deckId} />;
       case "pomodoro":
-        return <StudySessionsOptionsConfig_Pomodoro onClose={() => setShowConfigModal(false)} />;
+        return <StudySessionsOptionsConfig_Pomodoro onClose={() => setShowConfigModal(false)} deckId={deckId} />;
       case "simuladas":
-        return <StudySessionsOptionsConfig_SimulatedTests onClose={() => setShowConfigModal(false)} />;
+        return <StudySessionsOptionsConfig_SimulatedTests onClose={() => setShowConfigModal(false)} deckId={deckId} />;
       default:
         return null;
     }
@@ -53,27 +57,30 @@ function StudySessionsOptions({ selectedOption, setSelectedOption }: Props) {
       {options.map(({ id, title, description, background }) => (
         <div
           key={id}
-          className={`relative rounded-xl transition-all duration-300 ${
-            selectedOption === id ? "ring-4 ring-darkAccent scale-[1.01]" : ""
-          }`}
+          className={`relative rounded-xl transition-all duration-300 ${selectedOption === id ? "ring-4 ring-darkAccent scale-[1.01]" : ""
+            }`}
         >
           {/* Ícono de Configuración */}
-            <button
+          <button
             onClick={(e) => {
               e.stopPropagation();
-              setModalOptionId(id);
-              setShowConfigModal(true);
+              if (!disabled && deckId) {
+                setModalOptionId(id);
+                setShowConfigModal(true);
+              }
             }}
-            className="absolute top-6 right-6 z-10 text-lg hover:scale-110 transition-transform"
-            >
+            disabled={disabled || !deckId}
+            className={`absolute top-6 right-6 z-10 text-lg ${!disabled && deckId ? 'hover:scale-110' : 'cursor-not-allowed opacity-50'
+              } transition-transform duration-200`}
+          >
             <img
               src="/src/assets/settingsIcon.svg"
               alt="Configurar"
               className="w-6 h-6"
             />
-            </button>
+          </button>
 
-          <div onClick={() => setSelectedOption(id)} className="cursor-pointer">
+          <div onClick={() => !disabled && setSelectedOption(id)} className={`cursor-${disabled ? 'not-allowed' : 'pointer'}`}>
             <SpotlightCard
               className="w-full"
               enableSpotlight={false}
@@ -91,7 +98,7 @@ function StudySessionsOptions({ selectedOption, setSelectedOption }: Props) {
       ))}
 
       {/* Modal */}
-      {showConfigModal && (
+      {showConfigModal && deckId && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           {renderConfigModal()}
         </div>

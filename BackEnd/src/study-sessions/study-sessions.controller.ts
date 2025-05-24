@@ -27,8 +27,9 @@ export class StudySessionsController {
   }
 
   @Get()
-  findAll() {
-    return this.studySessionsService.findAll();
+  @ApiResponse({ status: 200, description: 'Lista de sesiones de estudio', type: StudySession, isArray: true })
+  findAll(@Request() req) {
+    return this.studySessionsService.findAll(req.user.userId);
   }
 
   @Get(':id')
@@ -37,13 +38,42 @@ export class StudySessionsController {
     return this.studySessionsService.findOne(+id, req.user.userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStudySessionDto: UpdateStudySessionDto) {
-    return this.studySessionsService.update(+id, updateStudySessionDto);
+  // STUDY METHODS: SPACED_REPETITION
+
+  @Get(':sessionId/next-card')
+  @ApiResponse({ status: 200, description: 'Siguiente carta encontrada', type: StudySession })
+  getNextCard(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.getNextCard(+sessionId, req.user.userId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.studySessionsService.remove(+id);
+  @Get(':sessionId/progress')
+  @ApiResponse({ status: 200, description: 'Progreso de la sesión de estudio en memorización espaciada', type: StudySession })
+  getSpacedRepetitionProgress(
+    @Param('sessionId') sessionId: string,
+    @Request() req
+  ) {
+    return this.studySessionsService.getSpacedRepetitionProgress(
+      +sessionId,
+      req.user.userId
+    );
   }
+
+  @Get(':sessionId/to-review')
+  @ApiResponse({ status: 200, description: 'Cartas a revisar en la sesión de estudio', type: StudySession })
+  getCardsToReview(
+    @Param('sessionId') sessionId: string,
+    @Request() req
+  ) {
+    return this.studySessionsService.getCardsToReview(
+      +sessionId,
+      req.user.userId
+    );
+  }
+
+  @Post(':sessionId/finish')
+  @ApiResponse({ status: 200, description: 'Sesión de estudio finalizada', type: StudySession })
+  finishSession(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.finishSession(+sessionId, req.user.userId);
+  }
+
 }

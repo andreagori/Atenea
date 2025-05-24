@@ -1,65 +1,113 @@
+import { useStudySession } from "@/hooks/useStudySessions";
+import { useState } from "react";
 import { ButtonCustom } from "./Buttons";
 
 interface ModalProps {
   onClose: () => void;
+  deckId: number;
 }
 
-export function StudySessionsOptionsConfig_Regular({ onClose }: ModalProps) {
+export function StudySessionsOptionsConfig_Regular({ onClose, deckId }: ModalProps) {
+  const [numCards, setNumCards] = useState('');
+  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+  const [validateError, setValidateError] = useState('');
+  const { createStudySession, error, loading } = useStudySession();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidateError('');
+
+    if (!numCards || selectedMethods.length === 0) {
+      setValidateError('Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      await createStudySession(deckId, {
+        studyMethod: 'spacedRepetition',
+        learningMethod: selectedMethods,
+        numCardsSpaced: parseInt(numCards)
+      });
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setValidateError('Error al crear la sesión');
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
       <div className="bg-darkSecondary p-6 rounded-lg shadow-lg max-w-md w-full">
         <h2 className="text-2xl font-bold text-center text-white">
           Configura tu sesión regular de estudio:
         </h2>
-        <p className="mt-4 text-white">Ingresa el número de cartas a revisar en la sesión: </p>
-        <input
-          className="input-primary input validator mt-2 w-full bg-white"
-          type="number"
-          placeholder="Debe ser un número entre 1 y 99"
-          min="1"
-          max="99"
-        />
-
-        <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
-        <select
-          defaultValue="Tipo de cartas"
-          className="select select-m select-primary w-full bg-white mt-2 text-black/50">
-          <option disabled={true}>Tipo de cartas</option>
-          <option>Repaso Activo</option>
-          <option>Método de cornell</option>
-          <option>Cartas visuales</option>
-          <option>Todas las anteriores</option>
-        </select>
-
-        {/* Buttons Form */}
-        <div className="flex justify-between mt-4">
-          <ButtonCustom
-            type="button"
-            text="Cerrar"
-            onClick={() => { onClose() }}
-            isGradient={true}
-            gradientDirection="to bottom"
-            gradientColors={['#FF2F2F', '#650707']}
-            color="#fff"
-            hoverColor="#fff"
-            hoverBackground="#FF2F2F"
-            width="80px"
-            height="35px"
+        <form name="config" onSubmit={handleSubmit}>
+          <p className="mt-4 text-white">Ingresa el número de cartas a revisar en la sesión: </p>
+          <input
+            className="input-primary input validator mt-2 w-full bg-white"
+            type="number"
+            value={numCards}
+            onChange={(e) => setNumCards(e.target.value)}
+            placeholder="Debe ser un número entre 1 y 99"
+            min="1"
+            max="99"
+            required
           />
-          <ButtonCustom
-            type="button"
-            text="Guardar"
-            onClick={() => { onClose() }}
-            isGradient={true}
-            gradientDirection="to bottom"
-            gradientColors={['#0C3BEB', '#1A368B']}
-            color="#fff"
-            hoverColor="#fff"
-            hoverBackground="#0C3BEB"
-            width="80px"
-            height="35px"
-          />
-        </div>
+
+          <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
+          <select
+            multiple
+            value={selectedMethods}
+            onChange={(e) => {
+              const options = Array.from(e.target.selectedOptions, option => option.value);
+              setSelectedMethods(options);
+            }}
+            defaultValue="Tipo de cartas"
+            required
+            className="select select-m select-primary w-full bg-white mt-2 text-black/50">
+            <option disabled={true}>Tipo de cartas</option>
+            <option value="activeRecall" >Repaso Activo</option>
+            <option value="cornell" >Método de cornell</option>
+            <option value="visualCard" >Cartas visuales</option>
+          </select>
+
+          {(validateError || error) && (
+            <p className="text-red-500 mt-2">
+              {validateError || error}
+            </p>
+          )}
+
+          {/* Buttons Form */}
+          <div className="flex justify-between mt-4">
+            <ButtonCustom
+              type="button"
+              text="Cerrar"
+              onClick={() => { onClose() }}
+              isGradient={true}
+              gradientDirection="to bottom"
+              gradientColors={['#FF2F2F', '#650707']}
+              color="#fff"
+              hoverColor="#fff"
+              hoverBackground="#FF2F2F"
+              width="80px"
+              height="35px"
+            />
+            <ButtonCustom
+              type="submit"
+              text="Guardar"
+              disabled={loading}
+              onClick={() => { }}
+              isGradient={true}
+              gradientDirection="to bottom"
+              gradientColors={['#0C3BEB', '#1A368B']}
+              color="#fff"
+              hoverColor="#fff"
+              hoverBackground="#0C3BEB"
+              width="80px"
+              height="35px"
+            />
+          </div>
+        </form>
       </div>
     </div >
   );

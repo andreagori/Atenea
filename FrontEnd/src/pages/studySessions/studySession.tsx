@@ -3,32 +3,40 @@ import { useNavigate } from "react-router-dom";
 import { NavbarLoginIn } from "../../components/Navbar";
 import SelectDecksStudySession from "../../libs/daisyUI/SelectDecksStudySession";
 import StudySessionsOptions from "../../components/StudySessionsOptions";
+import { useStudySession } from "@/hooks/useStudySessions";
+import { useStudySessionDefaults } from "@/hooks/useStudySessionsDefaults";
 
 {/* Después hacer un hook con esto */ }
-const sesionEstudio = () => {
+function sesionEstudio() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
+  const { createStudySession} = useStudySession();
+  const defaultConfig = useStudySessionDefaults(selectedOption);
   const navigate = useNavigate();
 
-  const handleStart = () => {
-    if (!selectedOption) {
-      alert("Por favor selecciona un tipo de sesión antes de comenzar.");
+  const handleStart = async () => {
+    if (!selectedOption || !selectedDeckId || !defaultConfig) {
+      alert("Por favor selecciona un mazo y un tipo de sesión antes de comenzar.");
       return;
     }
 
-    switch (selectedOption) {
-      case "regular":
-        navigate("/sesionesEstudio/regular");
-        break;
-      case "pomodoro":
-        navigate("/sesionesEstudio/pomodoro");
-        break;
-      case "simuladas":
-        navigate("/sesionesEstudio/simuladas");
-        break;
-      default:
-        alert("Opción no válida.");
+    try {
+      console.log('Creating session with config:', defaultConfig);
+      const response = await createStudySession(selectedDeckId, defaultConfig);
+      console.log('Session created:', response);
+
+      if (response && response.sessionId) {
+        const path = `/sesionesEstudio/${selectedOption}/${response.sessionId}`;
+        console.log('Navigating to:', path);
+        navigate(path, { replace: true }); // Añadimos replace: true
+      } else {
+        console.error('No sessionId received in response');
+      }
+    } catch (err) {
+      console.error('Error al crear la sesión:', err);
+      alert('Error al crear la sesión de estudio');
     }
-  };
+};
 
   const handleBack = () => {
     navigate(-1);
@@ -47,15 +55,16 @@ const sesionEstudio = () => {
         <p className="text-2xl font-semibold mt-2 mb-2 text-lightComponent">
           Selecciona el mazo a estudiar:
         </p>
-        <SelectDecksStudySession />
+        <SelectDecksStudySession onDeckSelect={setSelectedDeckId} />
         <p className="text-2xl font-semibold mt-10 text-lightComponent">
           Selecciona el tipo de sesión de estudio:
         </p>
         <StudySessionsOptions
           selectedOption={selectedOption}
           setSelectedOption={setSelectedOption}
+          deckId={selectedDeckId}
+          disabled={!selectedDeckId}
         />
-
         {/* Botones */}
         <div className="mt-10 flex gap-6 m-10">
           <button
@@ -82,11 +91,11 @@ const sesionEstudio = () => {
 
           <button
             onClick={handleStart}
-            className={`px-6 py-3 rounded flex items-center gap-2 ${selectedOption
+            className={`px-6 py-3 rounded flex items-center gap-2 ${selectedOption && selectedDeckId
               ? "bg-darkPrimary hover:bg-darkSecondary"
               : "bg-gray-400 cursor-not-allowed"
               } text-white transition`}
-            disabled={!selectedOption}
+            disabled={!selectedOption || !selectedDeckId}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

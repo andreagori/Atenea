@@ -4,6 +4,7 @@ import { CreateStudySessionDto } from './dto/create-study-session.dto';
 import { UpdateStudySessionDto } from './dto/update-study-session.dto';
 import { StudySession } from './entities/study-session.entity';
 import { StudyMethod, LearningMethod } from '@prisma/client';
+import { CardReview } from 'src/card-reviews/entities/card-review.entity';
 
 @Injectable()
 export class StudySessionsService {
@@ -27,6 +28,7 @@ export class StudySessionsService {
       numCardsSpaced: 10,
     }
   };
+
   /**
    * Crea una nueva sesión de estudio
    * @param createStudySessionDto
@@ -85,6 +87,12 @@ export class StudySessionsService {
     return this.findOne(session.sessionId, userId);
   }
 
+  /**
+   * Tipos de sesiones de estudio
+   * - Pomodoro: Estudia durante un tiempo determinado y luego descansa.
+   * - Simulated Test: Realiza un test simulado con preguntas.
+   * - Spaced Repetition: Revisa las cartas en intervalos de tiempo específicos.
+   */
 
   private async createPomodoroSession(sessionId: number, dto: CreateStudySessionDto) {
     const data = {
@@ -113,8 +121,26 @@ export class StudySessionsService {
     return this.prisma.sessionActiveRecall.create({ data });
   }
 
-  async findAll() {
-    return `This action returns all studySessions`;
+  async findAll(userId: number) {
+    return this.prisma.studySession.findMany({
+      where: {
+        userId
+      },
+      include: {
+        deck: true,
+        activeRecall: true,
+        pomodoro: true,
+        simulatedTest: true,
+        cardReviews: {
+          include: {
+            card: true
+          }
+        }
+      },
+      orderBy: {
+        startTime: 'desc'
+      }
+    });
   }
 
   /**
@@ -155,11 +181,144 @@ export class StudySessionsService {
     return session; // Añadimos el return que faltaba
   }
 
-  async update(id: number, updateStudySessionDto: UpdateStudySessionDto) {
-    return `This action updates a #${id} studySession`;
+  // SPACED_REPETITION METHODS
+
+  /**
+   * Para obtener la siguiente carta para revisar en una sesión de repetición espaciada
+   * @param sessionId ID de la sesión de estudio
+   * @param userId ID del usuario
+   * @returns Carta para revisar o null si no hay más cartas
+   */
+  async getNextCard(sessionId: number, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+
+    if (!session || session.endTime) {
+        throw new NotFoundException('Sesión no encontrada o ya finalizada');
+    }
+
+    const reviews = await this.prisma.cardReview.findMany({
+        where: {
+            sessionId,
+            userId,
+            nextReviewAt: {
+                gt: new Date() // Solo cartas que no necesitan revisión aún
+            }
+        }
+    });
+
+    // Obtener las cartas disponibles con sus relaciones
+    const availableCards = await this.prisma.card.findMany({
+        where: {
+            deckId: session.deckId,
+            learningMethod: {
+                in: session.learningMethod
+            },
+            NOT: {
+                cardId: {
+                    in: reviews.map(review => review.cardId)
+                }
+            }
+        },
+        include: {
+            activeRecall: true,  // Incluir la relación con activeRecall
+            cornell: true,       // Incluir la relación con cornell
+            visualCard: true     // Incluir la relación con visualCard
+        }
+    });
+
+    if (availableCards.length === 0) {
+        await this.checkSessionCompletion(sessionId, userId);
+        return null;
+    }
+
+    // Seleccionar una carta aleatoria
+    const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+    console.log('Selected card with relations:', randomCard); // Debug log
+
+    return randomCard;
+}
+
+  async getSpacedRepetitionProgress(sessionId: number, userId: number) {
+    const reviews = await this.prisma.cardReview.findMany({
+      where: {
+        sessionId,
+        userId
+      },
+      include: {
+        card: true
+      }
+    });
+
+    const totalCards = (await this.findOne(sessionId, userId)).deck.cards.length;
+    const reviewedCards = reviews.length;
+
+    return {
+      totalCards,
+      reviewedCards,
+      remainingCards: totalCards - reviewedCards,
+      reviews
+    };
   }
 
-  async remove(id: number) {
-    return `This action removes a #${id} studySession`;
+  async getCardsToReview(sessionId: number, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+    const now = new Date();
+
+    // Obtener todas las revisiones de la sesión
+    const reviews = await this.prisma.cardReview.findMany({
+      where: {
+        sessionId,
+        userId,
+        nextReviewAt: {
+          lte: now
+        }
+      },
+      orderBy: {
+        nextReviewAt: 'asc'
+      },
+      include: {
+        card: true
+      }
+    });
+
+    return reviews;
   }
+
+  async checkSessionCompletion(sessionId: number, userId: number) {
+    const progress = await this.getSpacedRepetitionProgress(sessionId, userId);
+
+    if (progress.remainingCards === 0) {
+      // Finalizar la sesión automáticamente
+      await this.finishSession(sessionId, userId);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Termina una sesión de estudio
+   * @param sessionId ID de la sesión de estudio
+   * @param userId ID del usuario
+   * @returns Sesión de estudio actualizada o mensaje de error con el endTime
+   */
+  async finishSession(sessionId: number, userId: number) {
+    const session = await this.prisma.studySession.findFirst({
+      where: {
+        sessionId,
+        userId,
+        endTime: null
+      }
+    });
+
+    if (!session) {
+      throw new NotFoundException('Sesión activa no encontrada');
+    }
+
+    return this.prisma.studySession.update({
+      where: { sessionId },
+      data: { endTime: new Date() }
+    });
+  }
+
 }

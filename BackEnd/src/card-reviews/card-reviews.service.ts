@@ -4,6 +4,7 @@ import { CardReview } from './entities/card-review.entity';
 import { CreateCardReviewDto } from './dto/create-card-review.dto';
 import { UpdateCardReviewDto } from './dto/update-card-review.dto';
 import { Evaluation, StudyMethod } from '@prisma/client';
+import { StudySession } from 'src/study-sessions/entities/study-session.entity';
 
 @Injectable()
 export class CardReviewsService {
@@ -12,20 +13,22 @@ export class CardReviewsService {
   // PrismaService instance for database operations.
   constructor(private readonly prisma: PrismaService) { }
 
+  private isValidSessionType(session: { studyMethod: StudyMethod }): boolean {
+    return session.studyMethod === StudyMethod.spacedRepetition ||
+      session.studyMethod === StudyMethod.pomodoro;
+  }
+
   async create(sessionId: number, cardId: number, userId: number, createCardReviewDto: CreateCardReviewDto) {
-    // Verificar que la sesión existe y es del tipo correcto
     const session = await this.prisma.studySession.findFirst({
       where: {
         sessionId,
         userId,
-        studyMethod: {
-          in: [StudyMethod.spacedRepetition, StudyMethod.pomodoro]
-        }
+        endTime: null // Solo sesiones activas
       }
     });
 
-    if (!session) {
-      throw new NotFoundException('Sesión no encontrada o no es del tipo correcto');
+    if (!session || !this.isValidSessionType(session)) {
+      throw new NotFoundException('Sesión no encontrada o tipo incorrecto');
     }
 
     // Calcular próxima revisión
