@@ -1,12 +1,14 @@
 import { useState } from "react";
 import SpotlightCard from "../libs/reactbits/SpotlightCard";
 import { StudySessionsOptionsConfig_Regular, StudySessionsOptionsConfig_Pomodoro, StudySessionsOptionsConfig_SimulatedTests } from "../components/StudySessionsOptionsCofig";
+import { CreateStudySessionDto } from "@/types/studySessions.types";
 
 interface Props {
   selectedOption: string | null;
   setSelectedOption: (id: string) => void;
   deckId: number | null;
   disabled?: boolean;
+  onConfigSave: (config: any) => void;
 }
 
 const options = [
@@ -33,20 +35,35 @@ const options = [
   },
 ];
 
-function StudySessionsOptions({ selectedOption, setSelectedOption, deckId, disabled }: Props) {
+function StudySessionsOptions({ selectedOption, setSelectedOption, deckId, disabled, onConfigSave }: Props) {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [modalOptionId, setModalOptionId] = useState<string | null>(null);
+
+  const handleConfigSave = (config: CreateStudySessionDto) => {
+    onConfigSave(config);
+    setShowConfigModal(false);
+  };
 
   const renderConfigModal = () => {
     if (!deckId) return null;
 
     switch (modalOptionId) {
       case "regular":
-        return <StudySessionsOptionsConfig_Regular onClose={() => setShowConfigModal(false)} deckId={deckId} />;
+        return <StudySessionsOptionsConfig_Regular
+          onClose={() => setShowConfigModal(false)}
+          onSave={handleConfigSave}
+          deckId={deckId}
+        />
       case "pomodoro":
-        return <StudySessionsOptionsConfig_Pomodoro onClose={() => setShowConfigModal(false)} deckId={deckId} />;
+        return <StudySessionsOptionsConfig_Pomodoro 
+        onClose={() => setShowConfigModal(false)} 
+        onSave={handleConfigSave}
+        deckId={deckId} />;
       case "simuladas":
-        return <StudySessionsOptionsConfig_SimulatedTests onClose={() => setShowConfigModal(false)} deckId={deckId} />;
+        return <StudySessionsOptionsConfig_SimulatedTests 
+        onClose={() => setShowConfigModal(false)} 
+        onSave={handleConfigSave}
+        deckId={deckId} />;
       default:
         return null;
     }

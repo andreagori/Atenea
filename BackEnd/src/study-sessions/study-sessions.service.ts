@@ -304,21 +304,27 @@ export class StudySessionsService {
    */
   async finishSession(sessionId: number, userId: number) {
     const session = await this.prisma.studySession.findFirst({
-      where: {
-        sessionId,
-        userId,
-        endTime: null
-      }
+        where: {
+            sessionId,
+            userId,
+            endTime: null
+        }
     });
 
     if (!session) {
-      throw new NotFoundException('Sesión activa no encontrada');
+        throw new NotFoundException('Sesión activa no encontrada');
     }
 
+    const endTime = new Date();
+    const startTime = session.startTime;
+    const durationInMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
+
     return this.prisma.studySession.update({
-      where: { sessionId },
-      data: { endTime: new Date() }
+        where: { sessionId },
+        data: { 
+            endTime,
+            minDuration: durationInMinutes
+        }
     });
   }
-
 }

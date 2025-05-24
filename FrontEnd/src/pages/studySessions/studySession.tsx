@@ -5,14 +5,21 @@ import SelectDecksStudySession from "../../libs/daisyUI/SelectDecksStudySession"
 import StudySessionsOptions from "../../components/StudySessionsOptions";
 import { useStudySession } from "@/hooks/useStudySessions";
 import { useStudySessionDefaults } from "@/hooks/useStudySessionsDefaults";
+import { CreateStudySessionDto } from "@/types/studySessions.types";
 
 {/* Después hacer un hook con esto */ }
 function sesionEstudio() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
-  const { createStudySession} = useStudySession();
+  const [sessionConfig, setSessionConfig] = useState<CreateStudySessionDto | null>(null);
+  const { createStudySession } = useStudySession();
   const defaultConfig = useStudySessionDefaults(selectedOption);
   const navigate = useNavigate();
+
+  const handleConfigSave = (config: CreateStudySessionDto) => {
+    console.log('Saving custom config:', config);
+    setSessionConfig(config);
+  };
 
   const handleStart = async () => {
     if (!selectedOption || !selectedDeckId || !defaultConfig) {
@@ -21,14 +28,24 @@ function sesionEstudio() {
     }
 
     try {
-      console.log('Creating session with config:', defaultConfig);
-      const response = await createStudySession(selectedDeckId, defaultConfig);
+      // Determinar qué configuración usar
+      let configToUse: CreateStudySessionDto;
+
+      if (sessionConfig) {
+        console.log('Using custom config:', sessionConfig);
+        configToUse = sessionConfig;
+      } else {
+        console.log('Using default config:', defaultConfig);
+        configToUse = defaultConfig;
+      }
+
+      const response = await createStudySession(selectedDeckId, configToUse);
       console.log('Session created:', response);
 
       if (response && response.sessionId) {
         const path = `/sesionesEstudio/${selectedOption}/${response.sessionId}`;
         console.log('Navigating to:', path);
-        navigate(path, { replace: true }); // Añadimos replace: true
+        navigate(path, { replace: true });
       } else {
         console.error('No sessionId received in response');
       }
@@ -36,7 +53,7 @@ function sesionEstudio() {
       console.error('Error al crear la sesión:', err);
       alert('Error al crear la sesión de estudio');
     }
-};
+  };
 
   const handleBack = () => {
     navigate(-1);
@@ -64,6 +81,7 @@ function sesionEstudio() {
           setSelectedOption={setSelectedOption}
           deckId={selectedDeckId}
           disabled={!selectedDeckId}
+          onConfigSave={handleConfigSave}
         />
         {/* Botones */}
         <div className="mt-10 flex gap-6 m-10">
@@ -120,3 +138,7 @@ function sesionEstudio() {
 };
 
 export default sesionEstudio;
+
+function setSessionConfig(config: CreateStudySessionDto) {
+  throw new Error("Function not implemented.");
+}

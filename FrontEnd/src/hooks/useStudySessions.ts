@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { useNavigate } from 'react-router-dom';
 
 interface CreateStudySessionDto {
     studyMethod: 'spacedRepetition' | 'pomodoro' | 'simulatedTest';
@@ -70,7 +69,6 @@ export const useStudySession = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentCard, setCurrentCard] = useState<CurrentCard | null>(null);
     const [showAnswer, setShowAnswer] = useState(false);
-    const navigate = useNavigate();
 
     const createStudySession = async (deckId: number, sessionConfig: CreateStudySessionDto) => {
         const token = Cookies.get("auth_token");
@@ -122,9 +120,12 @@ export const useStudySession = () => {
         const card = response.data;
         console.log('Raw next card data:', card);
 
+        // Si no hay más cartas, manejarlo gracefully
         if (!card || !card.cardId || !card.learningMethod) {
-            console.log('No more cards available or invalid card data');
+            console.log('No more cards available');
             setCurrentCard(null);
+            // En lugar de lanzar error, finalizamos la sesión
+            await finishSession(sessionId);
             return null;
         }
 
@@ -145,8 +146,15 @@ export const useStudySession = () => {
         setShowAnswer(false);
         return cardContent;
     } catch (err: any) {
+        // Si es error 404 (no más cartas) o la sesión ya finalizó
+        if (err.response?.status === 404 || 
+            err.response?.data?.message?.includes('finalizada')) {
+            console.log('Session completed or no more cards');
+            setCurrentCard(null);
+            return null;
+        }
+        
         console.error('Error in getNextCard:', err);
-        setCurrentCard(null);
         setError(err.response?.data?.message || 'Error al obtener la siguiente carta');
         throw err;
     } finally {
@@ -205,7 +213,6 @@ export const useStudySession = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
-            navigate('/sesionesEstudio');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Error al finalizar la sesión');
             throw error;

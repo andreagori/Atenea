@@ -1,17 +1,19 @@
 import { useStudySession } from "@/hooks/useStudySessions";
 import { useState } from "react";
 import { ButtonCustom } from "./Buttons";
+import { CreateStudySessionDto, LearningMethod, StudyMethod } from "@/types/studySessions.types";
 
 interface ModalProps {
   onClose: () => void;
+  onSave: (config: CreateStudySessionDto) => void;
   deckId: number;
 }
 
-export function StudySessionsOptionsConfig_Regular({ onClose, deckId }: ModalProps) {
+export function StudySessionsOptionsConfig_Regular({ onClose, onSave, deckId }: ModalProps) {
   const [numCards, setNumCards] = useState('');
-  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+  const [selectedMethods, setSelectedMethods] = useState<LearningMethod[]>([]);
   const [validateError, setValidateError] = useState('');
-  const { createStudySession, error, loading } = useStudySession();
+  const { error, loading } = useStudySession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,16 +24,18 @@ export function StudySessionsOptionsConfig_Regular({ onClose, deckId }: ModalPro
       return;
     }
 
+    const config: CreateStudySessionDto = {
+      studyMethod: StudyMethod.SPACED_REPETITION,
+      learningMethod: selectedMethods,
+      numCardsSpaced: parseInt(numCards)
+    };
+
     try {
-      await createStudySession(deckId, {
-        studyMethod: 'spacedRepetition',
-        learningMethod: selectedMethods,
-        numCardsSpaced: parseInt(numCards)
-      });
+      onSave(config);
       onClose();
     } catch (err) {
       console.error(err);
-      setValidateError('Error al crear la sesión');
+      setValidateError('Error al guardar la configuración');
     }
   };
 
@@ -59,16 +63,16 @@ export function StudySessionsOptionsConfig_Regular({ onClose, deckId }: ModalPro
             multiple
             value={selectedMethods}
             onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions, option => option.value);
+              const options = Array.from(e.target.selectedOptions).map(
+              option => option.value as LearningMethod);
               setSelectedMethods(options);
             }}
-            defaultValue="Tipo de cartas"
             required
             className="select select-m select-primary w-full bg-white mt-2 text-black/50">
             <option disabled={true}>Tipo de cartas</option>
-            <option value="activeRecall" >Repaso Activo</option>
-            <option value="cornell" >Método de cornell</option>
-            <option value="visualCard" >Cartas visuales</option>
+            <option value={LearningMethod.ACTIVE_RECALL}>Repaso Activo</option>
+            <option value={LearningMethod.CORNELL}>Método de cornell</option>
+            <option value={LearningMethod.VISUAL_CARD}>Cartas visuales</option>
           </select>
 
           {(validateError || error) && (
