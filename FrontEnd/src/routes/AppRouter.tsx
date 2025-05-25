@@ -74,7 +74,7 @@ const AppRouter = () => {
           }
         />
         <Route
-          path="/sesionesEstudio/simuladas"
+          path="/sesionesEstudio/simuladas/:sessionId"
           element={
             <PrivateRoute>
               <SimulatedTestStudySession />

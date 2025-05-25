@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { TestResultDto } from '@/types/simulatedStudySessions.types';
 
 interface CreateStudySessionDto {
     studyMethod: 'spacedRepetition' | 'pomodoro' | 'simulatedTest';
@@ -223,6 +224,102 @@ export const useStudySession = () => {
         }
     };
 
+    // SIMULATED TEST
+    const getTestQuestion = async (sessionId: number) => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+        try {
+            const response = await axios.get(
+                `http://localhost:3000/study-sessions/${sessionId}/test-question`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            // Si la respuesta es exitosa pero no hay más preguntas, manejarlo adecuadamente
+            if (response.status === 204) {
+                console.log('No hay más preguntas disponibles');
+                return null;
+            }
+
+            return response.data;
+        } catch (err: any) {
+            console.error('Error fetching test question:', err);
+
+            // Extraer mensaje de error más útil
+            const errorMessage = err.response?.data?.message || err.message;
+            console.log('Detalle del error:', errorMessage);
+
+            // Si el error es porque se completó el número de preguntas o no hay más cartas,
+            // podemos devolver null para indicar finalización
+            if (err.response?.status === 400 &&
+                (errorMessage.includes('No hay suficientes cartas') ||
+                    errorMessage.includes('alcanzado el límite'))) {
+                return null;
+            }
+
+            throw err;
+        }
+    };
+
+    const submitTestAnswer = async (sessionId: number, questionId: number, selectedOptionIndex: number, timeSpent?: number) => {
+        try {
+            console.log('Enviando respuesta:', {
+                questionId,
+                selectedOptionIndex,
+                timeSpent: timeSpent || 1
+            });
+
+            const response = await axios.post(
+                `http://localhost:3000/study-sessions/${sessionId}/test-answer`,
+                {
+                    questionId,
+                    selectedOptionIndex,
+                    timeSpent: timeSpent || 1
+                },
+                {
+                    headers: { Authorization: `Bearer ${Cookies.get('auth_token')}` }
+                }
+            );
+
+            return response.data;
+        } catch (err: any) {
+            console.error('Error submitting answer:', err);
+            console.error('Error response data:', err.response?.data);
+            throw err;
+        }
+    };
+
+    const getTestProgress = async (sessionId: number) => {
+        try {
+            const response = await axios.get(
+                `http://localhost:3000/study-sessions/${sessionId}/test-progress`,
+                {
+                    headers: { Authorization: `Bearer ${Cookies.get('auth_token')}` }
+                }
+            );
+            return response.data;
+        } catch (err) {
+            console.error('Error fetching test progress:', err);
+            throw err;
+        }
+    };
+
+    const getTestResult = async (sessionId: number): Promise<TestResultDto> => {
+        try {
+            const response = await axios.get<TestResultDto>(
+                `http://localhost:3000/study-sessions/${sessionId}/test-result`,
+                {
+                    headers: { Authorization: `Bearer ${Cookies.get('auth_token')}` }
+                }
+            );
+            return response.data;
+        } catch (err) {
+            console.error('Error fetching test result:', err);
+            throw err;
+        }
+    };
+
     return {
         createStudySession,
         getNextCard,
@@ -234,6 +331,10 @@ export const useStudySession = () => {
         loading,
         error,
         isSessionComplete,
-        setIsSessionComplete
+        setIsSessionComplete,
+        getTestQuestion,
+        submitTestAnswer,
+        getTestProgress,
+        getTestResult
     };
 };

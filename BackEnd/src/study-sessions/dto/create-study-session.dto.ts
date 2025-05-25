@@ -2,7 +2,6 @@ import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { StudySession } from "../entities/study-session.entity";
 import { IsNotEmpty, IsDate, IsInt, IsPositive, IsString, ValidateIf, IsArray, IsEnum, IsOptional } from "class-validator";
 import { StudyMethod } from "@prisma/client";
-import { using } from "rxjs";
 
 export enum LearningMethod {
     ACTIVE_RECALL = 'activeRecall',
@@ -103,7 +102,6 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
         }
     )
     @IsInt({ message: 'numQuestions debe ser un número entero' })
-    @IsPositive({ message: 'numQuestions debe ser un número positivo' })
     @IsNotEmpty({ message: 'numQuestions no puede estar vacío' })
     numQuestions: number;
 

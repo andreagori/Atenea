@@ -13,9 +13,10 @@ import { CardReviewsModule } from './card-reviews/card-reviews.module';
 import { SimulatedTestsModule } from './simulated-tests/simulated-tests.module';
 import { UserStatsModule } from './user-stats/user-stats.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { TestQuestionModule } from './test-question/test-question.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, DeckModule, CardModule, ExamModule, AuthModule, StudySessionsModule, SessionResultsModule, CardReviewsModule, SimulatedTestsModule, UserStatsModule, CloudinaryModule],
+  imports: [PrismaModule, UserModule, DeckModule, CardModule, ExamModule, AuthModule, StudySessionsModule, SessionResultsModule, CardReviewsModule, SimulatedTestsModule, UserStatsModule, CloudinaryModule, TestQuestionModule],
   controllers: [PrismaController],
   providers: [PrismaService],
   exports: [PrismaService],

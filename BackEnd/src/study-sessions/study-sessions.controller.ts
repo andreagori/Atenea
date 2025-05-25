@@ -5,6 +5,8 @@ import { UpdateStudySessionDto } from './dto/update-study-session.dto';
 import { StudySession } from './entities/study-session.entity';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/jwt/JwtAuthGuard';
+import { TestQuestionDto, TestAnswerDto } from 'src/test-question/dto/test-question.dto';
+import { TestResultDto } from './dto/test-result.dto';
 
 @ApiTags('study-sessions')
 @UseGuards(JwtAuthGuard)
@@ -70,9 +72,49 @@ export class StudySessionsController {
     );
   }
 
+  // STUDY METHODS: POMODORO
+
+  // STUDY METHODS: SIMULATED_TEST
+  @Get(':sessionId/test-question')
+  @ApiResponse({ status: 200, description: 'Obtiene la siguiente pregunta del test', type: TestQuestionDto })
+  getTestQuestion(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.getTestQuestion(+sessionId, req.user.userId);
+  }
+
+  @Get(':sessionId/test-progress')
+  @ApiResponse({ status: 200, description: 'Obtiene el progreso actual del test' })
+  getTestProgress(
+    @Param('sessionId') sessionId: string,
+    @Request() req
+  ) {
+    return this.studySessionsService.getTestProgress(+sessionId, req.user.userId);
+  }
+
+  @Post(':sessionId/test-answer')
+  @ApiResponse({ status: 200, description: 'Evalúa la respuesta del test' })
+  evaluateTestAnswer(
+    @Param('sessionId') sessionId: string,
+    @Body() answerDto: TestAnswerDto,
+    @Request() req
+  ) {
+    return this.studySessionsService.evaluateTestAnswer(+sessionId, req.user.userId, answerDto);
+  }
+
+  @Get(':sessionId/test-result')
+  @ApiResponse({ status: 200, description: 'Obtiene el resultado final del test', type: TestResultDto })
+  getTestResult(
+    @Param('sessionId') sessionId: string,
+    @Request() req
+  ) {
+    return this.studySessionsService.getTestResult(+sessionId, req.user.userId);
+  }
+
   @Post(':sessionId/finish')
   @ApiResponse({ status: 200, description: 'Sesión de estudio finalizada', type: StudySession })
-  finishSession(@Param('sessionId') sessionId: string, @Request() req) {
+  finishSession(
+    @Param('sessionId') sessionId: string,
+    @Request() req
+  ) {
     return this.studySessionsService.finishSession(+sessionId, req.user.userId);
   }
 
