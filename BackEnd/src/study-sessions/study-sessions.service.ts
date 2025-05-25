@@ -382,16 +382,108 @@ export class StudySessionsService {
   }
 
   async checkSessionCompletion(sessionId: number, userId: number) {
-    const progress = await this.getSpacedRepetitionProgress(sessionId, userId);
+  try {
+    // Obtener la sesión con su configuración
+    const session = await this.prisma.studySession.findFirst({
+      where: { sessionId, userId },
+      include: {
+        activeRecall: true,
+        pomodoro: true,
+        simulatedTest: true,
+        deck: {
+          include: {
+            cards: {
+              where: {
+                learningMethod: {
+                  in: [] // Se llenará dinámicamente
+                }
+              }
+            }
+          }
+        }
+      }
+    });
 
-    if (progress.remainingCards === 0) {
-      // Finalizar la sesión automáticamente
+    if (!session) {
+      throw new NotFoundException(`Sesión ${sessionId} no encontrada`);
+    }
+
+    // Actualizar el filtro de cartas
+    if (session.deck) {
+      session.deck.cards = await this.prisma.card.findMany({
+        where: {
+          deckId: session.deckId,
+          learningMethod: {
+            in: session.learningMethod
+          }
+        }
+      });
+    }
+
+    // Obtener revisiones completadas
+    const completedReviews = await this.prisma.cardReview.findMany({
+      where: { sessionId, userId }
+    });
+
+    let shouldFinish = false;
+    let cardLimit = 0;
+
+    // Verificar condiciones de finalización según el tipo de sesión
+    switch (session.studyMethod) {
+      case StudyMethod.spacedRepetition:
+        cardLimit = session.activeRecall?.numCardsSpaced || session.deck?.cards?.length || 0;
+        shouldFinish = completedReviews.length >= cardLimit;
+        console.log('Spaced Repetition - Revisiones completadas:', {
+          completedReviews: completedReviews.length,
+          cardLimit,
+          shouldFinish
+        });
+        break;
+
+      case StudyMethod.pomodoro:
+        cardLimit = session.pomodoro?.numCards || session.deck?.cards?.length || 0;
+        shouldFinish = completedReviews.length >= cardLimit;
+        console.log('Pomodoro - Revisiones completadas:', {
+          completedReviews: completedReviews.length,
+          cardLimit,
+          shouldFinish
+        });
+        break;
+
+      case StudyMethod.simulatedTest:
+        // Para test simulado, verificar preguntas respondidas
+        const answeredQuestions = await this.prisma.testQuestion.count({
+          where: {
+            testId: sessionId,
+            userAnswer: { not: null }
+          }
+        });
+        cardLimit = session.simulatedTest?.numQuestions || 0;
+        shouldFinish = answeredQuestions >= cardLimit;
+        console.log('Simulated Test - Preguntas respondidas:', {
+          answeredQuestions,
+          cardLimit,
+          shouldFinish
+        });
+        break;
+
+      default:
+        console.warn(`Tipo de sesión no reconocido: ${session.studyMethod}`);
+        return false;
+    }
+
+    if (shouldFinish) {
+      console.log(`Finalizando sesión ${sessionId} automáticamente - ${session.studyMethod}`);
       await this.finishSession(sessionId, userId);
       return true;
     }
 
     return false;
+  } catch (error) {
+    console.error(`Error verificando completitud de sesión ${sessionId}:`, error);
+    return false;
   }
+}
 
   // SIMULATED TEST METHODS
   async getTestQuestion(sessionId: number, userId: number) {
@@ -1054,6 +1146,11 @@ export class StudySessionsService {
         return session;
       }
 
+      // Calcular la duración en minutos
+      const endTime = new Date();
+      const durationMs = endTime.getTime() - session.startTime.getTime();
+      const minDuration = Math.round(durationMs / (1000 * 60)); // Convertir de ms a minutos
+
       // Para sesiones de test simulado, asegurar que las estadísticas están actualizadas
       if (session.studyMethod === StudyMethod.simulatedTest && session.simulatedTest) {
         // Recalcular estadísticas basadas en las preguntas
@@ -1070,11 +1167,15 @@ export class StudySessionsService {
         });
       }
 
-      // Finalizar la sesión
+      // Finalizar la sesión con endTime y minDuration
       const updatedSession = await this.prisma.studySession.update({
         where: { sessionId },
-        data: { endTime: new Date() }
+        data: {
+          endTime: endTime,
+          minDuration: minDuration
+        }
       });
+
       return updatedSession;
     } catch (error) {
       console.error(`Error finalizando sesión ${sessionId}:`, error);
