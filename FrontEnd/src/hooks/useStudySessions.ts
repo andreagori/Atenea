@@ -65,6 +65,8 @@ interface CardResponse {
     };
 }
 
+let questionsBeingAnswered: number[] = [];
+
 export const useStudySession = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

@@ -18,25 +18,41 @@ const SimulatedTestStudySession = () => {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const { getTestQuestion, submitTestAnswer, getTestProgress, finishSession, getTestResult } = useStudySession();
     const [results, setResults] = useState<TestResultDto | null>(null);
+    const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+    const [processingAnswer, setProcessingAnswer] = useState(false);
+    const [startTime, setStartTime] = useState(Date.now());
+    const [isSessionFinished, setIsSessionFinished] = useState(false);
+    const [answeredQuestions, setAnsweredQuestions] = useState(new Set<number>());
+    const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
-        if (!sessionId) return;
-        loadQuestion();
-        loadProgress();
+        if (!sessionId || isSessionFinished || isInitialized) return;
+
+        const initSession = async () => {
+            try {
+                setIsInitialized(true);
+                await initializeSession();
+            } catch (error) {
+                setIsInitialized(false); // Reset en caso de error
+                throw error;
+            }
+        };
+
+        initSession();
     }, [sessionId]);
 
     useEffect(() => {
-        if (!progress?.remainingTime) return;
+        if (!progress?.remainingTime || isSessionFinished) return;
 
         const timer = setInterval(() => {
             setProgress(prev => {
-                if (!prev) return null;
+                if (!prev || isSessionFinished) return prev;
 
                 const newTime = prev.remainingTime - 1;
 
                 if (newTime <= 0) {
                     clearInterval(timer);
-                    handleFinishSession();
+                    handleFinishSession('timeout');
                     return { ...prev, remainingTime: 0 };
                 }
 
@@ -45,199 +61,355 @@ const SimulatedTestStudySession = () => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [progress?.remainingTime]);
+    }, [progress?.remainingTime, isSessionFinished]);
+
+    const initializeSession = async () => {
+        try {
+            console.log('Inicializando sesión...');
+            await loadProgress();
+            await loadQuestion();
+        } catch (err) {
+            console.error('Error inicializando sesión:', err);
+            handleFinishSession('error');
+        }
+    };
 
     const handleOptionSelect = async (index: number) => {
-        if (!question || !sessionId || selectedOption !== null) return;
+        // Evitar selecciones múltiples o durante procesamiento
+        if (!question || !sessionId || selectedOption !== null || processingAnswer || isSessionFinished) {
+            console.log('Selección bloqueada:', { selectedOption, processingAnswer, isSessionFinished });
+            return;
+        }
 
+        // Verificar si esta pregunta ya fue respondida
+        if (answeredQuestions.has(question.questionId)) {
+            console.log('Pregunta ya respondida, ignorando...');
+            return;
+        }
+
+        // Validar índice de opción
+        if (index < 0 || index >= question.options.length) {
+            console.error('Índice de opción inválido:', index);
+            return;
+        }
+
+        // Establecer estados para UI
         setSelectedOption(index);
+        setProcessingAnswer(true);
+
         try {
-            console.log('Seleccionando opción:', {
+            const timeSpent = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+
+            console.log('Enviando respuesta:', {
                 sessionId,
                 questionId: question.questionId,
                 index,
-                timeSpent: Math.floor((Date.now() - startTime) / 1000)
+                timeSpent
             });
 
             const response = await submitTestAnswer(
                 parseInt(sessionId),
                 question.questionId,
                 index,
-                Math.floor((Date.now() - startTime) / 1000)
-            );
+                timeSpent
+            ) as { isCorrect: boolean, correctCardId?: number };
 
-            // Verificar si esta es la última pregunta según el progreso
-            const isLastQuestion = question.progress.current >= question.progress.total;
+            console.log('Respuesta recibida:', response);
 
-            // Esperar un breve momento antes de proceder
-            setTimeout(async () => {
-                // Actualizar el progreso para reflejar la respuesta actual
-                await loadProgress();
+            // Validar respuesta del servidor
+            if (typeof response.isCorrect !== 'boolean') {
+                throw new Error('Respuesta del servidor inválida');
+            }
 
-                // Si es la última pregunta, mostramos los resultados después de un pequeño delay para que
-                // el usuario pueda ver la respuesta seleccionada
-                if (isLastQuestion) {
-                    console.log('Esta fue la última pregunta, finalizando el test...');
-                    // Esperar un poco más para que el usuario vea la selección
-                    setTimeout(() => {
-                        handleFinishSession();
-                    }, 1500);
-                } else {
-                    // Si no es la última, cargamos la siguiente pregunta normalmente
-                    setSelectedOption(null);
-                    await loadQuestion();
+            // Marcar pregunta como respondida
+            setAnsweredQuestions(prev => new Set([...prev, question.questionId]));
+
+            // Mostrar feedback de respuesta correcta/incorrecta
+            setIsCorrect(response.isCorrect);
+
+            // Esperar un momento para mostrar el feedback visual
+            const feedbackTimeout = setTimeout(async () => {
+                try {
+                    await processAnswerAndContinue();
+                } catch (processError) {
+                    console.error('Error procesando respuesta:', processError);
+                    handleProcessingError();
                 }
-            }, 1000);
+            }, 1500);
+
+            // Limpiar timeout si el componente se desmonta
+            return () => clearTimeout(feedbackTimeout);
+
         } catch (err) {
-            console.error('Error submitting answer:', err);
-            alert('Error al enviar la respuesta. Intente nuevamente.');
+            console.error('Error enviando respuesta:', err);
+
+            // Mostrar error específico al usuario
+            setIsCorrect(null);
+
+            // Resetear estado después de mostrar error
+            const errorTimeout = setTimeout(() => {
+                handleSubmissionError(err);
+            }, 1500);
+
+            return () => clearTimeout(errorTimeout);
         }
     };
 
-    // Agregar estado para el tiempo transcurrido
-    const [startTime, setStartTime] = useState(Date.now());
+    // Función auxiliar para manejar errores de procesamiento
+    const handleProcessingError = () => {
+        console.log('Manejando error de procesamiento...');
+        resetQuestionState();
+        // Intentar continuar con la siguiente pregunta
+        continueToNextQuestion().catch(err => {
+            console.error('Error continuando después de error de procesamiento:', err);
+            // Como último recurso, finalizar la sesión
+            handleFinishSession('processing_error');
+        });
+    };
 
-    const handleFinishSession = async () => {
-        if (!sessionId) return;
+    // Función auxiliar para manejar errores de envío
+    const handleSubmissionError = (error: unknown) => {
+        console.log('Manejando error de envío...');
+
+        // Determinar si es un error de red o del servidor
+        const isNetworkError = error instanceof TypeError ||
+            (error as any)?.message?.includes('fetch');
+
+        if (isNetworkError) {
+            // Para errores de red, permitir reintentar
+            console.log('Error de red detectado, permitiendo reintento...');
+            resetQuestionState();
+        } else {
+            // Para otros errores, continuar con la siguiente pregunta
+            console.log('Error del servidor, continuando...');
+            resetQuestionState();
+            continueToNextQuestion().catch(err => {
+                console.error('Error continuando después de error de envío:', err);
+                handleFinishSession('submission_error');
+            });
+        }
+    };
+
+    const processAnswerAndContinue = async () => {
+        if (isSessionFinished) return;
 
         try {
-            // Primero, intentamos finalizar la sesión
-            await finishSession(parseInt(sessionId));
-            console.log("Sesión finalizada correctamente");
+            // Actualizar progreso después de la respuesta
+            const updatedProgress = await getTestProgress(parseInt(sessionId!)) as ExtendedTestProgress;
+            setProgress(updatedProgress);
 
-            try {
-                // Usar el nuevo endpoint para obtener resultados
-                const result = await getTestResult(parseInt(sessionId));
-                console.log("Resultados obtenidos:", result);
-                setResults(result);
-            } catch (resultError) {
-                console.error("Error obteniendo resultados:", resultError);
-                setResults({
-                    sessionId: parseInt(sessionId),
-                    correctAnswers: 0,
-                    incorrectAnswers: 0,
-                    score: 0,
-                    timeSpent: 0
-                });
+            console.log('Progreso actualizado:', {
+                answered: updatedProgress.answeredQuestions,
+                total: updatedProgress.totalQuestions,
+                isComplete: updatedProgress.isComplete,
+                questionsInMemory: answeredQuestions.size
+            });
+
+            // Verificar si el test debe finalizar basándose en el progreso del backend
+            if (updatedProgress.isComplete ||
+                updatedProgress.answeredQuestions >= updatedProgress.totalQuestions) {
+                console.log('Test completado según backend, finalizando...');
+                handleFinishSession('completed');
+                return;
             }
-        } catch (err) {
-            console.error("Error general finalizando sesión:", err);
 
-            // Intentar mostrar algunos resultados incluso con error
+            // Resetear estado y continuar con la siguiente pregunta
+            resetQuestionState();
+            await continueToNextQuestion();
+
+        } catch (err) {
+            console.error('Error procesando respuesta:', err);
+            // En caso de error, intentar continuar
+            resetQuestionState();
+            await continueToNextQuestion();
+        }
+    };
+
+    const resetQuestionState = () => {
+        setSelectedOption(null);
+        setIsCorrect(null);
+        setProcessingAnswer(false);
+        setStartTime(Date.now());
+    };
+
+    const continueToNextQuestion = async () => {
+        if (isSessionFinished) return;
+
+        console.log('Continuando a la siguiente pregunta...');
+
+        // Cargar nueva pregunta
+        await loadQuestion();
+    };
+
+    const handleFinishSession = async (reason: string = 'manual') => {
+        if (isSessionFinished) {
+            console.log('Sesión ya finalizada, ignorando...');
+            return;
+        }
+
+        console.log(`Finalizando sesión por: ${reason}`);
+        setIsSessionFinished(true);
+
+        try {
+            // Finalizar la sesión en el backend
+            if (reason !== 'backend_complete') {
+                await finishSession(parseInt(sessionId!));
+                console.log('Sesión finalizada en backend');
+            }
+
+            // Obtener resultados finales
+            const result = await getTestResult(parseInt(sessionId!));
+            console.log('Resultados obtenidos:', result);
+            setResults(result);
+
+        } catch (err) {
+            console.error('Error finalizando sesión:', err);
+
+            // Crear resultados por defecto si hay error
             setResults({
-                sessionId: parseInt(sessionId),
-                correctAnswers: 0,
-                incorrectAnswers: 0,
-                score: 0,
+                sessionId: parseInt(sessionId!),
+                correctAnswers: progress?.correctAnswers || 0,
+                incorrectAnswers: progress?.incorrectAnswers || 0,
+                score: progress ? Math.round((progress.correctAnswers / (progress.correctAnswers + progress.incorrectAnswers)) * 100) : 0,
                 timeSpent: 0
             });
         }
     };
 
+    const loadProgress = async () => {
+        try {
+            if (!sessionId || isSessionFinished) return;
+
+            console.log('Cargando progreso...');
+            const currentProgress = await getTestProgress(parseInt(sessionId)) as ExtendedTestProgress;
+            console.log('Progreso cargado:', currentProgress);
+
+            setProgress(currentProgress);
+
+            // Solo verificar finalización si ya se marcó como completo en el backend
+            if (currentProgress?.isComplete) {
+                console.log('Backend indica que el test está completo');
+                handleFinishSession('backend_complete');
+            }
+        } catch (err) {
+            console.error('Error cargando progreso:', err);
+            // No finalizar automáticamente por error de progreso
+        }
+    };
+
+    const loadQuestion = async () => {
+        try {
+            if (isSessionFinished) {
+                console.log('Sesión finalizada, no cargando más preguntas');
+                return;
+            }
+
+            console.log('Cargando nueva pregunta...');
+            const newQuestion = await getTestQuestion(parseInt(sessionId!)) as TestQuestion | null;
+
+            if (!newQuestion) {
+                console.log('No hay más preguntas disponibles');
+                handleFinishSession('no_more_questions');
+                return;
+            }
+
+            console.log('Nueva pregunta cargada:', {
+                questionId: newQuestion.questionId,
+                current: newQuestion.progress.current,
+                total: newQuestion.progress.total,
+                alreadyAnswered: answeredQuestions.has(newQuestion.questionId)
+            });
+
+            // Si la pregunta ya fue respondida, es porque el backend tiene una inconsistencia
+            // En lugar de ignorarla, vamos a limpiar el estado y aceptarla
+            if (answeredQuestions.has(newQuestion.questionId)) {
+                console.warn('Pregunta duplicada detectada. Limpiando estado...');
+                // No la ignoramos, sino que actualizamos el estado
+                setAnsweredQuestions(new Set()); // Reset del set si hay inconsistencias
+            }
+
+            setQuestion(newQuestion);
+
+        } catch (err) {
+            console.error('Error cargando pregunta:', err);
+            handleFinishSession('question_load_error');
+        }
+    };
+
+    // Calcular progreso visual basado en preguntas únicas respondidas
+    const getVisualProgress = () => {
+        if (!question || !progress) return { current: 0, total: 1, percentage: 0 };
+
+        const current = answeredQuestions.size + 1; // +1 para la pregunta actual
+        const total = progress.totalQuestions;
+        const percentage = Math.min((answeredQuestions.size / total) * 100, 100);
+
+        return { current, total, percentage };
+    };
+
     // Renderizar resultados
     if (results) {
         return (
-            <div className="...">
-                <h2>¡Test Completado!</h2>
-                <p>Correctas: {results.correctAnswers}</p>
-                <p>Incorrectas: {results.incorrectAnswers}</p>
-                <p>Puntuación: {results.score}%</p>
-                <p>Tiempo: {results.timeSpent.toFixed(1)} minutos</p>
-                <button onClick={() => navigate('/sesionesEstudio')}>
-                    Volver
-                </button>
+            <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
+                <NavbarStudySession />
+                <div className="w-full min-h-screen flex flex-col items-center justify-center p-8">
+                    <div className="bg-darkSecondary p-8 rounded-lg max-w-md w-full text-center">
+                        <h2 className="text-3xl font-bold mb-6">¡Test Completado!</h2>
+                        <div className="space-y-4">
+                            <div className="text-xl">
+                                <span className="text-green-400">Correctas: {results.correctAnswers}</span>
+                            </div>
+                            <div className="text-xl">
+                                <span className="text-red-400">Incorrectas: {results.incorrectAnswers}</span>
+                            </div>
+                            <div className="text-2xl font-bold">
+                                Puntuación: <span className="text-blue-400">{results.score}%</span>
+                            </div>
+                            <div className="text-lg">
+                                Tiempo: {results.timeSpent} minutos
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => navigate('/sesionesEstudio')}
+                            className="mt-6 bg-darkPrimary hover:bg-darkPrimary/80 px-6 py-3 rounded-lg transition-colors"
+                        >
+                            Volver a Sesiones
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    const loadQuestion = async () => {
-        try {
-            setStartTime(Date.now());
-            const newQuestion = await getTestQuestion(parseInt(sessionId!));
-
-            // Verificar si realmente recibimos una pregunta válida
-            if (
-                !newQuestion ||
-                typeof newQuestion !== 'object' ||
-                Array.isArray(newQuestion) ||
-                !('questionId' in newQuestion)
-            ) {
-                const currentProgress = await getTestProgress(parseInt(sessionId!)) as ExtendedTestProgress;
-
-                if (currentProgress.answeredQuestions >= currentProgress.totalQuestions) {
-                    console.log('Has completado todas las preguntas del test. Mostrando resultados...');
-                    await handleFinishSession();
-                    return;
-                }
-
-                console.log('No hay más preguntas disponibles, finalizando sesión...');
-                await handleFinishSession();
-                return;
-            }
-
-            setQuestion(newQuestion as TestQuestion);
-            setSelectedOption(null);
-        } catch (err) {
-            console.error('Error loading question:', err);
-
-            // Verificar si el error es porque el test ya completó todas las preguntas
-            if (
-                typeof err === "object" &&
-                err !== null &&
-                "response" in err &&
-                typeof (err as any).response === "object" &&
-                (err as any).response !== null &&
-                (err as any).response.status === 400 &&
-                ((err as any).response.data?.message?.includes('suficientes cartas') ||
-                    (err as any).response.data?.message?.includes('finalizada'))
-            ) {
-
-                console.log('Test completado, mostrando resultados');
-                await handleFinishSession();
-            } else {
-                // Otro tipo de error
-                alert('Error al cargar la siguiente pregunta. Intentaremos finalizar la sesión.');
-                await handleFinishSession();
-            }
-        }
-    };
-
-    const loadProgress = async () => {
-        try {
-            if (!sessionId) return;
-            const currentProgress = await getTestProgress(parseInt(sessionId)) as ExtendedTestProgress;
-            setProgress(currentProgress);
-
-            if (currentProgress?.isComplete) {
-                handleFinishSession();
-            }
-        } catch (err) {
-            console.error('Error loading progress:', err);
-        }
-    };
+    const visualProgress = getVisualProgress();
 
     return (
         <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
             <NavbarStudySession />
             <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden p-8">
                 {/* Progress Bar */}
-                {progress && (
+                {progress && question && (
                     <div className="w-full max-w-3xl mb-8">
                         <div className="flex justify-between mb-2">
-                            <span>Pregunta {question?.progress.current} de {question?.progress.total}</span>
-                            <span>Correctas: {progress.correctAnswers}</span>
+                            <span>Pregunta {visualProgress.current} de {visualProgress.total}</span>
+                            <span>Correctas: {progress.correctAnswers} | Incorrectas: {progress.incorrectAnswers}</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2.5">
                             <div
-                                className="bg-blue-600 h-2.5 rounded-full"
-                                style={{ width: `${(question?.progress.current || 0) / (question?.progress.total || 1) * 100}%` }}
+                                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                                style={{ width: `${visualProgress.percentage}%` }}
                             ></div>
                         </div>
+                        {progress.remainingTime > 0 && (
+                            <div className="text-center mt-2 text-sm">
+                                Tiempo restante: {Math.floor(progress.remainingTime / 60)}:{(progress.remainingTime % 60).toString().padStart(2, '0')}
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Question */}
-                {question && (
+                {question && !isSessionFinished && (
                     <>
                         <h1 className="text-4xl font-bold text-center mb-10">
                             {question.title}
@@ -248,21 +420,47 @@ const SimulatedTestStudySession = () => {
                                 <button
                                     key={index}
                                     onClick={() => handleOptionSelect(index)}
-                                    disabled={selectedOption !== null}
-                                    className={`p-6 text-left rounded-lg transition-colors ${selectedOption === index
-                                        ? 'bg-darkPrimary'
-                                        : 'bg-darkSecondary hover:bg-darkPrimary/80'
-                                        }`}
+                                    disabled={selectedOption !== null || processingAnswer}
+                                    className={`p-6 text-left rounded-lg transition-all duration-300 
+                                        ${selectedOption === index && isCorrect === true ? 'bg-green-600 border-2 border-green-400' : ''}
+                                        ${selectedOption === index && isCorrect === false ? 'bg-red-600 border-2 border-red-400' : ''}
+                                        ${selectedOption === index && isCorrect === null ? 'bg-darkPrimary border-2 border-blue-400' : ''}
+                                        ${selectedOption !== index && selectedOption === null ? 'bg-darkSecondary hover:bg-darkPrimary/80 border-2 border-transparent' : ''}
+                                        ${selectedOption !== null && selectedOption !== index ? 'bg-darkSecondary/50 opacity-50' : ''}
+                                        ${processingAnswer ? 'cursor-not-allowed' : 'cursor-pointer'}
+                                    `}
                                 >
                                     {option.type === 'visualCard' ? (
-                                        <img src={option.content} alt="Opción visual" className="max-h-40 mx-auto" />
+                                        <img src={option.content} alt="Opción visual" className="max-h-40 mx-auto rounded" />
                                     ) : (
                                         <p className="text-lg">{option.content}</p>
                                     )}
                                 </button>
                             ))}
                         </div>
+
+                        {/* Feedback de respuesta */}
+                        {selectedOption !== null && isCorrect !== null && (
+                            <div className={`mt-6 p-4 text-center font-bold rounded-lg text-xl transition-all duration-300
+                                ${isCorrect ? 'bg-green-700 text-green-100' : 'bg-red-700 text-red-100'}`}>
+                                {isCorrect ? '¡Correcto! 🎉' : 'Incorrecto 😔'}
+                            </div>
+                        )}
+
+                        {processingAnswer && (
+                            <div className="mt-4 text-center text-blue-400">
+                                <div className="animate-pulse">Procesando respuesta...</div>
+                            </div>
+                        )}
                     </>
+                )}
+
+                {/* Loading state */}
+                {!question && !results && !isSessionFinished && (
+                    <div className="flex flex-col items-center justify-center h-64">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mb-4"></div>
+                        <p className="text-lg">Cargando pregunta...</p>
+                    </div>
                 )}
             </div>
         </div>

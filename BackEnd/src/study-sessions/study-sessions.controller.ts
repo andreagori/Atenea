@@ -91,13 +91,16 @@ export class StudySessionsController {
   }
 
   @Post(':sessionId/test-answer')
-  @ApiResponse({ status: 200, description: 'Evalúa la respuesta del test' })
-  evaluateTestAnswer(
+  async submitTestAnswer(
     @Param('sessionId') sessionId: string,
     @Body() answerDto: TestAnswerDto,
     @Request() req
   ) {
-    return this.studySessionsService.evaluateTestAnswer(+sessionId, req.user.userId, answerDto);
+    return this.studySessionsService.evaluateTestAnswer(
+      parseInt(sessionId),
+      req.user.userId, // Usar userId en lugar de id
+      answerDto
+    );
   }
 
   @Get(':sessionId/test-result')

@@ -125,8 +125,6 @@ export class StudySessionsService {
         }
       });
 
-      console.log(`Cartas disponibles para test: ${availableCardCount}`);
-
       // Si numQuestions es -1, usar el número total de cartas disponibles
       // o un valor máximo (como 10) si hay demasiadas cartas
       let numQuestions = dto.numQuestions;
@@ -140,7 +138,6 @@ export class StudySessionsService {
       const testDurationMin = dto.testDurationMinutes === -1 ?
         this.defaultValues.simulatedTest.testDurationMin : dto.testDurationMinutes;
 
-      console.log(`Creando test simulado con ${numQuestions} preguntas y ${testDurationMin} minutos`);
 
       const data = {
         sessionId,
@@ -334,7 +331,6 @@ export class StudySessionsService {
 
     // Seleccionar una carta aleatoria
     const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
-    console.log('Selected card with relations:', randomCard); // Debug log
 
     return randomCard;
   }
@@ -400,134 +396,91 @@ export class StudySessionsService {
   // SIMULATED TEST METHODS
   async getTestQuestion(sessionId: number, userId: number) {
     try {
-      // Verify session exists and is not finished
+      // Verificar que la sesión existe y no ha finalizado
       const session = await this.validateTestSession(sessionId, userId);
 
-      // Get test configuration with questions
+      // Obtener la configuración del test con preguntas y respuestas
       const testConfig = await this.prisma.sessionSimulatedTest.findUnique({
         where: { sessionId },
-        include: { testQuestions: true }
+        include: {
+          testQuestions: {
+            select: {
+              questionId: true,
+              cardId: true,
+              userAnswer: true
+            }
+          }
+        }
       });
 
       if (!testConfig) {
         throw new NotFoundException('Configuración del test no encontrada');
       }
 
-      // Check if we've reached the question limit
-      if (testConfig.testQuestions.length >= testConfig.numQuestions) {
-        await this.finishSession(sessionId, userId);
+      // Obtener el número de preguntas RESPONDIDAS (no solo creadas)
+      const answeredQuestions = testConfig.testQuestions.filter(q => q.userAnswer !== null).length;
+      // Verificar si hay alguna pregunta creada pero no respondida aún
+      const pendingQuestion = testConfig.testQuestions.find(q => q.userAnswer === null);
+
+      // Verificar si ya se han respondido todas las preguntas configuradas
+      if (answeredQuestions >= testConfig.numQuestions) {
         return null;
       }
 
-      // Get all cards from deck that match session's learning methods
-      // Solo excluimos las cartas que ya han sido usadas como pregunta principal
-      const usedCardIds = testConfig.testQuestions.map(q => q.cardId);
 
-      const availableCardsForQuestion = await this.prisma.card.findMany({
-        where: {
-          deckId: session.deckId,
-          learningMethod: {
-            in: session.learningMethod
-          },
-          NOT: {
-            cardId: {
-              in: usedCardIds
+      if (pendingQuestion) {
+        // Obtener la pregunta completa con su carta correcta
+        const fullQuestion = await this.prisma.testQuestion.findUnique({
+          where: { questionId: pendingQuestion.questionId },
+          include: {
+            correctCard: {
+              include: {
+                activeRecall: true,
+                cornell: true,
+                visualCard: true
+              }
             }
           }
-        },
-        include: {
-          activeRecall: true,
-          cornell: true,
-          visualCard: true
-        }
-      });
-
-      // Filtrar las cartas que tienen contenido válido para mostrar como pregunta
-      const validQuestionCards = availableCardsForQuestion.filter(card => {
-        try {
-          const content = this.getCardContent(card);
-          return !!content && content !== 'Error getting content' &&
-            content !== 'No content available' &&
-            content !== 'Unknown card type';
-        } catch (e) {
-          return false;
-        }
-      });
-
-      // Si no hay cartas válidas para usar como pregunta, finalizar el test
-      if (validQuestionCards.length === 0) {
-        console.log('No hay más cartas disponibles para preguntas. Finalizando test.');
-
-        // Ajustar el número total de preguntas al alcanzado
-        await this.prisma.sessionSimulatedTest.update({
-          where: { sessionId },
-          data: { numQuestions: testConfig.testQuestions.length }
         });
 
-        await this.finishSession(sessionId, userId);
-        return null;
-      }
+        if (!fullQuestion) {
+          throw new NotFoundException(`Pregunta ${pendingQuestion.questionId} no encontrada`);
+        }
 
-      // Seleccionar una carta aleatoria como pregunta correcta
-      const correctCard = validQuestionCards[Math.floor(Math.random() * validQuestionCards.length)];
-
-      // Obtener todas las cartas disponibles para opciones (incluidas las usadas como pregunta)
-      const allAvailableCards = await this.prisma.card.findMany({
-        where: {
-          deckId: session.deckId,
-          learningMethod: {
-            in: session.learningMethod
+        // Obtener todas las cartas necesarias para las opciones
+        const allCards = await this.prisma.card.findMany({
+          where: {
+            deckId: session.deckId,
+            learningMethod: { in: session.learningMethod }
           },
-          NOT: {
-            cardId: correctCard.cardId  // Excluir solo la carta actual
-          }
-        },
-        include: {
-          activeRecall: true,
-          cornell: true,
-          visualCard: true
-        }
-      });
-
-      // Filtrar para opciones válidas
-      const validOptionCards = allAvailableCards.filter(card => {
-        try {
-          const content = this.getCardContent(card);
-          return !!content && content !== 'Error getting content' &&
-            content !== 'No content available' &&
-            content !== 'Unknown card type';
-        } catch (e) {
-          return false;
-        }
-      });
-
-      // Si no hay suficientes cartas para opciones, usar las disponibles y avisar
-      if (validOptionCards.length < 2) {
-        console.log(`No hay suficientes opciones incorrectas: ${validOptionCards.length}`);
-
-        // Si no hay ninguna opción disponible, finalizar
-        if (validOptionCards.length === 0) {
-          await this.finishSession(sessionId, userId);
-          return null;
-        }
-
-        // Con una opción incorrecta, proceder con solo 2 opciones en total
-        const incorrectCards = this.shuffleArray(validOptionCards).slice(0, 1);
-
-        // Crear pregunta con solo 2 opciones
-        const testQuestion = await this.prisma.testQuestion.create({
-          data: {
-            testId: sessionId,
-            cardId: correctCard.cardId,
-            optionsOrder: this.shuffleArray([0, 1])  // Solo 2 opciones: correcta e incorrecta
+          include: {
+            activeRecall: true,
+            cornell: true,
+            visualCard: true
           }
         });
 
-        // Preparar opciones
-        const options: { cardId: number; content: string; type: LearningMethod }[] = [];
-        for (let i = 0; i < testQuestion.optionsOrder.length; i++) {
-          const index = testQuestion.optionsOrder[i];
-          const card = index === 0 ? correctCard : incorrectCards[0];
+        // Preparar las opciones en el orden correcto
+        const options: { cardId: any; content: string; type: any }[] = [];
+        for (let i = 0; i < fullQuestion.optionsOrder.length; i++) {
+          const optionIndex = fullQuestion.optionsOrder[i];
+          let card;
+
+          if (optionIndex === 0) {
+            // La opción 0 siempre es la carta correcta
+            card = fullQuestion.correctCard;
+          } else {
+            // Para las demás opciones, usamos otras cartas diferentes a la correcta
+            const otherCards = allCards.filter(c => c.cardId !== fullQuestion.cardId);
+
+            // Si no hay suficientes cartas, usamos la misma carta (esto no debería ocurrir)
+            if (otherCards.length < optionIndex) {
+              card = otherCards[0] || fullQuestion.correctCard;
+            } else {
+              card = otherCards[optionIndex - 1];
+            }
+          }
+
           options.push({
             cardId: card.cardId,
             content: this.getCardContent(card),
@@ -535,48 +488,163 @@ export class StudySessionsService {
           });
         }
 
+        // Devolver la pregunta pendiente con sus opciones reconstruidas
         return {
-          questionId: testQuestion.questionId,
-          title: correctCard.title,
+          questionId: fullQuestion.questionId,
+          title: fullQuestion.correctCard.title,
           options,
           progress: {
-            current: testConfig.testQuestions.length + 1,
+            current: answeredQuestions + 1,
             total: testConfig.numQuestions
           }
         };
       }
 
-      // Si hay suficientes opciones, proceder normalmente con 3 opciones
-      const incorrectCards = this.shuffleArray(validOptionCards).slice(0, 2);
+      // Si el número de preguntas ya creadas alcanzó el límite pero no todas están respondidas,
+      if (testConfig.testQuestions.length >= testConfig.numQuestions) {
+        await this.finishSession(sessionId, userId);
+        return null;
+      }
 
-      // Crear pregunta con 3 opciones
-      const testQuestion = await this.prisma.testQuestion.create({
-        data: {
-          testId: sessionId,
-          cardId: correctCard.cardId,
-          optionsOrder: this.shuffleArray([0, 1, 2])
+      // Obtener cartas usadas como preguntas para evitar repetición
+      const usedCardIds = testConfig.testQuestions.map(q => q.cardId);
+
+      // Obtener cartas disponibles para nuevas preguntas
+      const availableCardsForQuestion = await this.prisma.card.findMany({
+        where: {
+          deckId: session.deckId,
+          learningMethod: { in: session.learningMethod },
+          NOT: { cardId: { in: usedCardIds } }
+        },
+        include: {
+          activeRecall: true,
+          cornell: true,
+          visualCard: true
         }
       });
 
-      // Preparar opciones
-      const allCards = [correctCard, ...incorrectCards];
-      const options: { cardId: number; content: string; type: LearningMethod }[] = [];
+      // Filtrar cartas con contenido válido para preguntas
+      const validQuestionCards = availableCardsForQuestion.filter(card => {
+        try {
+          const content = this.getCardContent(card);
+          return !!content &&
+            content !== 'Error getting content' &&
+            content !== 'No content available' &&
+            content !== 'Unknown card type';
+        } catch (e) {
+          return false;
+        }
+      });
 
-      for (let i = 0; i < testQuestion.optionsOrder.length; i++) {
-        const index = testQuestion.optionsOrder[i];
-        options.push({
-          cardId: allCards[index].cardId,
-          content: this.getCardContent(allCards[index]),
-          type: allCards[index].learningMethod
-        });
+      // Si no hay cartas válidas disponibles
+      if (validQuestionCards.length === 0) {
+
+        // Si ya se respondió al menos una pregunta, ajustar el número total al respondido
+        if (answeredQuestions > 0) {
+          await this.prisma.sessionSimulatedTest.update({
+            where: { sessionId },
+            data: { numQuestions: answeredQuestions }
+          });
+        }
+
+        await this.finishSession(sessionId, userId);
+        return null;
       }
 
+      // Seleccionar carta correcta aleatoriamente
+      const correctCard = validQuestionCards[Math.floor(Math.random() * validQuestionCards.length)];
+
+      // Obtener cartas para opciones incorrectas
+      const allAvailableCards = await this.prisma.card.findMany({
+        where: {
+          deckId: session.deckId,
+          learningMethod: { in: session.learningMethod },
+          NOT: { cardId: correctCard.cardId }  // Excluir solo la carta correcta actual
+        },
+        include: {
+          activeRecall: true,
+          cornell: true,
+          visualCard: true
+        }
+      });
+
+      // Filtrar opciones con contenido válido
+      const validOptionCards = allAvailableCards.filter(card => {
+        try {
+          const content = this.getCardContent(card);
+          return !!content &&
+            content !== 'Error getting content' &&
+            content !== 'No content available' &&
+            content !== 'Unknown card type';
+        } catch (e) {
+          return false;
+        }
+      });
+
+      // Crear pregunta según cantidad de opciones disponibles
+      let testQuestion, options;
+
+      if (validOptionCards.length < 2) {
+        // Caso con pocas opciones
+        const numOptions = validOptionCards.length + 1; // +1 por la correcta
+        const incorrectCards = this.shuffleArray(validOptionCards);
+        const optionsOrder = this.shuffleArray(Array.from({ length: numOptions }, (_, i) => i));
+
+        // Crear pregunta
+        testQuestion = await this.prisma.testQuestion.create({
+          data: {
+            testId: sessionId,
+            cardId: correctCard.cardId,
+            optionsOrder
+          }
+        });
+
+        // Preparar opciones
+        options = [];
+        for (let i = 0; i < optionsOrder.length; i++) {
+          const index = optionsOrder[i];
+          const card = index === 0 ? correctCard : incorrectCards[index - 1];
+          options.push({
+            cardId: card.cardId,
+            content: this.getCardContent(card),
+            type: card.learningMethod
+          });
+        }
+      } else {
+        // Caso normal con suficientes opciones
+        const incorrectCards = this.shuffleArray(validOptionCards).slice(0, 2);
+
+        // Crear pregunta con 3 opciones
+        testQuestion = await this.prisma.testQuestion.create({
+          data: {
+            testId: sessionId,
+            cardId: correctCard.cardId,
+            optionsOrder: this.shuffleArray([0, 1, 2])
+          }
+        });
+
+        // Preparar opciones
+        const allCards = [correctCard, ...incorrectCards];
+        options = [];
+
+        for (let i = 0; i < testQuestion.optionsOrder.length; i++) {
+          const index = testQuestion.optionsOrder[i];
+          options.push({
+            cardId: allCards[index].cardId,
+            content: this.getCardContent(allCards[index]),
+            type: allCards[index].learningMethod
+          });
+        }
+      }
+
+      // Contar preguntas respondidas para el progreso
+      // Esto asegura que la numeración comience en 1 para la primera pregunta
       return {
         questionId: testQuestion.questionId,
         title: correctCard.title,
         options,
         progress: {
-          current: testConfig.testQuestions.length + 1,
+          current: answeredQuestions + 1, // CORRECCIÓN: Usamos preguntas respondidas + 1
           total: testConfig.numQuestions
         }
       };
@@ -588,8 +656,6 @@ export class StudySessionsService {
 
   private getCardContent(card: any): string {
     try {
-      console.log('Getting content for card:', JSON.stringify(card, null, 2));
-
       if (!card || !card.learningMethod) {
         throw new Error('Invalid card data: card or learningMethod is undefined');
       }
@@ -646,16 +712,26 @@ export class StudySessionsService {
 
     const testConfig = await this.prisma.sessionSimulatedTest.findUnique({
       where: { sessionId },
-      include: { testQuestions: true }
+      include: {
+        testQuestions: {
+          select: {
+            questionId: true,
+            userAnswer: true,
+            isCorrect: true
+          }
+        }
+      }
     });
 
     if (!testConfig) {
       throw new NotFoundException('Configuración del test no encontrada');
     }
 
+    const answeredQuestions = testConfig.testQuestions.filter(q => q.userAnswer !== null).length;
+
     return {
       totalQuestions: testConfig.numQuestions,
-      answeredQuestions: testConfig.testQuestions.length,
+      answeredQuestions: answeredQuestions,
       correctAnswers: testConfig.correctAnswers || 0,
       incorrectAnswers: testConfig.incorrectAnswers || 0,
       remainingTime: this.calculateRemainingTime(session.startTime, testConfig.testDurationMin),
@@ -664,7 +740,6 @@ export class StudySessionsService {
   }
 
   async getTestResult(sessionId: number, userId: number): Promise<TestResultDto> {
-    // No importe si la sesión está finalizada o no
     const session = await this.prisma.studySession.findFirst({
       where: {
         sessionId,
@@ -687,7 +762,27 @@ export class StudySessionsService {
       throw new BadRequestException('Esta sesión no es un test simulado');
     }
 
-    // Calcular puntuación incluso si la sesión no ha finalizado
+    // Verificar si los contadores son null o están desactualizados
+    if (!session.simulatedTest.correctAnswers && !session.simulatedTest.incorrectAnswers) {
+      // Recalcular las estadísticas basadas en las preguntas
+      const correctAnswers = session.simulatedTest.testQuestions.filter(q => q.isCorrect).length;
+      const incorrectAnswers = session.simulatedTest.testQuestions.filter(q => q.userAnswer !== null && !q.isCorrect).length;
+
+      // Actualizar las estadísticas del test
+      await this.prisma.sessionSimulatedTest.update({
+        where: { sessionId },
+        data: {
+          correctAnswers,
+          incorrectAnswers
+        }
+      });
+
+      // Actualizar los valores en el objeto de sesión
+      session.simulatedTest.correctAnswers = correctAnswers;
+      session.simulatedTest.incorrectAnswers = incorrectAnswers;
+    }
+
+    // Calcular puntuación
     const correctAnswers = session.simulatedTest.correctAnswers || 0;
     const incorrectAnswers = session.simulatedTest.incorrectAnswers || 0;
     const answeredQuestions = correctAnswers + incorrectAnswers;
@@ -719,62 +814,184 @@ export class StudySessionsService {
 
   async evaluateTestAnswer(sessionId: number, userId: number, answerDto: TestAnswerDto) {
     try {
+      // Verificar que es una sesión de test válida
       const session = await this.validateTestSession(sessionId, userId);
 
+      // Obtener la pregunta con todas las cartas involucradas
       const testQuestion = await this.prisma.testQuestion.findUnique({
         where: { questionId: answerDto.questionId },
-        include: { correctCard: true }
-      });
-
-      if (!testQuestion) {
-        throw new NotFoundException('Pregunta no encontrada');
-      }
-
-      console.log('Evaluando respuesta:', {
-        questionId: answerDto.questionId,
-        selectedOptionIndex: answerDto.selectedOptionIndex,
-        optionsOrder: testQuestion.optionsOrder,
-      });
-
-      // Verificar índice válido
-      if (answerDto.selectedOptionIndex < 0 || answerDto.selectedOptionIndex >= testQuestion.optionsOrder.length) {
-        throw new BadRequestException(`Índice de opción seleccionada inválido: ${answerDto.selectedOptionIndex}`);
-      }
-
-      // El valor en optionsOrder para el índice seleccionado
-      // Si optionsOrder es [2,0,1] y selectedOptionIndex es 1, entonces selectedValue es 0
-      const selectedValue = testQuestion.optionsOrder[answerDto.selectedOptionIndex];
-
-      // La respuesta es correcta si el valor seleccionado es 0 (que representa la posición de la respuesta correcta)
-      const isCorrect = selectedValue === 0;
-
-      // Update test question with user's answer
-      await this.prisma.testQuestion.update({
-        where: { questionId: testQuestion.questionId },
-        data: {
-          userAnswer: testQuestion.correctCard.cardId, // Siempre guardamos el cardId correcto
-          isCorrect,
-          timeSpent: answerDto.timeSpent || 1
-        }
-      });
-
-      // Update test statistics
-      await this.prisma.sessionSimulatedTest.update({
-        where: { sessionId },
-        data: {
-          correctAnswers: {
-            increment: isCorrect ? 1 : 0
-          },
-          incorrectAnswers: {
-            increment: isCorrect ? 0 : 1
+        include: {
+          correctCard: true,
+          test: {
+            include: {
+              session: {
+                include: {
+                  deck: {
+                    include: {
+                      cards: {
+                        where: {
+                          learningMethod: {
+                            in: session.learningMethod
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       });
 
-      return { isCorrect };
+      if (!testQuestion) {
+        throw new NotFoundException(`Pregunta con ID ${answerDto.questionId} no encontrada`);
+      }
+
+      // VALIDACIÓN: Verificar si la pregunta ya fue respondida
+      if (testQuestion.userAnswer !== null) {
+        console.warn(`Pregunta ${answerDto.questionId} ya fue respondida`);
+        return {
+          isCorrect: testQuestion.isCorrect,
+          correctCardId: testQuestion.cardId,
+          selectedIndex: answerDto.selectedOptionIndex,
+          optionsOrder: testQuestion.optionsOrder,
+          alreadyAnswered: true
+        };
+      }
+
+      // VALIDACIÓN CRÍTICA: Verificar formato de optionsOrder
+      if (!testQuestion.optionsOrder || !Array.isArray(testQuestion.optionsOrder)) {
+        console.error(`Error crítico: optionsOrder inválido:`, testQuestion.optionsOrder);
+        throw new BadRequestException('Configuración de pregunta inválida - optionsOrder no es un array');
+      }
+
+      // VALIDACIÓN: Verificar que selectedOptionIndex es válido
+      if (answerDto.selectedOptionIndex === undefined || answerDto.selectedOptionIndex === null) {
+        throw new BadRequestException('selectedOptionIndex es requerido');
+      }
+
+      if (answerDto.selectedOptionIndex < 0 || answerDto.selectedOptionIndex >= testQuestion.optionsOrder.length) {
+        console.error(`Índice seleccionado fuera de rango:`, {
+          selectedIndex: answerDto.selectedOptionIndex,
+          optionsLength: testQuestion.optionsOrder.length,
+          optionsOrder: testQuestion.optionsOrder
+        });
+        throw new BadRequestException(`Índice de opción inválido: ${answerDto.selectedOptionIndex}. Debe estar entre 0 y ${testQuestion.optionsOrder.length - 1}`);
+      }
+
+      const selectedOptionIndex = answerDto.selectedOptionIndex;
+      const selectedValue = testQuestion.optionsOrder[selectedOptionIndex];
+      const isCorrect = selectedValue === 0;
+
+      // OBTENER EL CARDID DE LA OPCIÓN SELECCIONADA
+      const availableCards = testQuestion.test.session.deck.cards;
+      let selectedCardId: number;
+
+      if (selectedValue === 0) {
+        // Respuesta correcta - usar la carta correcta
+        selectedCardId = testQuestion.cardId;
+      } else {
+        // Respuesta incorrecta - necesitamos encontrar la carta correspondiente
+        // Filtrar las cartas incorrectas (excluyendo la correcta)
+        const incorrectCards = availableCards.filter(card => card.cardId !== testQuestion.cardId);
+
+        if (selectedValue - 1 < incorrectCards.length) {
+          selectedCardId = incorrectCards[selectedValue - 1].cardId;
+        } else {
+          throw new BadRequestException('Opción seleccionada no válida');
+        }
+      }
+
+      // Validar timeSpent
+      const timeSpent = Math.max(1, answerDto.timeSpent || 1);
+
+      // Usar transacción para atomicidad
+      const result = await this.prisma.$transaction(async (tx) => {
+
+        // Verificar de nuevo que la pregunta no fue respondida (race condition)
+        const currentQuestion = await tx.testQuestion.findUnique({
+          where: { questionId: testQuestion.questionId },
+          select: { userAnswer: true }
+        });
+
+        if (!currentQuestion) {
+          throw new NotFoundException('La pregunta no fue encontrada durante la transacción');
+        }
+
+        if (currentQuestion.userAnswer !== null) {
+          throw new BadRequestException('La pregunta ya fue respondida por otro proceso');
+        }
+
+        await tx.testQuestion.update({
+          where: { questionId: testQuestion.questionId },
+          data: {
+            userAnswer: selectedCardId, // Usar cardId válido
+            isCorrect,
+            timeSpent
+          }
+        });
+
+        // Obtener estadísticas actuales del test
+        const testStats = await tx.sessionSimulatedTest.findUnique({
+          where: { sessionId },
+          select: { correctAnswers: true, incorrectAnswers: true }
+        });
+
+        if (!testStats) {
+          throw new NotFoundException('Configuración del test no encontrada');
+        }
+
+        // Inicializar con valores por defecto si son null
+        const currentCorrect = testStats.correctAnswers ?? 0;
+        const currentIncorrect = testStats.incorrectAnswers ?? 0;
+
+        // Calcular nuevas estadísticas
+        const newCorrect = currentCorrect + (isCorrect ? 1 : 0);
+        const newIncorrect = currentIncorrect + (isCorrect ? 0 : 1);
+
+        // Actualizar estadísticas del test
+        await tx.sessionSimulatedTest.update({
+          where: { sessionId },
+          data: {
+            correctAnswers: newCorrect,
+            incorrectAnswers: newIncorrect
+          }
+        });
+
+        return {
+          isCorrect,
+          correctCardId: testQuestion.cardId,
+          selectedIndex: selectedOptionIndex,
+          selectedCardId,
+          optionsOrder: testQuestion.optionsOrder,
+          alreadyAnswered: false
+        };
+      });
+
+      return result;
+
     } catch (error) {
-      console.error('Error en evaluateTestAnswer:', error);
-      throw error;
+      console.error('=== ERROR en evaluateTestAnswer ===');
+      console.error('Error completo:', error);
+      console.error('Stack trace:', error.stack);
+
+      if (error instanceof BadRequestException ||
+        error instanceof NotFoundException) {
+        throw error;
+      }
+
+      // Para errores inesperados, log más detallado
+      console.error('Error inesperado:', {
+        type: typeof error,
+        name: error?.constructor?.name,
+        message: error?.message,
+        answerDto,
+        sessionId,
+        userId
+      });
+
+      throw new Error(`Error procesando respuesta: ${error?.message || 'Error desconocido'}`);
     }
   }
 
@@ -818,6 +1035,13 @@ export class StudySessionsService {
         where: {
           sessionId,
           userId
+        },
+        include: {
+          simulatedTest: {
+            include: {
+              testQuestions: true
+            }
+          }
         }
       });
 
@@ -827,8 +1051,23 @@ export class StudySessionsService {
 
       // Si ya está finalizada, simplemente devolver la sesión
       if (session.endTime) {
-        console.log(`La sesión ${sessionId} ya estaba finalizada`);
         return session;
+      }
+
+      // Para sesiones de test simulado, asegurar que las estadísticas están actualizadas
+      if (session.studyMethod === StudyMethod.simulatedTest && session.simulatedTest) {
+        // Recalcular estadísticas basadas en las preguntas
+        const correctAnswers = session.simulatedTest.testQuestions.filter(q => q.isCorrect).length;
+        const incorrectAnswers = session.simulatedTest.testQuestions.filter(q => q.userAnswer !== null && !q.isCorrect).length;
+
+        // Actualizar las estadísticas del test
+        await this.prisma.sessionSimulatedTest.update({
+          where: { sessionId },
+          data: {
+            correctAnswers,
+            incorrectAnswers
+          }
+        });
       }
 
       // Finalizar la sesión
@@ -836,8 +1075,6 @@ export class StudySessionsService {
         where: { sessionId },
         data: { endTime: new Date() }
       });
-
-      console.log(`Sesión ${sessionId} finalizada correctamente`);
       return updatedSession;
     } catch (error) {
       console.error(`Error finalizando sesión ${sessionId}:`, error);
