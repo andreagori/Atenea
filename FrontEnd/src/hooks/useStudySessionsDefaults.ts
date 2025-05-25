@@ -16,13 +16,13 @@ export const useStudySessionDefaults = (selectedOption: string | null): CreateSt
         return {
           ...baseConfig,
           studyMethod: StudyMethod.SPACED_REPETITION,
-          numCardsSpaced: 10
+          numCardsSpaced: -1
         };
       case 'pomodoro':
         return {
           ...baseConfig,
           studyMethod: StudyMethod.POMODORO,
-          numCards: 10,
+          numCards: -1,
           studyMinutes: 25,
           restMinutes: 5
         };
@@ -30,7 +30,7 @@ export const useStudySessionDefaults = (selectedOption: string | null): CreateSt
         return {
           ...baseConfig,
           studyMethod: StudyMethod.SIMULATED_TEST,
-          numQuestions: 10,
+          numQuestions: -1,
           testDurationMinutes: 15
         };
       default:

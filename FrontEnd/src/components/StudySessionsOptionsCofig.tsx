@@ -9,7 +9,7 @@ interface ModalProps {
   deckId: number;
 }
 
-export function StudySessionsOptionsConfig_Regular({ onClose, onSave, deckId }: ModalProps) {
+export function StudySessionsOptionsConfig_Regular({ onClose, onSave }: ModalProps) {
   const [numCards, setNumCards] = useState('');
   const [selectedMethods, setSelectedMethods] = useState<LearningMethod[]>([]);
   const [validateError, setValidateError] = useState('');
@@ -27,7 +27,7 @@ export function StudySessionsOptionsConfig_Regular({ onClose, onSave, deckId }: 
     const config: CreateStudySessionDto = {
       studyMethod: StudyMethod.SPACED_REPETITION,
       learningMethod: selectedMethods,
-      numCardsSpaced: parseInt(numCards)
+      numCardsSpaced: numCards ? parseInt(numCards) : -1
     };
 
     try {

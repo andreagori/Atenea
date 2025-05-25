@@ -24,9 +24,6 @@ export class StudySessionsService {
       numQuestions: 10,
       testDurationMin: 15,
     },
-    spacedRepetition: {
-      numCardsSpaced: 10,
-    }
   };
 
   /**
@@ -114,10 +111,39 @@ export class StudySessionsService {
   }
 
   private async createSpacedRepetitionSession(sessionId: number, dto: CreateStudySessionDto) {
+    // Get the session with its deck and cards
+    const session = await this.prisma.studySession.findUnique({
+      where: { sessionId },
+      include: {
+        deck: {
+          include: {
+            cards: {
+              where: {
+                learningMethod: {
+                  in: dto.learningMethod
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!session || !session.deck) {
+      throw new NotFoundException(`Sesión ${sessionId} o mazo no encontrado`);
+    }
+
+    const totalCards = session.deck.cards?.length || 0;
+
+    if (totalCards === 0) {
+      throw new BadRequestException('No hay cartas disponibles para esta sesión');
+    }
+
     const data = {
       sessionId,
-      numCardsSpaced: dto.numCardsSpaced || this.defaultValues.spacedRepetition.numCardsSpaced,
+      numCardsSpaced: dto.numCardsSpaced || totalCards,
     };
+
     return this.prisma.sessionActiveRecall.create({ data });
   }
 
@@ -193,42 +219,72 @@ export class StudySessionsService {
     const session = await this.findOne(sessionId, userId);
 
     if (!session || session.endTime) {
-        throw new NotFoundException('Sesión no encontrada o ya finalizada');
+      throw new NotFoundException('Sesión no encontrada o ya finalizada');
     }
 
     const reviews = await this.prisma.cardReview.findMany({
-        where: {
-            sessionId,
-            userId,
-            nextReviewAt: {
-                gt: new Date() // Solo cartas que no necesitan revisión aún
-            }
+      where: {
+        sessionId,
+        userId,
+        nextReviewAt: {
+          gt: new Date() // Solo cartas que no necesitan revisión aún
         }
+      }
     });
+
+    // Get session configuration and card limit based on study method
+    let cardLimit: number | undefined;
+    switch (session.studyMethod) {
+      case StudyMethod.spacedRepetition:
+        const activeRecall = await this.prisma.sessionActiveRecall.findUnique({
+          where: { sessionId }
+        });
+        cardLimit = activeRecall?.numCardsSpaced;
+        break;
+      case StudyMethod.pomodoro:
+        const pomodoro = await this.prisma.sessionPomodoro.findUnique({
+          where: { sessionId }
+        });
+        cardLimit = pomodoro?.numCards;
+        break;
+      case StudyMethod.simulatedTest:
+        const simulatedTest = await this.prisma.sessionSimulatedTest.findUnique({
+          where: { sessionId }
+        });
+        cardLimit = simulatedTest?.numQuestions;
+        break;
+    }
+
+    // Check if we've reached the card limit (-1 means no limit)
+    if (cardLimit !== -1 && cardLimit !== undefined && reviews.length >= cardLimit) {
+      this.logger.debug(`Reached card limit (${reviews.length}/${cardLimit})`);
+      await this.finishSession(sessionId, userId);
+      return null;
+    }
 
     // Obtener las cartas disponibles con sus relaciones
     const availableCards = await this.prisma.card.findMany({
-        where: {
-            deckId: session.deckId,
-            learningMethod: {
-                in: session.learningMethod
-            },
-            NOT: {
-                cardId: {
-                    in: reviews.map(review => review.cardId)
-                }
-            }
+      where: {
+        deckId: session.deckId,
+        learningMethod: {
+          in: session.learningMethod
         },
-        include: {
-            activeRecall: true,  // Incluir la relación con activeRecall
-            cornell: true,       // Incluir la relación con cornell
-            visualCard: true     // Incluir la relación con visualCard
+        NOT: {
+          cardId: {
+            in: reviews.map(review => review.cardId)
+          }
         }
+      },
+      include: {
+        activeRecall: true,
+        cornell: true,
+        visualCard: true
+      }
     });
 
     if (availableCards.length === 0) {
-        await this.checkSessionCompletion(sessionId, userId);
-        return null;
+      await this.checkSessionCompletion(sessionId, userId);
+      return null;
     }
 
     // Seleccionar una carta aleatoria
@@ -236,7 +292,7 @@ export class StudySessionsService {
     console.log('Selected card with relations:', randomCard); // Debug log
 
     return randomCard;
-}
+  }
 
   async getSpacedRepetitionProgress(sessionId: number, userId: number) {
     const reviews = await this.prisma.cardReview.findMany({
@@ -304,15 +360,15 @@ export class StudySessionsService {
    */
   async finishSession(sessionId: number, userId: number) {
     const session = await this.prisma.studySession.findFirst({
-        where: {
-            sessionId,
-            userId,
-            endTime: null
-        }
+      where: {
+        sessionId,
+        userId,
+        endTime: null
+      }
     });
 
     if (!session) {
-        throw new NotFoundException('Sesión activa no encontrada');
+      throw new NotFoundException('Sesión activa no encontrada');
     }
 
     const endTime = new Date();
@@ -320,11 +376,11 @@ export class StudySessionsService {
     const durationInMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
 
     return this.prisma.studySession.update({
-        where: { sessionId },
-        data: { 
-            endTime,
-            minDuration: durationInMinutes
-        }
+      where: { sessionId },
+      data: {
+        endTime,
+        minDuration: durationInMinutes
+      }
     });
   }
 }

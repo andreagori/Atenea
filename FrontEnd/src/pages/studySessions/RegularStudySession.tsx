@@ -9,7 +9,7 @@ const RegularStudySession = () => {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
     const [IsInitialLoad, setIsInitialLoad] = useState(true);
-    const [sessionCompleted, setSessionCompleted] = useState(false);
+    
     const {
         currentCard,
         showAnswer,
@@ -18,7 +18,9 @@ const RegularStudySession = () => {
         error,
         getNextCard,
         evaluateCard,
-        finishSession
+        finishSession,
+        isSessionComplete,
+        setIsSessionComplete
     } = useStudySession();
 
     useEffect(() => {
@@ -31,17 +33,16 @@ const RegularStudySession = () => {
             try {
                 const card = await getNextCard(parseInt(sessionId));
                 if (!card) {
-                    console.log('No more cards to study, showing completion screen');
                 }
             } catch (err) {
-                console.error('Error loading card:', err);
+                console.error('Error al cargar la carta:', err);
             } finally {
                 setIsInitialLoad(false);
             }
         };
 
         loadCard();
-    }, [sessionId]);
+    }, [sessionId, IsInitialLoad]);
 
     const handleShowAnswer = () => {
         setShowAnswer(true);
@@ -69,18 +70,18 @@ const RegularStudySession = () => {
         if (!sessionId) return;
         try {
             await finishSession(parseInt(sessionId));
-            setSessionCompleted(true);
+            setIsSessionComplete(true);
         } catch (err) {
-            console.error('Error al finalizar sesión:', err);
+            console.error('Error al finalizar la sesión:', err);
         }
     };
 
-    if (sessionCompleted || (!currentCard && !IsInitialLoad)) {
+    if (isSessionComplete || (!currentCard && !IsInitialLoad)) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-darkBackground text-white font-primary">
                 <h2 className="text-2xl mb-4">¡Has completado la sesión!</h2>
                 <p className="text-lg mb-6">
-                    {sessionCompleted
+                    {isSessionComplete
                         ? "Has decidido finalizar la sesión."
                         : "No hay más cartas para repasar en esta sesión."}
                 </p>

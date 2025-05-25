@@ -17,41 +17,35 @@ function sesionEstudio() {
   const navigate = useNavigate();
 
   const handleConfigSave = (config: CreateStudySessionDto) => {
-    console.log('Saving custom config:', config);
+
     setSessionConfig(config);
   };
 
   const handleStart = async () => {
-    if (!selectedOption || !selectedDeckId || !defaultConfig) {
+    if (!selectedOption || !selectedDeckId) {
       alert("Por favor selecciona un mazo y un tipo de sesión antes de comenzar.");
       return;
     }
 
     try {
-      // Determinar qué configuración usar
-      let configToUse: CreateStudySessionDto;
+        // Use custom config if available, otherwise use default
+        const configToUse = sessionConfig || defaultConfig;
 
-      if (sessionConfig) {
-        console.log('Using custom config:', sessionConfig);
-        configToUse = sessionConfig;
-      } else {
-        console.log('Using default config:', defaultConfig);
-        configToUse = defaultConfig;
-      }
+        if (!configToUse) {
+            throw new Error('No se pudo obtener la configuración');
+        }
 
-      const response = await createStudySession(selectedDeckId, configToUse);
-      console.log('Session created:', response);
+        console.log('Using configuration:', configToUse);
+        
+        const response = await createStudySession(selectedDeckId, configToUse);
 
-      if (response && response.sessionId) {
-        const path = `/sesionesEstudio/${selectedOption}/${response.sessionId}`;
-        console.log('Navigating to:', path);
-        navigate(path, { replace: true });
-      } else {
-        console.error('No sessionId received in response');
-      }
+        if (response && response.sessionId) {
+            const path = `/sesionesEstudio/${selectedOption}/${response.sessionId}`;
+            navigate(path, { replace: true });
+        }
     } catch (err) {
-      console.error('Error al crear la sesión:', err);
-      alert('Error al crear la sesión de estudio');
+        console.error('Error creating study session:', err);
+        alert('Error al crear la sesión de estudio');
     }
   };
 
@@ -138,7 +132,3 @@ function sesionEstudio() {
 };
 
 export default sesionEstudio;
-
-function setSessionConfig(config: CreateStudySessionDto) {
-  throw new Error("Function not implemented.");
-}
