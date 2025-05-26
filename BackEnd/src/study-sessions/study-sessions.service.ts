@@ -1,13 +1,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudySessionDto } from './dto/create-study-session.dto';
-import { UpdateStudySessionDto } from './dto/update-study-session.dto';
-import { StudySession } from './entities/study-session.entity';
 import { StudyMethod, LearningMethod } from '@prisma/client';
-import { CardReview } from 'src/card-reviews/entities/card-review.entity';
 import { TestResultDto } from './dto/test-result.dto';
 import { TestAnswerDto } from '../test-question/dto/test-question.dto';
 import { UserStatsService } from '../user-stats/user-stats.service';
+import { CreateSessionResultDto } from '../session-results/dto/create-session-result.dto';
 
 @Injectable()
 export class StudySessionsService {
@@ -273,6 +271,7 @@ export class StudySessionsService {
         pomodoro: true,
         simulatedTest: true,
         activeRecall: true,
+        sessionResult: true,
         deck: {
           include: {
             cards: true
@@ -1679,7 +1678,7 @@ export class StudySessionsService {
         // Recalcular estadísticas basadas en las preguntas
         const correctAnswers = session.simulatedTest.testQuestions.filter(q => q.isCorrect).length;
         const incorrectAnswers = session.simulatedTest.testQuestions.filter(q => q.userAnswer !== null && !q.isCorrect).length;
-
+        const totalAnswered = correctAnswers + incorrectAnswers;
         // Actualizar las estadísticas del test
         await this.prisma.sessionSimulatedTest.update({
           where: { sessionId },
@@ -1688,27 +1687,151 @@ export class StudySessionsService {
             incorrectAnswers
           }
         });
-      }
 
+        if (totalAnswered > 0) {
+          const score = Math.round((correctAnswers / totalAnswered) * 100);
+
+          // Verificar si ya existe un resultado
+          const existingResult = await this.prisma.sessionsResult.findUnique({
+            where: { sessionId }
+          });
+
+          if (!existingResult) {
+            // Crear el resultado automáticamente
+            await this.prisma.sessionsResult.create({
+              data: {
+                sessionId,
+                score,
+                testDate: endTime
+              }
+            });
+
+            this.logger.log(`✅ Resultado automático creado para test simulado ${sessionId}: ${score}%`);
+          }
+        }
+      }
+    
       // Finalizar la sesión con endTime y minDuration
       const updatedSession = await this.prisma.studySession.update({
-        where: { sessionId },
-        data: {
-          endTime: endTime,
-          minDuration: minDuration
-        }
+      where: { sessionId },
+      data: {
+        endTime: endTime,
+        minDuration: minDuration
+      }
+    });
+
+    // Actualizar estadísticas del usuario de forma asíncrona
+    this.userStatsService.updateStatsOnSessionComplete(sessionId)
+      .catch(error => {
+        this.logger.error(`Error actualizando estadísticas para sesión ${sessionId}:`, error);
       });
 
-      // Actualizar estadísticas del usuario de forma asíncrona
-      this.userStatsService.updateStatsOnSessionComplete(sessionId)
-        .catch(error => {
-          this.logger.error(`Error actualizando estadísticas para sesión ${sessionId}:`, error);
-        });
-
-      return updatedSession;
-    } catch (error) {
-      console.error(`Error finalizando sesión ${sessionId}:`, error);
-      throw error;
-    }
+    return updatedSession;
+  } catch(error) {
+    console.error(`Error finalizando sesión ${sessionId}:`, error);
+    throw error;
   }
+}
+
+  // SESSIONS RESULTS METHODS:
+  async createSessionResult(sessionId: number, userId: number, createResultDto: CreateSessionResultDto) {
+  try {
+    const session = await this.findOne(sessionId, userId);
+
+    if (!session) {
+      throw new NotFoundException(`Sesión ${sessionId} no encontrada`);
+    }
+
+    // Verificar que la sesión esté finalizada
+    if (!session.endTime) {
+      throw new BadRequestException('La sesión debe estar finalizada para crear un resultado');
+    }
+
+    if (session.sessionResult) {
+      throw new BadRequestException('Esta sesión ya tiene un resultado asociado');
+    }
+
+    // Crear el resultado...
+    const sessionResult = await this.prisma.sessionsResult.create({
+      data: {
+        sessionId,
+        score: createResultDto.score,
+        testDate: createResultDto.testDate || new Date()
+      },
+      include: {
+        session: {
+          include: {
+            deck: true,
+            user: {
+              select: { userId: true, username: true }
+            }
+          }
+        }
+      }
+    });
+
+    this.logger.log(`Resultado creado para sesión ${sessionId}: ${createResultDto.score}%`);
+    return sessionResult;
+  } catch (error) {
+    this.logger.error(`Error creando resultado para sesión ${sessionId}:`, error);
+    throw error;
+  }
+}
+
+  /**
+   * Obtener resultado de una sesión
+   */
+  async getSessionResult(sessionId: number, userId: number) {
+  const session = await this.findOne(sessionId, userId);
+
+  if (!session) {
+    throw new NotFoundException(`Sesión ${sessionId} no encontrada`);
+  }
+
+  const result = await this.prisma.sessionsResult.findUnique({
+    where: { sessionId },
+    include: {
+      session: {
+        include: {
+          deck: {
+            select: { title: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!result) {
+    throw new NotFoundException(`No se encontró resultado para la sesión ${sessionId}`);
+  }
+
+  return result;
+}
+
+  /**
+   * Obtener todos los resultados de un usuario
+   */
+  async getUserResults(userId: number) {
+  const results = await this.prisma.sessionsResult.findMany({
+    where: {
+      session: {
+        userId
+      }
+    },
+    include: {
+      session: {
+        include: {
+          deck: {
+            select: { title: true }
+          }
+        }
+      }
+    },
+    orderBy: {
+      testDate: 'desc'
+    }
+  });
+
+  return results;
+}
 }

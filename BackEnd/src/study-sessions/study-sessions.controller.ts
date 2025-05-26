@@ -1,12 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ParseIntPipe } from '@nestjs/common';
 import { StudySessionsService } from './study-sessions.service';
 import { CreateStudySessionDto } from './dto/create-study-session.dto';
-import { UpdateStudySessionDto } from './dto/update-study-session.dto';
 import { StudySession } from './entities/study-session.entity';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
 import { TestQuestionDto, TestAnswerDto } from '../test-question/dto/test-question.dto';
 import { TestResultDto } from './dto/test-result.dto';
+import { CreateSessionResultDto } from '../session-results/dto/create-session-result.dto';
 
 @ApiTags('study-sessions')
 @UseGuards(JwtAuthGuard)
@@ -159,6 +159,32 @@ export class StudySessionsController {
     @Request() req
   ) {
     return this.studySessionsService.finishSession(+sessionId, req.user.userId);
+  }
+
+  // STUDY METHODS: SESSION RESULTS
+  @Post(':sessionId/result')
+  @ApiResponse({ status: 201, description: 'Resultado de sesión creado exitosamente' })
+  async createSessionResult(
+    @Param('sessionId', ParseIntPipe) sessionId: number,
+    @Body() createResultDto: CreateSessionResultDto,
+    @Request() req
+  ) {
+    return this.studySessionsService.createSessionResult(sessionId, req.user.userId, createResultDto);
+  }
+
+  @Get(':sessionId/result')
+  @ApiResponse({ status: 200, description: 'Resultado de sesión obtenido' })
+  async getSessionResult(
+    @Param('sessionId', ParseIntPipe) sessionId: number,
+    @Request() req
+  ) {
+    return this.studySessionsService.getSessionResult(sessionId, req.user.userId);
+  }
+
+  @Get('results')
+  @ApiResponse({ status: 200, description: 'Todos los resultados del usuario' })
+  async getUserResults(@Request() req) {
+    return this.studySessionsService.getUserResults(req.user.userId);
   }
 
 }
