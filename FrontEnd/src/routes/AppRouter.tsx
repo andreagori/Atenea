@@ -66,7 +66,7 @@ const AppRouter = () => {
           }
         />
         <Route
-          path="/sesionesEstudio/pomodoro"
+          path="/sesionesEstudio/pomodoro/:sessionId"
           element={
             <PrivateRoute>
               <PomodoroStudySession />

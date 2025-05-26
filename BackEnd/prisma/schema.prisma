@@ -108,6 +108,12 @@ model SessionPomodoro {
   numCards            Int
   studyMinutes        Int
   restMinutes         Int
+  currentCycle        Int @default(1)
+  isOnBreak           Boolean @default(false)
+  breakStartTime     DateTime?
+  studyStartTime     DateTime?
+  totalStudyTimeMin Int @default(0)
+  totalBreakTimeMin Int @default(0)
 
   session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 }

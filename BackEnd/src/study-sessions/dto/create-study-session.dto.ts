@@ -64,7 +64,6 @@ export class CreateStudySessionDto extends OmitType(StudySession, [
         }
     )
     @IsInt({ message: 'numCards debe ser un número entero' })
-    @IsPositive({ message: 'numCards debe ser un número positivo' })
     @IsNotEmpty({ message: 'numCards no puede estar vacío' })
     numCards: number;
 

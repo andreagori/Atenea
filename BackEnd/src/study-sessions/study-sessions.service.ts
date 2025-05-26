@@ -94,12 +94,55 @@ export class StudySessionsService {
    */
 
   private async createPomodoroSession(sessionId: number, dto: CreateStudySessionDto) {
+    // Get the session with its deck and cards to count available cards
+    const session = await this.prisma.studySession.findUnique({
+      where: { sessionId },
+      include: {
+        deck: {
+          include: {
+            cards: {
+              where: {
+                learningMethod: {
+                  in: dto.learningMethod
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!session || !session.deck) {
+      throw new NotFoundException(`Sesión ${sessionId} o mazo no encontrado`);
+    }
+
+    const totalAvailableCards = session.deck.cards?.length || 0;
+
+    if (totalAvailableCards === 0) {
+      throw new BadRequestException('No hay cartas disponibles para esta sesión');
+    }
+
+    // Si numCards es -1, usar todas las cartas disponibles
+    let numCards = dto.numCards;
+    if (numCards === -1 || numCards === undefined) {
+      numCards = totalAvailableCards;
+    } else {
+      // Asegurar que no exceda las cartas disponibles
+      numCards = Math.min(numCards, totalAvailableCards);
+    }
+
     const data = {
       sessionId,
-      numCards: dto.numCards || this.defaultValues.pomodoro.numCards,
+      numCards,
       studyMinutes: dto.studyMinutes || this.defaultValues.pomodoro.studyMinutes,
       restMinutes: dto.restMinutes || this.defaultValues.pomodoro.restMinutes,
+      currentCycle: 1,
+      isOnBreak: false,
+      studyStartTime: new Date(), // Iniciar el tiempo de estudio inmediatamente
+      totalStudyTimeMin: 0,
+      totalBreakTimeMin: 0
     };
+
     return this.prisma.sessionPomodoro.create({ data });
   }
 
@@ -382,108 +425,108 @@ export class StudySessionsService {
   }
 
   async checkSessionCompletion(sessionId: number, userId: number) {
-  try {
-    // Obtener la sesión con su configuración
-    const session = await this.prisma.studySession.findFirst({
-      where: { sessionId, userId },
-      include: {
-        activeRecall: true,
-        pomodoro: true,
-        simulatedTest: true,
-        deck: {
-          include: {
-            cards: {
-              where: {
-                learningMethod: {
-                  in: [] // Se llenará dinámicamente
+    try {
+      // Obtener la sesión con su configuración
+      const session = await this.prisma.studySession.findFirst({
+        where: { sessionId, userId },
+        include: {
+          activeRecall: true,
+          pomodoro: true,
+          simulatedTest: true,
+          deck: {
+            include: {
+              cards: {
+                where: {
+                  learningMethod: {
+                    in: [] // Se llenará dinámicamente
+                  }
                 }
               }
             }
           }
         }
-      }
-    });
-
-    if (!session) {
-      throw new NotFoundException(`Sesión ${sessionId} no encontrada`);
-    }
-
-    // Actualizar el filtro de cartas
-    if (session.deck) {
-      session.deck.cards = await this.prisma.card.findMany({
-        where: {
-          deckId: session.deckId,
-          learningMethod: {
-            in: session.learningMethod
-          }
-        }
       });
-    }
 
-    // Obtener revisiones completadas
-    const completedReviews = await this.prisma.cardReview.findMany({
-      where: { sessionId, userId }
-    });
+      if (!session) {
+        throw new NotFoundException(`Sesión ${sessionId} no encontrada`);
+      }
 
-    let shouldFinish = false;
-    let cardLimit = 0;
-
-    // Verificar condiciones de finalización según el tipo de sesión
-    switch (session.studyMethod) {
-      case StudyMethod.spacedRepetition:
-        cardLimit = session.activeRecall?.numCardsSpaced || session.deck?.cards?.length || 0;
-        shouldFinish = completedReviews.length >= cardLimit;
-        console.log('Spaced Repetition - Revisiones completadas:', {
-          completedReviews: completedReviews.length,
-          cardLimit,
-          shouldFinish
-        });
-        break;
-
-      case StudyMethod.pomodoro:
-        cardLimit = session.pomodoro?.numCards || session.deck?.cards?.length || 0;
-        shouldFinish = completedReviews.length >= cardLimit;
-        console.log('Pomodoro - Revisiones completadas:', {
-          completedReviews: completedReviews.length,
-          cardLimit,
-          shouldFinish
-        });
-        break;
-
-      case StudyMethod.simulatedTest:
-        // Para test simulado, verificar preguntas respondidas
-        const answeredQuestions = await this.prisma.testQuestion.count({
+      // Actualizar el filtro de cartas
+      if (session.deck) {
+        session.deck.cards = await this.prisma.card.findMany({
           where: {
-            testId: sessionId,
-            userAnswer: { not: null }
+            deckId: session.deckId,
+            learningMethod: {
+              in: session.learningMethod
+            }
           }
         });
-        cardLimit = session.simulatedTest?.numQuestions || 0;
-        shouldFinish = answeredQuestions >= cardLimit;
-        console.log('Simulated Test - Preguntas respondidas:', {
-          answeredQuestions,
-          cardLimit,
-          shouldFinish
-        });
-        break;
+      }
 
-      default:
-        console.warn(`Tipo de sesión no reconocido: ${session.studyMethod}`);
-        return false;
+      // Obtener revisiones completadas
+      const completedReviews = await this.prisma.cardReview.findMany({
+        where: { sessionId, userId }
+      });
+
+      let shouldFinish = false;
+      let cardLimit = 0;
+
+      // Verificar condiciones de finalización según el tipo de sesión
+      switch (session.studyMethod) {
+        case StudyMethod.spacedRepetition:
+          cardLimit = session.activeRecall?.numCardsSpaced || session.deck?.cards?.length || 0;
+          shouldFinish = completedReviews.length >= cardLimit;
+          console.log('Spaced Repetition - Revisiones completadas:', {
+            completedReviews: completedReviews.length,
+            cardLimit,
+            shouldFinish
+          });
+          break;
+
+        case StudyMethod.pomodoro:
+          cardLimit = session.pomodoro?.numCards || session.deck?.cards?.length || 0;
+          shouldFinish = completedReviews.length >= cardLimit;
+          console.log('Pomodoro - Revisiones completadas:', {
+            completedReviews: completedReviews.length,
+            cardLimit,
+            shouldFinish
+          });
+          break;
+
+        case StudyMethod.simulatedTest:
+          // Para test simulado, verificar preguntas respondidas
+          const answeredQuestions = await this.prisma.testQuestion.count({
+            where: {
+              testId: sessionId,
+              userAnswer: { not: null }
+            }
+          });
+          cardLimit = session.simulatedTest?.numQuestions || 0;
+          shouldFinish = answeredQuestions >= cardLimit;
+          console.log('Simulated Test - Preguntas respondidas:', {
+            answeredQuestions,
+            cardLimit,
+            shouldFinish
+          });
+          break;
+
+        default:
+          console.warn(`Tipo de sesión no reconocido: ${session.studyMethod}`);
+          return false;
+      }
+
+      if (shouldFinish) {
+        console.log(`Finalizando sesión ${sessionId} automáticamente - ${session.studyMethod}`);
+        await this.finishSession(sessionId, userId);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error(`Error verificando completitud de sesión ${sessionId}:`, error);
+      return false;
     }
-
-    if (shouldFinish) {
-      console.log(`Finalizando sesión ${sessionId} automáticamente - ${session.studyMethod}`);
-      await this.finishSession(sessionId, userId);
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error(`Error verificando completitud de sesión ${sessionId}:`, error);
-    return false;
   }
-}
 
   // SIMULATED TEST METHODS
   async getTestQuestion(sessionId: number, userId: number) {
@@ -1114,6 +1157,483 @@ export class StudySessionsService {
     return session;
   }
 
+  // POMODORO METHODS:
+
+  async getPomodoroNextCard(sessionId: number, userId: number) {
+    try {
+      const session = await this.findOne(sessionId, userId);
+
+      if (!session || session.endTime) {
+        throw new NotFoundException('Sesión no encontrada o ya finalizada');
+      }
+
+      if (session.studyMethod !== StudyMethod.pomodoro) {
+        throw new BadRequestException('Esta sesión no es de tipo Pomodoro');
+      }
+
+      // Verificar si estamos en descanso
+      const pomodoroConfig = await this.prisma.sessionPomodoro.findUnique({
+        where: { sessionId }
+      });
+
+      if (!pomodoroConfig) {
+        throw new NotFoundException('Configuración Pomodoro no encontrada');
+      }
+
+      if (pomodoroConfig.isOnBreak) {
+        throw new BadRequestException('La sesión está en descanso. Finaliza el descanso para continuar estudiando.');
+      }
+
+      // Verificar si debemos iniciar un descanso por tiempo de estudio
+      await this.checkPomodoroStudyTime(sessionId, pomodoroConfig);
+
+      // Obtener todas las cartas disponibles del deck para esta sesión
+      const allAvailableCards = await this.prisma.card.findMany({
+        where: {
+          deckId: session.deckId,
+          learningMethod: {
+            in: session.learningMethod
+          }
+        },
+        include: {
+          activeRecall: true,
+          cornell: true,
+          visualCard: true
+        }
+      });
+
+      if (allAvailableCards.length === 0) {
+        throw new BadRequestException('No hay cartas disponibles para esta sesión');
+      }
+
+      this.logger.debug(`Pomodoro: Total cartas disponibles: ${allAvailableCards.length}`);
+
+      // Obtener todas las revisiones de la sesión actual
+      const allReviews = await this.prisma.cardReview.findMany({
+        where: {
+          sessionId,
+          userId
+        },
+        orderBy: {
+          reviewedAt: 'desc'
+        }
+      });
+
+      this.logger.debug(`Pomodoro: Total revisiones: ${allReviews.length}`);
+
+      // NUEVA LÓGICA PARA POMODORO:
+      // En lugar de usar memorización espaciada estricta, usar un enfoque más balanceado
+
+      // 1. Obtener cartas no vistas primero (prioridad alta)
+      const reviewedCardIds = allReviews.map(review => review.cardId);
+      const unviewedCards = allAvailableCards.filter(card =>
+        !reviewedCardIds.includes(card.cardId)
+      );
+
+      this.logger.debug(`Pomodoro: Cartas no vistas: ${unviewedCards.length}`);
+
+      if (unviewedCards.length > 0) {
+        // Seleccionar una carta aleatoria de las no vistas
+        const randomCard = unviewedCards[Math.floor(Math.random() * unviewedCards.length)];
+        this.logger.debug(`Pomodoro: Devolviendo carta no vista. CardId: ${randomCard.cardId}`);
+        return randomCard;
+      }
+
+      // 2. Si todas las cartas han sido vistas, usar lógica inteligente de repetición
+      // Evitar mostrar la misma carta consecutivamente
+
+      // Obtener las últimas 2-3 cartas para evitar repetición inmediata
+      const recentCardIds = allReviews.slice(0, Math.min(3, allReviews.length)).map(r => r.cardId);
+      
+      // Filtrar cartas para evitar las recientes
+      let availableForRepeat = allAvailableCards;
+      if (recentCardIds.length > 0 && allAvailableCards.length > recentCardIds.length) {
+        availableForRepeat = allAvailableCards.filter(card => 
+          !recentCardIds.includes(card.cardId)
+        );
+      }
+
+      // Si después del filtro no quedan cartas suficientes, usar todas menos la última
+      if (availableForRepeat.length === 0) {
+        const lastCardId = allReviews.length > 0 ? allReviews[0].cardId : null;
+        if (lastCardId && allAvailableCards.length > 1) {
+          availableForRepeat = allAvailableCards.filter(card => card.cardId !== lastCardId);
+        } else {
+          availableForRepeat = allAvailableCards;
+        }
+      }
+
+      // 3. Dentro de las cartas disponibles, dar ligera prioridad a las que necesitan revisión
+      // pero sin quedarse atrapado en una sola carta
+      const now = new Date();
+      const cardsNeedingReview = await this.prisma.cardReview.findMany({
+        where: {
+          sessionId,
+          userId,
+          cardId: { in: availableForRepeat.map(c => c.cardId) },
+          nextReviewAt: { lte: now }
+        },
+        include: {
+          card: {
+            include: {
+              activeRecall: true,
+              cornell: true,
+              visualCard: true
+            }
+          }
+        },
+        orderBy: {
+          nextReviewAt: 'asc'
+        }
+      });
+
+      // Si hay cartas que necesitan revisión Y no son las recientes, considerarlas con 70% de probabilidad
+      if (cardsNeedingReview.length > 0 && Math.random() < 0.7) {
+        // Pero limitar cuántas veces seguidas se puede mostrar la misma carta que necesita revisión
+        const lastFewReviews = allReviews.slice(0, 3);
+        const cardCounts = lastFewReviews.reduce((acc, review) => {
+          acc[review.cardId] = (acc[review.cardId] || 0) + 1;
+          return acc;
+        }, {} as Record<number, number>);
+
+        // Filtrar cartas que no se han mostrado demasiado recientemente
+        const cardsNotOverused = cardsNeedingReview.filter(review => 
+          (cardCounts[review.cardId] || 0) < 2 // No más de 2 veces en las últimas 3
+        );
+
+        if (cardsNotOverused.length > 0) {
+          const selectedReview = cardsNotOverused[0]; // Tomar la primera (más antigua)
+          this.logger.debug(`Pomodoro: Devolviendo carta que necesita revisión (controlada). CardId: ${selectedReview.card.cardId}`);
+          return selectedReview.card;
+        }
+      }
+
+      // 4. Si no hay cartas que necesiten revisión o se aplicó el filtro de sobreuso,
+      // seleccionar aleatoriamente de las disponibles
+      const randomCard = availableForRepeat[Math.floor(Math.random() * availableForRepeat.length)];
+
+      this.logger.debug(`Pomodoro: Repitiendo cartas aleatoriamente. Evitando recientes: [${recentCardIds.join(', ')}]. Seleccionada: ${randomCard.cardId}`);
+
+      return randomCard;
+
+    } catch (error) {
+      this.logger.error(`Error en getPomodoroNextCard: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  async getPomodoroProgress(sessionId: number, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+
+    if (session.studyMethod !== StudyMethod.pomodoro) {
+      throw new BadRequestException('Esta sesión no es de tipo Pomodoro');
+    }
+
+    const pomodoroConfig = await this.prisma.sessionPomodoro.findUnique({
+      where: { sessionId }
+    });
+
+    if (!pomodoroConfig) {
+      throw new NotFoundException('Configuración Pomodoro no encontrada');
+    }
+
+    const reviews = await this.prisma.cardReview.findMany({
+      where: {
+        sessionId,
+        userId
+      }
+    });
+
+    const totalCards = session.deck.cards.length;
+    const reviewedCards = reviews.length;
+    const uniqueCardsReviewed = new Set(reviews.map(r => r.cardId)).size;
+
+    // Calcular tiempo transcurrido en estudio (excluyendo descansos) EN TIEMPO REAL
+    const now = new Date();
+    let studyTimeElapsed = pomodoroConfig.totalStudyTimeMin;
+
+    if (pomodoroConfig.studyStartTime && !pomodoroConfig.isOnBreak) {
+      const currentStudyTime = Math.floor((now.getTime() - pomodoroConfig.studyStartTime.getTime()) / 60000);
+      studyTimeElapsed += currentStudyTime;
+    }
+
+    // Calcular tiempo de descanso transcurrido EN TIEMPO REAL
+    let breakTimeElapsed = pomodoroConfig.totalBreakTimeMin;
+
+    if (pomodoroConfig.breakStartTime && pomodoroConfig.isOnBreak) {
+      const currentBreakTime = Math.floor((now.getTime() - pomodoroConfig.breakStartTime.getTime()) / 60000);
+      breakTimeElapsed += currentBreakTime;
+    }
+
+    return {
+      currentCycle: pomodoroConfig.currentCycle,
+      isOnBreak: pomodoroConfig.isOnBreak,
+      studyTimeElapsed, // en minutos - actualizado en tiempo real
+      breakTimeElapsed, // en minutos - actualizado en tiempo real
+      studyTimeTarget: pomodoroConfig.studyMinutes,
+      breakTimeTarget: pomodoroConfig.restMinutes,
+      totalCards,
+      reviewedCards,
+      uniqueCardsReviewed,
+      cardsTarget: pomodoroConfig.numCards
+    };
+  }
+
+  async evaluateCard(sessionId: number, cardId: number, evaluation: string, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+
+    if (!session || session.endTime) {
+      throw new NotFoundException('Sesión no encontrada o ya finalizada');
+    }
+
+    // Verificar que la carta pertenece al deck de la sesión
+    const card = await this.prisma.card.findFirst({
+      where: {
+        cardId,
+        deckId: session.deckId
+      }
+    });
+
+    if (!card) {
+      throw new NotFoundException('Carta no encontrada en este deck');
+    }
+
+    // Calcular el próximo intervalo basado en la evaluación
+    const intervals = this.getSpacedRepetitionIntervals(evaluation);
+    const nextReviewAt = new Date(Date.now() + intervals.minutes * 60 * 1000);
+
+    // Crear la revisión de la carta
+    const cardReview = await this.prisma.cardReview.create({
+      data: {
+        sessionId,
+        cardId,
+        userId,
+        evaluation: evaluation as any, // Cast to Evaluation enum
+        reviewedAt: new Date(),
+        nextReviewAt,
+        intervalMinutes: intervals.minutes
+      }
+    });
+
+    return {
+      success: true,
+      cardReview,
+      nextReviewAt,
+      intervalMinutes: intervals.minutes
+    };
+  }
+
+  private getSpacedRepetitionIntervals(evaluation: string) {
+    switch (evaluation) {
+      case 'dificil':
+        return { minutes: 1 }; // Revisar en 1 minuto
+      case 'masomenos':
+        return { minutes: 5 }; // Revisar en 5 minutos
+      case 'bien':
+        return { minutes: 15 }; // Revisar en 15 minutos
+      case 'facil':
+        return { minutes: 30 }; // Revisar en 30 minutos
+      default:
+        return { minutes: 5 }; // Default a 5 minutos
+    }
+  }
+
+  /**
+   * Inicia un descanso en la sesión Pomodoro
+   */
+  async startPomodoroBreak(sessionId: number, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+
+    if (session.studyMethod !== StudyMethod.pomodoro) {
+      throw new BadRequestException('Esta sesión no es de tipo Pomodoro');
+    }
+
+    const pomodoroConfig = await this.prisma.sessionPomodoro.findUnique({
+      where: { sessionId }
+    });
+
+    if (!pomodoroConfig) {
+      throw new NotFoundException('Configuración Pomodoro no encontrada');
+    }
+
+    if (pomodoroConfig.isOnBreak) {
+      throw new BadRequestException('La sesión ya está en descanso');
+    }
+
+    const now = new Date();
+    let totalStudyTimeMin = pomodoroConfig.totalStudyTimeMin;
+
+    // Si había un tiempo de estudio activo, calcularlo y agregarlo al total
+    if (pomodoroConfig.studyStartTime) {
+      const studyTimeElapsed = Math.floor((now.getTime() - pomodoroConfig.studyStartTime.getTime()) / 60000);
+      totalStudyTimeMin += studyTimeElapsed;
+    }
+
+    // Actualizar a estado de descanso
+    const updatedConfig = await this.prisma.sessionPomodoro.update({
+      where: { sessionId },
+      data: {
+        isOnBreak: true,
+        breakStartTime: now,
+        studyStartTime: null, // Limpiar el tiempo de estudio
+        totalStudyTimeMin // Actualizar el tiempo total de estudio
+      }
+    });
+
+    this.logger.debug(`Pomodoro: Iniciando descanso. Tiempo de estudio acumulado: ${totalStudyTimeMin}min`);
+
+    return {
+      success: true,
+      isOnBreak: true,
+      breakStartTime: now,
+      totalStudyTimeMin
+    };
+  }
+
+  /**
+   * Finaliza un descanso en la sesión Pomodoro
+   */
+  async endPomodoroBreak(sessionId: number, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+
+    if (session.studyMethod !== StudyMethod.pomodoro) {
+      throw new BadRequestException('Esta sesión no es de tipo Pomodoro');
+    }
+
+    const pomodoroConfig = await this.prisma.sessionPomodoro.findUnique({
+      where: { sessionId }
+    });
+
+    if (!pomodoroConfig) {
+      throw new NotFoundException('Configuración Pomodoro no encontrada');
+    }
+
+    if (!pomodoroConfig.isOnBreak) {
+      throw new BadRequestException('La sesión no está en descanso');
+    }
+
+    const now = new Date();
+    let totalBreakTimeMin = pomodoroConfig.totalBreakTimeMin;
+
+    // Calcular el tiempo de descanso transcurrido
+    if (pomodoroConfig.breakStartTime) {
+      const breakTimeElapsed = Math.floor((now.getTime() - pomodoroConfig.breakStartTime.getTime()) / 60000);
+      totalBreakTimeMin += breakTimeElapsed;
+      
+      this.logger.debug(`End break: Break time elapsed: ${breakTimeElapsed}min, Total break time: ${totalBreakTimeMin}min`);
+    }
+
+    // Actualizar a estado de estudio y incrementar ciclo
+    const updatedConfig = await this.prisma.sessionPomodoro.update({
+      where: { sessionId },
+      data: {
+        isOnBreak: false,
+        breakStartTime: null, // Limpiar el tiempo de descanso
+        studyStartTime: now, // Iniciar nuevo tiempo de estudio
+        totalBreakTimeMin, // Actualizar el tiempo total de descanso
+        currentCycle: pomodoroConfig.currentCycle + 1 // Incrementar ciclo
+      }
+    });
+
+    this.logger.debug(`Pomodoro: Finalizando descanso. Tiempo de descanso acumulado: ${totalBreakTimeMin}min. Nuevo ciclo: ${updatedConfig.currentCycle}`);
+
+    return {
+      success: true,
+      isOnBreak: false,
+      studyStartTime: now,
+      totalBreakTimeMin,
+      currentCycle: updatedConfig.currentCycle
+    };
+  }
+
+  /**
+   * Obtiene el estado actual de la sesión Pomodoro
+   */
+  async getPomodoroStatus(sessionId: number, userId: number) {
+    const session = await this.findOne(sessionId, userId);
+
+    if (session.studyMethod !== StudyMethod.pomodoro) {
+      throw new BadRequestException('Esta sesión no es de tipo Pomodoro');
+    }
+
+    const pomodoroConfig = await this.prisma.sessionPomodoro.findUnique({
+      where: { sessionId }
+    });
+
+    if (!pomodoroConfig) {
+      throw new NotFoundException('Configuración Pomodoro no encontrada');
+    }
+
+    const now = new Date();
+    let timeRemaining = 0;
+    let currentPhase = 'not_started';
+
+    if (pomodoroConfig.isOnBreak && pomodoroConfig.breakStartTime) {
+      // Calculamos tiempo restante de descanso
+      const breakElapsed = Math.floor((now.getTime() - pomodoroConfig.breakStartTime.getTime()) / 1000); // en SEGUNDOS
+      const breakDurationSeconds = pomodoroConfig.restMinutes * 60;
+      timeRemaining = Math.max(0, breakDurationSeconds - breakElapsed); // en SEGUNDOS
+      currentPhase = 'break';
+      
+      this.logger.debug(`Pomodoro Status - Break: elapsed=${breakElapsed}s, duration=${breakDurationSeconds}s, remaining=${timeRemaining}s`);
+    } else if (pomodoroConfig.studyStartTime) {
+      // Calculamos tiempo restante de estudio
+      const studyElapsed = Math.floor((now.getTime() - pomodoroConfig.studyStartTime.getTime()) / 1000); // en SEGUNDOS
+      const studyDurationSeconds = pomodoroConfig.studyMinutes * 60;
+      timeRemaining = Math.max(0, studyDurationSeconds - studyElapsed); // en SEGUNDOS
+      currentPhase = 'study';
+      
+      this.logger.debug(`Pomodoro Status - Study: elapsed=${studyElapsed}s, duration=${studyDurationSeconds}s, remaining=${timeRemaining}s`);
+    } else {
+      currentPhase = 'not_started';
+      timeRemaining = pomodoroConfig.studyMinutes * 60; // en SEGUNDOS
+    }
+
+    return {
+      sessionId,
+      currentCycle: pomodoroConfig.currentCycle,
+      currentPhase,
+      isOnBreak: pomodoroConfig.isOnBreak,
+      timeRemaining, // en SEGUNDOS ahora
+      studyDuration: pomodoroConfig.studyMinutes,
+      breakDuration: pomodoroConfig.restMinutes,
+      totalStudyTime: pomodoroConfig.totalStudyTimeMin,
+      totalBreakTime: pomodoroConfig.totalBreakTimeMin
+    };
+  }
+
+  /**
+   * Verifica si debe iniciar un descanso automáticamente por tiempo de estudio
+   */
+  private async checkPomodoroStudyTime(sessionId: number, pomodoroConfig: any) {
+    if (!pomodoroConfig.studyStartTime || pomodoroConfig.isOnBreak) {
+      return;
+    }
+
+    const now = new Date();
+    const studyTimeElapsed = Math.floor((now.getTime() - pomodoroConfig.studyStartTime.getTime()) / 60000);
+
+    // Si ha pasado el tiempo de estudio configurado, iniciar descanso automáticamente
+    if (studyTimeElapsed >= pomodoroConfig.studyMinutes) {
+      this.logger.debug(`Pomodoro: Tiempo de estudio completado automáticamente (${studyTimeElapsed}/${pomodoroConfig.studyMinutes}min)`);
+      
+      // Calcular el tiempo total de estudio incluyendo el tiempo actual
+      const totalStudyTimeMin = pomodoroConfig.totalStudyTimeMin + studyTimeElapsed;
+
+      // Actualizar los tiempos antes de forzar el descanso
+      await this.prisma.sessionPomodoro.update({
+        where: { sessionId },
+        data: {
+          isOnBreak: true,
+          breakStartTime: now,
+          studyStartTime: null,
+          totalStudyTimeMin
+        }
+      });
+
+      throw new BadRequestException('Tiempo de estudio completado. Inicia tu descanso.');
+    }
+  }
   /**
    * Termina una sesión de estudio
    * @param sessionId ID de la sesión de estudio

@@ -65,7 +65,30 @@ interface CardResponse {
     };
 }
 
-let questionsBeingAnswered: number[] = [];
+interface PomodoroStatus {
+    sessionId: number;
+    currentCycle: number;
+    currentPhase: 'study' | 'break' | 'not_started';
+    isOnBreak: boolean;
+    timeRemaining: number; // en minutos
+    studyDuration: number;
+    breakDuration: number;
+    totalStudyTime: number;
+    totalBreakTime: number;
+}
+
+interface PomodoroProgress {
+    currentCycle: number;
+    isOnBreak: boolean;
+    studyTimeElapsed: number;
+    breakTimeElapsed: number;
+    studyTimeTarget: number;
+    breakTimeTarget: number;
+    totalCards: number;
+    reviewedCards: number;
+    uniqueCardsReviewed: number;
+    cardsTarget: number;
+}
 
 export const useStudySession = () => {
     const [loading, setLoading] = useState(false);
@@ -322,6 +345,168 @@ export const useStudySession = () => {
         }
     };
 
+    // POMODORO
+    const getPomodoroNextCard = async (sessionId: number) => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+
+        try {
+            setLoading(true);
+            const response = await axios.get<CardResponse>(
+                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/next-card`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            const card = response.data;
+
+            if (!card || !card.cardId || !card.learningMethod) {
+                console.log('No more cards available');
+                setCurrentCard(null);
+                return null;
+            }
+
+            let cardContent: CurrentCard = {
+                cardId: card.cardId,
+                title: card.title || 'Sin título',
+                learningMethod: card.learningMethod.toLowerCase(),
+                answer: card.activeRecall?.answer,
+                principalNote: card.cornell?.principalNote,
+                urlImage: card.visualCard?.urlImage,
+                activeRecall: card.activeRecall,
+                cornell: card.cornell,
+                visualCard: card.visualCard
+            };
+
+            setCurrentCard(cardContent);
+            setShowAnswer(false);
+            return cardContent;
+        } catch (err: any) {
+            // Manejar errores específicos de Pomodoro
+            if (err.response?.status === 400) {
+                const errorMessage = err.response?.data?.message || '';
+
+                if (errorMessage.includes('está en descanso')) {
+                    throw new Error('La sesión está en descanso');
+                } else if (errorMessage.includes('Tiempo de estudio completado')) {
+                    throw new Error('Tiempo de estudio completado. Inicia tu descanso.');
+                }
+            }
+
+            if (err.response?.status === 404) {
+                // En Pomodoro, un 404 podría indicar un problema del servidor
+                // No debería suceder si la lógica está correcta
+                console.error('Unexpected 404 in Pomodoro session:', err);
+                throw new Error('Error del servidor al obtener la siguiente carta');
+            }
+
+            setError(err.response?.data?.message || 'Error al obtener la siguiente carta');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getPomodoroProgress = async (sessionId: number): Promise<PomodoroProgress> => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+
+        try {
+            const response = await axios.get<PomodoroProgress>(
+                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/progress`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            return response.data;
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Error al obtener el progreso');
+            throw err;
+        }
+    };
+
+    const evaluatePomodoroCard = async (sessionId: number, cardId: number, evaluation: string) => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+
+        try {
+            setLoading(true);
+            const response = await axios.post(
+                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/evaluate`,
+                {
+                    cardId,
+                    evaluation
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            return response.data;
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Error al evaluar la carta');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startPomodoroBreak = async (sessionId: number) => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+
+        try {
+            const response = await axios.post(
+                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/start-break`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            return response.data;
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Error al iniciar el descanso');
+            throw err;
+        }
+    };
+
+    const endPomodoroBreak = async (sessionId: number) => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+
+        try {
+            const response = await axios.post(
+                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/end-break`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            return response.data;
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Error al finalizar el descanso');
+            throw err;
+        }
+    };
+
+    const getPomodoroStatus = async (sessionId: number): Promise<PomodoroStatus> => {
+        const token = Cookies.get("auth_token");
+        if (!token) throw new Error("No authentication token found");
+
+        try {
+            const response = await axios.get<PomodoroStatus>(
+                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/status`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            return response.data;
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Error al obtener el estado');
+            throw err;
+        }
+    };
+
     return {
         createStudySession,
         getNextCard,
@@ -337,6 +522,12 @@ export const useStudySession = () => {
         getTestQuestion,
         submitTestAnswer,
         getTestProgress,
-        getTestResult
+        getTestResult,
+        getPomodoroNextCard,
+        getPomodoroProgress,
+        startPomodoroBreak,
+        endPomodoroBreak,
+        getPomodoroStatus,
+        evaluatePomodoroCard
     };
 };

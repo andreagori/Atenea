@@ -73,6 +73,46 @@ export class StudySessionsController {
   }
 
   // STUDY METHODS: POMODORO
+  @Get(':sessionId/pomodoro/next-card')
+  @ApiResponse({ status: 200, description: 'Siguiente carta para estudiar en Pomodoro' })
+  getPomodoroNextCard(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.getPomodoroNextCard(+sessionId, req.user.userId);
+  }
+
+  @Get(':sessionId/pomodoro/progress')
+  @ApiResponse({ status: 200, description: 'Progreso de la sesión Pomodoro' })
+  getPomodoroProgress(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.getPomodoroProgress(+sessionId, req.user.userId);
+  }
+
+  @Post(':sessionId/pomodoro/evaluate')
+  @ApiResponse({ status: 200, description: 'Evalúa una carta en sesión Pomodoro' })
+  evaluatePomodoroCard(
+    @Param('sessionId') sessionId: string,
+    @Body() evaluationDto: { cardId: number; evaluation: string },
+    @Request() req
+  ) {
+    return this.studySessionsService.evaluateCard(+sessionId, evaluationDto.cardId, evaluationDto.evaluation, req.user.userId);
+  }
+
+  @Post(':sessionId/pomodoro/start-break')
+  @ApiResponse({ status: 200, description: 'Iniciar descanso en sesión Pomodoro' })
+  startPomodoroBreak(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.startPomodoroBreak(+sessionId, req.user.userId);
+  }
+
+  @Post(':sessionId/pomodoro/end-break')
+  @ApiResponse({ status: 200, description: 'Finalizar descanso en sesión Pomodoro' })
+  endPomodoroBreak(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.endPomodoroBreak(+sessionId, req.user.userId);
+  }
+
+  @Get(':sessionId/pomodoro/status')
+  @ApiResponse({ status: 200, description: 'Estado actual de la sesión Pomodoro' })
+  getPomodoroStatus(@Param('sessionId') sessionId: string, @Request() req) {
+    return this.studySessionsService.getPomodoroStatus(+sessionId, req.user.userId);
+  }
+
 
   // STUDY METHODS: SIMULATED_TEST
   @Get(':sessionId/test-question')
