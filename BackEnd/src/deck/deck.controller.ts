@@ -4,8 +4,8 @@ import { Deck } from './entities/deck.entity';
 import { CreateDeckDto } from './dto/create-deck.dto';
 import { UpdateDeckDto } from './dto/update-deck.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/jwt/JwtAuthGuard';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 
 @ApiTags('deck')
 @Controller('deck')

@@ -1,34 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
 import { UserStatsService } from './user-stats.service';
-import { CreateUserStatDto } from './dto/create-user-stat.dto';
-import { UpdateUserStatDto } from './dto/update-user-stat.dto';
 
+@ApiTags('user-stats')
+@UseGuards(JwtAuthGuard)
 @Controller('user-stats')
 export class UserStatsController {
   constructor(private readonly userStatsService: UserStatsService) {}
 
-  @Post()
-  create(@Body() createUserStatDto: CreateUserStatDto) {
-    return this.userStatsService.create(createUserStatDto);
-  }
-
   @Get()
-  findAll() {
-    return this.userStatsService.findAll();
+  @ApiResponse({ status: 200, description: 'Estadísticas básicas del usuario' })
+  async getUserStats(@Request() req) {
+    return this.userStatsService.getUserStats(req.user.userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userStatsService.findOne(+id);
+  @Get('detailed')
+  @ApiResponse({ status: 200, description: 'Estadísticas detalladas del usuario' })
+  async getDetailedUserStats(@Request() req) {
+    return this.userStatsService.getDetailedUserStats(req.user.userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserStatDto: UpdateUserStatDto) {
-    return this.userStatsService.update(+id, updateUserStatDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userStatsService.remove(+id);
+  @Post('recalculate')
+  @ApiResponse({ status: 200, description: 'Recalcula las estadísticas del usuario' })
+  async recalculateUserStats(@Request() req) {
+    return this.userStatsService.calculateAndUpdateUserStats(req.user.userId);
   }
 }

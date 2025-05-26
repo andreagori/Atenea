@@ -1,19 +1,22 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudySessionDto } from './dto/create-study-session.dto';
 import { UpdateStudySessionDto } from './dto/update-study-session.dto';
 import { StudySession } from './entities/study-session.entity';
 import { StudyMethod, LearningMethod } from '@prisma/client';
 import { CardReview } from 'src/card-reviews/entities/card-review.entity';
 import { TestResultDto } from './dto/test-result.dto';
-import { TestAnswerDto } from 'src/test-question/dto/test-question.dto';
+import { TestAnswerDto } from '../test-question/dto/test-question.dto';
+import { UserStatsService } from '../user-stats/user-stats.service';
 
 @Injectable()
 export class StudySessionsService {
   // Logger for the StudySessionsService class, which is used to log messages and errors.
   private readonly logger = new Logger(StudySessionsService.name);
   // PrismaService instance for database operations.
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService,
+    private readonly userStatsService: UserStatsService
+  ) { }
 
   // Valores por defecto para cada tipo de sesión
   private readonly defaultValues = {
@@ -1244,11 +1247,11 @@ export class StudySessionsService {
 
       // Obtener las últimas 2-3 cartas para evitar repetición inmediata
       const recentCardIds = allReviews.slice(0, Math.min(3, allReviews.length)).map(r => r.cardId);
-      
+
       // Filtrar cartas para evitar las recientes
       let availableForRepeat = allAvailableCards;
       if (recentCardIds.length > 0 && allAvailableCards.length > recentCardIds.length) {
-        availableForRepeat = allAvailableCards.filter(card => 
+        availableForRepeat = allAvailableCards.filter(card =>
           !recentCardIds.includes(card.cardId)
         );
       }
@@ -1297,7 +1300,7 @@ export class StudySessionsService {
         }, {} as Record<number, number>);
 
         // Filtrar cartas que no se han mostrado demasiado recientemente
-        const cardsNotOverused = cardsNeedingReview.filter(review => 
+        const cardsNotOverused = cardsNeedingReview.filter(review =>
           (cardCounts[review.cardId] || 0) < 2 // No más de 2 veces en las últimas 3
         );
 
@@ -1519,7 +1522,7 @@ export class StudySessionsService {
     if (pomodoroConfig.breakStartTime) {
       const breakTimeElapsed = Math.floor((now.getTime() - pomodoroConfig.breakStartTime.getTime()) / 60000);
       totalBreakTimeMin += breakTimeElapsed;
-      
+
       this.logger.debug(`End break: Break time elapsed: ${breakTimeElapsed}min, Total break time: ${totalBreakTimeMin}min`);
     }
 
@@ -1574,7 +1577,7 @@ export class StudySessionsService {
       const breakDurationSeconds = pomodoroConfig.restMinutes * 60;
       timeRemaining = Math.max(0, breakDurationSeconds - breakElapsed); // en SEGUNDOS
       currentPhase = 'break';
-      
+
       this.logger.debug(`Pomodoro Status - Break: elapsed=${breakElapsed}s, duration=${breakDurationSeconds}s, remaining=${timeRemaining}s`);
     } else if (pomodoroConfig.studyStartTime) {
       // Calculamos tiempo restante de estudio
@@ -1582,7 +1585,7 @@ export class StudySessionsService {
       const studyDurationSeconds = pomodoroConfig.studyMinutes * 60;
       timeRemaining = Math.max(0, studyDurationSeconds - studyElapsed); // en SEGUNDOS
       currentPhase = 'study';
-      
+
       this.logger.debug(`Pomodoro Status - Study: elapsed=${studyElapsed}s, duration=${studyDurationSeconds}s, remaining=${timeRemaining}s`);
     } else {
       currentPhase = 'not_started';
@@ -1616,7 +1619,7 @@ export class StudySessionsService {
     // Si ha pasado el tiempo de estudio configurado, iniciar descanso automáticamente
     if (studyTimeElapsed >= pomodoroConfig.studyMinutes) {
       this.logger.debug(`Pomodoro: Tiempo de estudio completado automáticamente (${studyTimeElapsed}/${pomodoroConfig.studyMinutes}min)`);
-      
+
       // Calcular el tiempo total de estudio incluyendo el tiempo actual
       const totalStudyTimeMin = pomodoroConfig.totalStudyTimeMin + studyTimeElapsed;
 
@@ -1695,6 +1698,12 @@ export class StudySessionsService {
           minDuration: minDuration
         }
       });
+
+      // Actualizar estadísticas del usuario de forma asíncrona
+      this.userStatsService.updateStatsOnSessionComplete(sessionId)
+        .catch(error => {
+          this.logger.error(`Error actualizando estadísticas para sesión ${sessionId}:`, error);
+        });
 
       return updatedSession;
     } catch (error) {

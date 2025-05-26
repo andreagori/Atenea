@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, UseGuards, Param, Request } from '@nestjs/common';
 import { CardReviewsService } from './card-reviews.service';
 import { CreateCardReviewDto } from './dto/create-card-review.dto';
-import { JwtAuthGuard } from 'src/jwt/JwtAuthGuard';
+import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('card-reviews')

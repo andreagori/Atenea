@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt'; // Import bcrypt for password hashing
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UserService } from 'src/user/user.service';
+import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()

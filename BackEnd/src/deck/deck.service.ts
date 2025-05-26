@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Deck } from './entities/deck.entity';
 import { CreateDeckDto } from './dto/create-deck.dto';
 import { UpdateDeckDto } from './dto/update-deck.dto';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 
 @Injectable()
 export class DeckService {

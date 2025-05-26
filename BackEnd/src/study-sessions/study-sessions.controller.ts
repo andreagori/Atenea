@@ -4,8 +4,8 @@ import { CreateStudySessionDto } from './dto/create-study-session.dto';
 import { UpdateStudySessionDto } from './dto/update-study-session.dto';
 import { StudySession } from './entities/study-session.entity';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/jwt/JwtAuthGuard';
-import { TestQuestionDto, TestAnswerDto } from 'src/test-question/dto/test-question.dto';
+import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
+import { TestQuestionDto, TestAnswerDto } from '../test-question/dto/test-question.dto';
 import { TestResultDto } from './dto/test-result.dto';
 
 @ApiTags('study-sessions')

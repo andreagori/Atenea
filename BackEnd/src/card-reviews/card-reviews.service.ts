@@ -1,10 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CardReview } from './entities/card-review.entity';
 import { CreateCardReviewDto } from './dto/create-card-review.dto';
 import { UpdateCardReviewDto } from './dto/update-card-review.dto';
 import { Evaluation, StudyMethod } from '@prisma/client';
-import { StudySession } from 'src/study-sessions/entities/study-session.entity';
+import { StudySession } from '../study-sessions/entities/study-session.entity';
 
 @Injectable()
 export class CardReviewsService {
