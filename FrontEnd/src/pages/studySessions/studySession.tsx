@@ -60,14 +60,14 @@ function sesionEstudio() {
         style={{
           backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
         }}>
-        <h1 className="text-6xl text-lightComponent mt-10 mb-8 text-center">
+        <h1 className="text-6xl text-lightComponent mt-10 mb-8 text-center font-bold">
           Sesión de <br /> estudio
         </h1>
-        <p className="text-2xl font-semibold mt-2 mb-2 text-lightComponent">
+        <p className="text-2xl mt-2 mb-2 text-lightComponent">
           Selecciona el mazo a estudiar:
         </p>
         <SelectDecksStudySession onDeckSelect={setSelectedDeckId} />
-        <p className="text-2xl font-semibold mt-10 text-lightComponent">
+        <p className="text-2xl mt-10 text-lightComponent">
           Selecciona el tipo de sesión de estudio:
         </p>
         <StudySessionsOptions

@@ -73,11 +73,11 @@
 }
 
 /* TYPOGRAPHY ----------------------------- */
-funnel-sans-<uniquifier> 
+funnel-sans-uniquifier 
 {
   font-family: "Funnel Sans", sans-serif;
   font-optical-sizing: auto;
-  font-weight: <weight>;
+  font-weight: weight;
   font-style: normal;
 }
 
