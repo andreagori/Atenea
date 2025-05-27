@@ -12,7 +12,6 @@ import {
   ProductiveHoursData
 } from '../types/analytics.types';
 
-// ✅ Crear interfaz para el estado de datos
 interface AnalyticsData {
   dailyStudyTime: DailyStudyData[];
   testScores: TestScoreData[];
@@ -22,13 +21,14 @@ interface AnalyticsData {
   deckProgress: DeckProgressData[];
   cardRetention: CardRetentionData[];
   productiveHours: ProductiveHoursData[];
+  studyMethods?: { method: string; count: number }[];
+  learningMethods?: { method: string; count: number }[];
 }
 
 export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // ✅ Estado inicial con tipos correctos
   const [data, setData] = useState<AnalyticsData>({
     dailyStudyTime: [],
     testScores: [],
@@ -48,7 +48,7 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
       const [
         dailyStudyTime,
         testScores,
-        methodsDistribution,
+        methodsDistribution, // Para métodos, obtener datos históricos completos
         activityCalendar,
         methodEfficiency,
         deckProgress,
@@ -57,7 +57,8 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
       ] = await Promise.all([
         AnalyticsService.getDailyStudyTime(timeRange),
         AnalyticsService.getTestScores(timeRange),
-        AnalyticsService.getMethodsDistribution(timeRange),
+        // ✅ Para métodos de distribución, usar un rango histórico completo
+        AnalyticsService.getMethodsDistribution({ days: 365 }), // Último año completo
         AnalyticsService.getActivityCalendar(),
         AnalyticsService.getMethodEfficiency(timeRange),
         AnalyticsService.getDeckProgress(timeRange),

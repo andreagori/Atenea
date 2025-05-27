@@ -108,10 +108,10 @@ export function CreateDeckModal({
                             onClick={onClose}
                             isGradient={true}
                             gradientDirection="to bottom"
-                            gradientColors={['#FF2F2F', '#FF2F2F']}
+                            gradientColors={['#FF2F2F', '#650707']}
                             color="#fff"
                             hoverColor="#fff"
-                            hoverBackground="#650707"
+                            hoverBackground="#FF2F2F"
                             width="120px"
                             height="35px"
                         />
@@ -125,7 +125,7 @@ export function CreateDeckModal({
                             onClick={() => { }}
                             isGradient={true}
                             gradientDirection="to bottom"
-                            gradientColors={['#0C3BEB', '#1A368B']}
+                            gradientColors={['#0C3BEB', '#1700A4']}
                             color="#fff"
                             hoverColor="#fff"
                             hoverBackground="#0C3BEB"

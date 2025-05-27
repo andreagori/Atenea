@@ -12,7 +12,7 @@ function StatsAnalysisSummary() {
                     <div className="stat-desc text-lg">Última sesión</div>
                 </div>
                 <div className="stat">
-                    <div className="stat-title text-2xl mb-2">Sesiones totales</div>
+                    <div className="stat-title text-2xl mb-2">Sesiones realizadas</div>
                     <div className="stat-value text-4xl mb-2 bg-darkSecondaryPurple rounded h-12 w-16"></div>
                     <div className="stat-desc text-lg">Total</div>
                 </div>
@@ -36,10 +36,14 @@ function StatsAnalysisSummary() {
         );
     }
 
-    // 📊 Obtener datos directos usando las propiedades correctas
+    // 📊 Obtener datos directos del usuario específico
     const lastSession = data.dailyStudyTime?.[data.dailyStudyTime.length - 1];
-    const totalMinutes = data.dailyStudyTime?.reduce((acc, day) => acc + day.minutes, 0) || 0;
-    const totalSessions = data.dailyStudyTime?.length || 0;
+    
+    // 🎯 Calcular sesiones reales del usuario (suma de todas las sesiones por día)
+    const totalUserSessions = data.dailyStudyTime?.reduce((acc, day) => {
+        return acc + (day.minutes > 0 ? 1 : 0);
+    }, 0) || 0;
+    
     const lastTest = data.testScores?.[data.testScores.length - 1];
 
     return (
@@ -55,12 +59,12 @@ function StatsAnalysisSummary() {
             </div>
 
             <div className="stat">
-                <div className="stat-title text-2xl mb-2 text-darkSecondaryPurple">Total de sesiones</div>
+                <div className="stat-title text-2xl mb-2 text-darkSecondaryPurple">Sesiones realizadas</div>
                 <div className="stat-value text-4xl mb-2 text-white">
-                    {totalSessions}
+                    {totalUserSessions}
                 </div>
                 <div className="stat-desc text-lg text-darkInfo">
-                    Sesiones completadas
+                    Total del usuario
                 </div>
             </div>
 

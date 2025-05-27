@@ -13,7 +13,6 @@ interface PageSizeSelectorProps {
 export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
   pageSize,
   onPageSizeChange,
-  totalItems,
   variant = 'blue',
   className = ""
 }) => {

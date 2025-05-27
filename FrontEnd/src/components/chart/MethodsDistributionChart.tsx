@@ -6,7 +6,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { MethodDistribution } from '../../types/analytics.types';
+import { MethodDistribution } from '@/types/analytics.types';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -16,7 +16,7 @@ interface MethodsDistributionChartProps {
 }
 
 export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> = ({ data, loading }) => {
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="bg-darkPrimaryPurple rounded-xl p-6 border border-darkSecondaryPurple">
         <div className="animate-pulse">
@@ -30,20 +30,76 @@ export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> =
     );
   }
 
-  // Mapear los datos con nombres personalizados
+  if (!data) {
+    return (
+      <div className="bg-darkPrimaryPurple rounded-xl p-6 border border-darkSecondaryPurple text-center">
+        <h3 className="text-lg font-bold text-lightNeutral mb-4">
+          Distribución de Métodos y Tipos
+        </h3>
+        <p className="text-darkInfo">
+          📚 Aún no tienes datos de métodos de estudio.
+          <br />
+          ¡Comienza a estudiar para ver tus estadísticas!
+        </p>
+      </div>
+    );
+  }
+
+  // Usar los datos del usuario pasados como props
+  const userStudyMethods = data.studyMethods || [];
+  const userLearningMethods = data.learningMethods || [];
+
+  // Mapear los datos reales del usuario
   const customStudyMethods = [
-    { method: 'Memorización espaciada', count: data.studyMethods[0]?.count || 15 },
-    { method: 'Pruebas simuladas', count: data.studyMethods[1]?.count || 8 },
-    { method: 'Pomodoro', count: data.studyMethods[2]?.count || 12 }
+    { 
+      method: 'Memorización espaciada', 
+      count: userStudyMethods.find(m => m.method === 'spacedRepetition')?.count || 0 
+    },
+    { 
+      method: 'Pruebas simuladas', 
+      count: userStudyMethods.find(m => m.method === 'simulatedTest')?.count || 0 
+    },
+    { 
+      method: 'Pomodoro', 
+      count: userStudyMethods.find(m => m.method === 'pomodoro')?.count || 0 
+    }
   ];
 
   const customCardTypes = [
-    { method: 'Método de Cornell', count: data.learningMethods[0]?.count || 20 },
-    { method: 'Carta visual', count: data.learningMethods[1]?.count || 10 },
-    { method: 'Repetición activa', count: data.learningMethods[2]?.count || 15 }
+    { 
+      method: 'Método de Cornell', 
+      count: userLearningMethods.find(m => m.method === 'cornell')?.count || 0 
+    },
+    { 
+      method: 'Carta visual', 
+      count: userLearningMethods.find(m => m.method === 'visualCard')?.count || 0 
+    },
+    { 
+      method: 'Repetición activa', 
+      count: userLearningMethods.find(m => m.method === 'activeRecall')?.count || 0 
+    }
   ];
 
-  // Paleta de azules del proyecto
+  // Si no hay datos del usuario, mostrar mensaje
+  const totalStudySessions = customStudyMethods.reduce((acc, m) => acc + m.count, 0);
+  const totalCardTypes = customCardTypes.reduce((acc, m) => acc + m.count, 0);
+
+  if (totalStudySessions === 0 && totalCardTypes === 0) {
+    return (
+      <div className="bg-darkPrimaryPurple rounded-xl p-6 border border-darkSecondaryPurple text-center">
+        <h3 className="text-lg font-bold text-lightNeutral mb-4">
+          Distribución de Métodos y Tipos
+        </h3>
+        <p className="text-darkInfo">
+          Aún no tienes datos de métodos de estudio.
+          <br />
+          ¡Comienza a estudiar para ver tus estadísticas!
+        </p>
+      </div>
+    );
+  }
+
+  // ...resto del código para los gráficos permanece igual...
   const studyMethodsData = {
     labels: customStudyMethods.map(m => m.method),
     datasets: [
@@ -66,7 +122,6 @@ export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> =
     ],
   };
 
-  // Paleta complementaria en tonos azul-cyan
   const cardTypesData = {
     labels: customCardTypes.map(m => m.method),
     datasets: [
@@ -96,7 +151,7 @@ export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> =
       legend: {
         position: 'bottom' as const,
         labels: {
-          color: '#75CDF8', // darkPSText
+          color: '#75CDF8',
           font: {
             size: 11,
             weight: 'bold' as const,
@@ -107,32 +162,29 @@ export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> =
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 4, 22, 0.95)', // darkBackground con transparencia
-        borderColor: '#75CDF8', // darkPSText
+        backgroundColor: 'rgba(0, 4, 22, 0.95)',
+        borderColor: '#75CDF8',
         borderWidth: 2,
         titleColor: '#75CDF8',
-        bodyColor: '#BDDAFE', // darkComponentText
+        bodyColor: '#BDDAFE',
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
           label: function(context: any) {
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = Math.round((context.parsed / total) * 100);
-            return `${context.label}: ${context.parsed} sesiones (${percentage}%)`;
+            const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
+            return `${context.label}: ${context.parsed} cartas (${percentage}%)`;
           }
         }
       },
     },
-    cutout: '60%', // Donut más delgado para mejor legibilidad
+    cutout: '60%',
   };
-
-  const totalStudySessions = customStudyMethods.reduce((acc, m) => acc + m.count, 0);
-  const totalCardTypes = customCardTypes.reduce((acc, m) => acc + m.count, 0);
 
   return (
     <div className="bg-darkPrimaryPurple rounded-xl p-4 border border-darkSecondaryPurple shadow-lg">
       <h3 className="text-lg font-bold text-lightNeutral mb-4 text-center">
-        Distribución de Métodos y Tipos
+        Tus Métodos y Tipos de Estudio
       </h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -141,7 +193,7 @@ export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> =
           <div className="flex items-center justify-center gap-2 mb-3">
             <h4 className="text-base font-semibold text-lightNeutral">Métodos de Estudio</h4>
           </div>
-          <div className="h-56"> {/* Aumentado altura */}
+          <div className="h-56">
             <Doughnut data={studyMethodsData} options={chartOptions} />
           </div>
         </div>
@@ -151,49 +203,55 @@ export const MethodsDistributionChart: React.FC<MethodsDistributionChartProps> =
           <div className="flex items-center justify-center gap-2 mb-3">
             <h4 className="text-base font-semibold text-lightNeutral">Tipos de Cartas</h4>
           </div>
-          <div className="h-56"> {/* Aumentado altura */}
+          <div className="h-56">
             <Doughnut data={cardTypesData} options={chartOptions} />
           </div>
         </div>
       </div>
 
-      {/* Summary Stats Mejoradas */}
+      {/* Summary Stats del usuario */}
       <div className="mt-4 grid grid-cols-4 gap-3">
         <div className="bg-gradient-to-br from-[#75CDF8] to-[#027CE6] rounded-lg p-3 text-center">
           <div className="text-lg font-bold text-darkBackground">{totalStudySessions}</div>
-          <div className="text-xs text-darkBackground opacity-80">Sesiones</div>
+          <div className="text-xs text-darkBackground opacity-80">Tus Sesiones</div>
         </div>
         <div className="bg-gradient-to-br from-[#0C3BEB] to-[#002FE1] rounded-lg p-3 text-center">
           <div className="text-lg font-bold text-white">{totalCardTypes}</div>
-          <div className="text-xs text-white opacity-80">Cartas</div>
+          <div className="text-xs text-white opacity-80">Tus Cartas</div>
         </div>
         <div className="bg-gradient-to-br from-[#729BCE] to-[#027CE6] rounded-lg p-3 text-center">
           <div className="text-lg font-bold text-darkBackground">
-            {Math.round((totalStudySessions / (totalStudySessions + totalCardTypes)) * 100)}%
+            {totalStudySessions + totalCardTypes > 0 
+              ? Math.round((totalStudySessions / (totalStudySessions + totalCardTypes)) * 100)
+              : 0}%
           </div>
           <div className="text-xs text-darkBackground opacity-80">Estudio</div>
         </div>
         <div className="bg-gradient-to-br from-[#002456] to-[#0C3BEB] rounded-lg p-3 text-center">
           <div className="text-lg font-bold text-white">
-            {Math.round((totalCardTypes / (totalStudySessions + totalCardTypes)) * 100)}%
+            {totalStudySessions + totalCardTypes > 0 
+              ? Math.round((totalCardTypes / (totalStudySessions + totalCardTypes)) * 100)
+              : 0}%
           </div>
           <div className="text-xs text-white opacity-80">Cartas</div>
         </div>
       </div>
 
-      {/* Método más utilizado */}
-      <div className="mt-3 p-3 bg-gradient-to-r from-[#75CDF8] to-[#027CE6] rounded-lg">
-        <div className="text-center">
-          <span className="text-sm font-medium text-darkBackground">
-          Método favorito: 
-          </span>
-          <span className="ml-2 text-sm font-bold text-darkBackground">
-            {customStudyMethods.reduce((prev, current) => 
-              (prev.count > current.count) ? prev : current
-            ).method}
-          </span>
+      {/* Método más utilizado por el usuario */}
+      {totalStudySessions > 0 && (
+        <div className="mt-3 p-3 bg-gradient-to-r from-[#75CDF8] to-[#027CE6] rounded-lg">
+          <div className="text-center">
+            <span className="text-sm font-medium text-darkBackground">
+              Tu método favorito: 
+            </span>
+            <span className="ml-2 text-sm font-bold text-darkBackground">
+              {customStudyMethods.reduce((prev, current) => 
+                (prev.count > current.count) ? prev : current
+              ).method}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -6,13 +6,13 @@ import { TimeRangeDto, DeckAnalyticsDto } from './dto/create-analytics.dto';
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // 1. Tiempo de estudio diario - Line chart
   async getDailyStudyTime(userId: number, timeRange: TimeRangeDto) {
     const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
-    const startDate = timeRange.startDate 
-      ? new Date(timeRange.startDate) 
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
       : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000)); // Default to 7 days if undefined
 
     const sessions = await this.prisma.studySession.findMany({
@@ -32,7 +32,7 @@ export class AnalyticsService {
     // Agrupar por fecha y calcular minutos totales
     const dailyData = sessions.reduce((acc, session) => {
       const date = session.startTime.toISOString().split('T')[0];
-      
+
       let minutes = 0;
       if (session.studyMethod === 'pomodoro' && session.pomodoro) {
         minutes = session.pomodoro.totalStudyTimeMin;
@@ -61,8 +61,8 @@ export class AnalyticsService {
   // 2. Puntuaciones en tests - Bar chart
   async getTestScores(userId: number, timeRange: TimeRangeDto) {
     const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
-    const startDate = timeRange.startDate 
-      ? new Date(timeRange.startDate) 
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
       : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000)); // Default to 7 days if undefined
 
     const results = await this.prisma.sessionsResult.findMany({
@@ -100,8 +100,8 @@ export class AnalyticsService {
   // 3. Distribución de métodos - Pie chart
   async getMethodsDistribution(userId: number, timeRange: TimeRangeDto) {
     const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
-    const startDate = timeRange.startDate 
-      ? new Date(timeRange.startDate) 
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
       : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000)); // Default to 7 days if undefined
 
     const sessions = await this.prisma.studySession.findMany({
@@ -120,11 +120,18 @@ export class AnalyticsService {
       return acc;
     }, {} as Record<string, number>);
 
-    // Distribución de métodos de aprendizaje
-    const learningMethods = sessions.reduce((acc, session) => {
-      session.learningMethod.forEach(method => {
-        acc[method] = (acc[method] || 0) + 1;
-      });
+    const cards = await this.prisma.card.findMany({
+      where: {
+        deck: { userId: userId }
+      },
+      select: {
+        learningMethod: true
+      }
+    });
+
+    // Contar cartas por learningMethod
+    const learningMethods = cards.reduce((acc, card) => {
+      acc[card.learningMethod] = (acc[card.learningMethod] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
@@ -132,12 +139,12 @@ export class AnalyticsService {
       studyMethods: Object.entries(studyMethods).map(([method, count]) => ({
         method,
         count,
-        percentage: Math.round((count / sessions.length) * 100)
+        percentage: sessions.length > 0 ? Math.round((count / sessions.length) * 100) : 0
       })),
       learningMethods: Object.entries(learningMethods).map(([method, count]) => ({
         method,
         count,
-        percentage: Math.round((count / sessions.length) * 100)
+        percentage: cards.length > 0 ? Math.round((count / cards.length) * 100) : 0
       }))
     };
   }
@@ -163,7 +170,7 @@ export class AnalyticsService {
 
     const activityMap = sessions.reduce((acc, session) => {
       const date = session.startTime.toISOString().split('T')[0];
-      
+
       let minutes = 0;
       if (session.studyMethod === 'pomodoro' && session.pomodoro) {
         minutes = session.pomodoro.totalStudyTimeMin;
@@ -176,7 +183,7 @@ export class AnalyticsService {
       }
       acc[date].minutes += minutes;
       acc[date].sessions += 1;
-      
+
       return acc;
     }, {} as Record<string, { minutes: number, sessions: number }>);
 
@@ -192,7 +199,7 @@ export class AnalyticsService {
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
       const activity = activityMap[dateStr];
-      
+
       calendar.push({
         date: dateStr,
         dayOfWeek: d.getDay(),
@@ -209,8 +216,8 @@ export class AnalyticsService {
   // 5. Eficiencia por método - Scatter plot
   async getMethodEfficiency(userId: number, timeRange: TimeRangeDto) {
     const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
-    const startDate = timeRange.startDate 
-      ? new Date(timeRange.startDate) 
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
       : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000)); // Default to 7 days if undefined
 
     const sessions = await this.prisma.studySession.findMany({
@@ -252,8 +259,8 @@ export class AnalyticsService {
   // 6. Progreso por deck - Multi-bar chart
   async getDeckProgress(userId: number, timeRange: TimeRangeDto) {
     const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
-    const startDate = timeRange.startDate 
-      ? new Date(timeRange.startDate) 
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
       : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000)); // Default to 7 days if undefined
 
     const sessions = await this.prisma.studySession.findMany({
@@ -368,8 +375,8 @@ export class AnalyticsService {
   // 8. Horas productivas - Radar chart
   async getProductiveHours(userId: number, timeRange: TimeRangeDto) {
     const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
-    const startDate = timeRange.startDate 
-      ? new Date(timeRange.startDate) 
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
       : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000)); // Default to 7 days if undefined
 
     const sessions = await this.prisma.studySession.findMany({
@@ -422,7 +429,7 @@ export class AnalyticsService {
       ...stat,
       averageScore: stat.testCount > 0 ? Math.round(stat.totalScore / stat.testCount) : 0,
       averageMinutes: stat.sessions > 0 ? Math.round(stat.totalMinutes / stat.sessions) : 0,
-      productivity: stat.sessions > 0 && stat.testCount > 0 
+      productivity: stat.sessions > 0 && stat.testCount > 0
         ? Math.round(((stat.totalScore / stat.testCount) * stat.sessions) / 10) // Métrica compuesta
         : stat.sessions * 2 // Si no hay tests, usar solo cantidad de sesiones
     }));

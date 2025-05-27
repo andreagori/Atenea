@@ -16,7 +16,6 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
   pageSize,
-  totalItems,
   variant = 'blue',
   className = ""
 }) => {

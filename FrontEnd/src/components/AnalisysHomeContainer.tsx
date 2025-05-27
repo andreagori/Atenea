@@ -31,7 +31,7 @@ function AnalisisContainer() {
             </ul>
             </div>
           {/* Gráfica a la derecha */}
-          <div className="aspect-square w-4/13 bg-[#09090B] rounded-4xl">
+          <div className="aspect-square w-4/13 bg-[#09090bc7] rounded-4xl">
             <ExampleChart />
           </div>
         </div>

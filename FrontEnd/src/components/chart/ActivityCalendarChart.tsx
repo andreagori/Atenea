@@ -19,7 +19,7 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
     );
   }
 
-  // 🎨 Nueva función que usa rangos de sesiones
+  // Nueva función que usa rangos de sesiones
   const getIntensityColorBySessions = (sessions: number) => {
     if (sessions === 0) return '#002456';      // Sin actividad - darkComponent2
     if (sessions <= 2) return '#75CDF820';     // 1-2 sesiones - Muy baja
@@ -28,7 +28,7 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
     return '#75CDF8';                          // 11+ sesiones - Alta
   };
 
-  // 📊 Función para obtener la intensidad visual basada en sesiones
+  // Función para obtener la intensidad visual basada en sesiones
   const getIntensityLevel = (sessions: number) => {
     if (sessions === 0) return 0;
     if (sessions <= 2) return 1;
@@ -124,7 +124,6 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">📅</span>
               <h3 className="text-base font-bold text-lightNeutral">Actividad (30 días)</h3>
             </div>
             <div className="text-sm text-lightNeutral opacity-70">
@@ -197,7 +196,6 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
         {/* Mazos Más Estudiados */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">📚</span>
             <h3 className="text-base font-bold text-lightNeutral">Mazos Más Estudiados</h3>
           </div>
 

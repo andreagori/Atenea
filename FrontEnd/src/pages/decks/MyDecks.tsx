@@ -33,7 +33,7 @@ const MisMazos = () => {
 
     const handlePageSizeChange = (newSize: PageSize) => {
         setPageSize(newSize);
-        setCurrentPage(1); // Reset to first page when changing page size
+        setCurrentPage(1); 
     };
 
     if (loading) return (
@@ -63,58 +63,64 @@ const MisMazos = () => {
                 </p>
 
                 <div className="flex flex-col justify-center items-center mt-10 w-10/12 max-w-6xl">
-                    {/* Selector de tamaño de página */}
-                    <div className="flex justify-between items-center w-full mb-4">
-                        <PageSizeSelector
-                            pageSize={pageSize}
-                            onPageSizeChange={handlePageSizeChange}
-                            totalItems={decks?.length || 0}
-                            variant="blue" // Azul para mazos
-                        />
-                        <div className="text-sm text-darkInfo">
-                            Total: <span className="font-semibold text-darkPSText">{decks?.length || 0}</span> mazos
-                        </div>
-                    </div>
+                    {decks && decks.length > 0 ? (
+                        <>
+                            {/* Selector de tamaño de página */}
+                            <div className="flex justify-between items-center w-full mb-4">
+                                <PageSizeSelector
+                                    pageSize={pageSize}
+                                    onPageSizeChange={handlePageSizeChange}
+                                    totalItems={decks.length}
+                                    variant="blue" // Azul para mazos
+                                />
+                                <div className="text-sm text-darkInfo">
+                                    Total: <span className="font-semibold text-darkPSText">{decks.length}</span> mazos
+                                </div>
+                            </div>
 
-                    {/* Tabla de mazos */}
-                    <DecksTable
-                        data={displayedDecks.map(deck => ({
-                            deckId: deck.deckId,
-                            title: deck.title,
-                            body: deck.body
-                        }))}
-                        onDelete={async (deckId: number) => {
-                            try {
-                                await deleteDeck(deckId);
-                                await refetch();
-                                const newTotal = (decks?.length || 1) - 1;
-                                const newTotalPages = pageSize === 'Todas' ? 1 : Math.ceil(newTotal / Number(pageSize));
-                                if (currentPage > newTotalPages && newTotalPages > 0) {
-                                    setCurrentPage(newTotalPages);
-                                }
-                            } catch (error) {
-                                console.error("Error deleting deck:", error);
-                            }
-                        }}
-                        onUpdate={async (deckId: number, title: string, body: string) => {
-                            try {
-                                await updateDeck(deckId, { title, body });
-                                await refetch();
-                            } catch (error) {
-                                console.error("Error updating deck:", error);
-                            }
-                        }}
-                    />
+                            {/* Tabla de mazos */}
+                            <DecksTable
+                                data={displayedDecks.map(deck => ({
+                                    deckId: deck.deckId,
+                                    title: deck.title,
+                                    body: deck.body
+                                }))}
+                                onDelete={async (deckId: number) => {
+                                    try {
+                                        await deleteDeck(deckId);
+                                        await refetch();
+                                        const newTotal = (decks?.length || 1) - 1;
+                                        const newTotalPages = pageSize === 'Todas' ? 1 : Math.ceil(newTotal / Number(pageSize));
+                                        if (currentPage > newTotalPages && newTotalPages > 0) {
+                                            setCurrentPage(newTotalPages);
+                                        }
+                                    } catch (error) {
+                                        console.error("Error deleting deck:", error);
+                                    }
+                                }}
+                                onUpdate={async (deckId: number, title: string, body: string) => {
+                                    try {
+                                        await updateDeck(deckId, { title, body });
+                                        await refetch();
+                                    } catch (error) {
+                                        console.error("Error updating deck:", error);
+                                    }
+                                }}
+                            />
 
-                    {/* Paginación compacta azul */}
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        pageSize={pageSize}
-                        totalItems={decks?.length || 0}
-                        variant="blue" // Azul para mazos
-                    />
+                            {/* Paginación compacta azul */}
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                                pageSize={pageSize}
+                                totalItems={decks.length}
+                                variant="blue" // Azul para mazos
+                            />
+                        </>
+                    ) : (
+                        <p className="text-darkSecondary mt-4">No hay mazos creados</p>
+                    )}
 
                     {/* Botón crear mazo */}
                     <div className="flex justify-end mt-6 w-full">
@@ -124,10 +130,10 @@ const MisMazos = () => {
                             onClick={() => setIsModalOpen(true)}
                             isGradient={true}
                             gradientDirection="to bottom"
-                            gradientColors={['#A683FF', '#5311F8']}
+                            gradientColors={['#0C3BEB', '#1700A4']}
                             color="#fff"
                             hoverColor="#fff"
-                            hoverBackground="#8C4FFF"
+                            hoverBackground="#0C3BEB"
                             width="180px"
                             height="35px"
                         />
