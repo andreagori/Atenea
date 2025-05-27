@@ -8,6 +8,10 @@ import { ButtonCustom } from '@/components/Buttons';
 import { CreateCardModal } from "@/components/CreateDeckModal";
 import { ChevronRight } from 'lucide-react';
 import { CreateCardPayload } from "@/types/card.types";
+import { Pagination } from "@/components/Pagination";
+import { PageSizeSelector } from "@/components/PageSizeSelector";
+
+
 import Footer from "../../components/Footer";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 'Todas'] as const;
@@ -110,32 +114,17 @@ const OneDeck = () => {
                         Cartas del mazo:
                     </p>
 
-                    {error ? (
-                        <p className="text-red-500 mt-4">{error}</p>
-                    ) : cards && cards.length > 0 ? (
+                    {cards && cards.length > 0 ? (
                         <>
                             <div className="flex justify-between items-center w-full mb-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-white">Mostrar:</span>
-                                    <select
-                                        className="select select-bordered select-sm bg-darkPrimaryPurple text-white"
-                                        value={pageSize.toString()}
-                                        onChange={(e) => {
-                                            const value = e.target.value === 'Todas' ? 'Todas' : Number(e.target.value);
-                                            setPageSize(value as PageSize);
-                                            setCurrentPage(1);
-                                        }}
-                                    >
-                                        {PAGE_SIZE_OPTIONS.map((size) => (
-                                            <option key={size.toString()} value={size}>
-                                                {size}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <span className="text-white">cartas</span>
-                                </div>
-                                <div className="text-white">
-                                    Mostrando {displayedCards.length} de {cards.length} cartas
+                                <PageSizeSelector
+                                    pageSize={pageSize}
+                                    onPageSizeChange={handlePageSizeChange}
+                                    totalItems={cards.length}
+                                    variant="purple" // Morado para cartas
+                                />
+                                <div className="text-sm text-darkInfo">
+                                    Total: <span className="font-semibold text-darkPSText">{cards.length}</span> cartas
                                 </div>
                             </div>
 
@@ -152,34 +141,15 @@ const OneDeck = () => {
                                 onUpdateCard={handleUpdateCard}
                             />
 
-                            {pageSize !== 'Todas' && totalPages > 1 && (
-                                <div className="flex justify-center gap-2 mt-4">
-                                    <button
-                                        className="btn btn-sm btn-circle"
-                                        onClick={() => setCurrentPage(prev => prev - 1)}
-                                        disabled={currentPage === 1}
-                                    >
-                                        «
-                                    </button>
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                        <button
-                                            key={page}
-                                            className={`btn btn-sm btn-circle ${page === currentPage ? 'btn-primary' : ''
-                                                }`}
-                                            onClick={() => setCurrentPage(page)}
-                                        >
-                                            {page}
-                                        </button>
-                                    ))}
-                                    <button
-                                        className="btn btn-sm btn-circle"
-                                        onClick={() => setCurrentPage(prev => prev + 1)}
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        »
-                                    </button>
-                                </div>
-                            )}
+                            {/* Paginación compacta morada */}
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                                pageSize={pageSize}
+                                totalItems={cards.length}
+                                variant="purple" // Morado para cartas
+                            />
                         </>
                     ) : (
                         <p className="text-white mt-4">No hay cartas en este mazo</p>

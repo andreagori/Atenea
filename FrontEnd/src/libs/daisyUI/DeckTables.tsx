@@ -24,7 +24,6 @@ interface DaisyTableProps {
   onUpdate?: (deckId: number, title: string, body: string) => Promise<void>;
 }
 
-
 const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,8 +51,11 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
     }
   }
 
-  async function onStudy(index: number) {
-    console.log('Estudiando mazo:', data[index]);
+  // Función para redirigir a sesión de estudio con el mazo seleccionado
+  async function onStudy(deck: TableRow, event: React.MouseEvent) {
+    event.stopPropagation();
+    // Redirigir a sesión de estudio con el deckId como parámetro
+    navigate(`/sesionesEstudio?deckId=${deck.deckId}`);
   }
 
   return (
@@ -82,15 +84,15 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                 <div className="flex justify-center gap-2">
                   <button
                     className="btn btn-sm btn-info"
-                    onClick={() => onStudy?.(index)}
+                    onClick={(e) => onStudy(deck, e)}
+                    title="Estudiar mazo"
                   >
                     <img
                       src={StudyIcon}
                       alt="Study Icon"
                       className="w-5 h-5"
                       style={{ marginLeft: '4px' }}
-                    >
-                    </img>
+                    />
                     Estudiar
                   </button>
                   <button
@@ -103,8 +105,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                       alt="Edit Icon"
                       className="w-5 h-5"
                       style={{ marginLeft: '2px' }}
-                    >
-                    </img>
+                    />
                   </button>
                   <button
                     className="btn btn-sm btn-error"
@@ -116,8 +117,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                       alt="Delete Icon"
                       className="w-5 h-5"
                       style={{ marginLeft: '2px' }}
-                    >
-                    </img>
+                    />
                   </button>
                 </div>
               </td>

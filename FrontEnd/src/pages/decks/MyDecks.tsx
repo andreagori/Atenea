@@ -1,23 +1,57 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { NavbarLoginIn } from "../../components/Navbar"
 import { DecksTable } from "../../libs/daisyUI/DeckTables"
 import { useDecks } from "@/hooks/useDeck";
 import { ButtonCustom } from '@/components/Buttons';
 import { CreateDeckModal } from "@/components/CreateDeckModal";
-import { ChevronRight } from 'lucide-react';
+import { Pagination } from "@/components/Pagination";
+import { PageSizeSelector } from "@/components/PageSizeSelector";
 import Footer from "../../components/Footer";
+
+type PageSize = 5 | 10 | 25 | 50 | 'Todas';
 
 const MisMazos = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { decks, loading, error, deleteDeck, createDeck, updateDeck, refetch, } = useDecks();
+    const [pageSize, setPageSize] = useState<PageSize>(10);
+    const [currentPage, setCurrentPage] = useState(1);
+    const { decks, loading, error, deleteDeck, createDeck, updateDeck, refetch } = useDecks();
 
-    if (loading) return <p className="text-white mt-20">Cargando mazos...</p>;
-    if (error) return <p className="text-red-500 mt-20">Error: {error}</p>;
+    const displayedDecks = useMemo(() => {
+        if (!decks) return [];
+        if (pageSize === 'Todas') return decks;
+
+        const start = (currentPage - 1) * Number(pageSize);
+        const end = start + Number(pageSize);
+        return decks.slice(start, end);
+    }, [decks, pageSize, currentPage]);
+
+    const totalPages = useMemo(() => {
+        if (!decks) return 0;
+        if (pageSize === 'Todas') return 1;
+        return Math.ceil(decks.length / Number(pageSize));
+    }, [decks, pageSize]);
+
+    const handlePageSizeChange = (newSize: PageSize) => {
+        setPageSize(newSize);
+        setCurrentPage(1); // Reset to first page when changing page size
+    };
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-screen text-lightComponent">
+            <span className="loading loading-spinner loading-lg text-darkSecondaryPurple"></span>
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex justify-center items-center h-screen text-red-500">
+            Error: {error}
+        </div>
+    );
 
     return (
         <>
             <NavbarLoginIn />
-            <div className="w-full h-screen flex bg-darkBackground font-primary flex-col items-center overflow-y-auto scrollbar-hide scroll-smooth"
+            <div className="w-full min-h-screen flex bg-darkBackground font-primary flex-col items-center overflow-y-auto scrollbar-hide scroll-smooth"
                 style={{
                     backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
                 }}>
@@ -27,10 +61,25 @@ const MisMazos = () => {
                 <p className="text-lightComponent mt-2 text-xl">
                     Selecciona el mazo para editarlo o acceder a las cartas
                 </p>
-                <div className="flex flex-col justify-center items-center mt-10 w-10/12 h-full">
+
+                <div className="flex flex-col justify-center items-center mt-10 w-10/12 max-w-6xl">
+                    {/* Selector de tamaño de página */}
+                    <div className="flex justify-between items-center w-full mb-4">
+                        <PageSizeSelector
+                            pageSize={pageSize}
+                            onPageSizeChange={handlePageSizeChange}
+                            totalItems={decks?.length || 0}
+                            variant="blue" // Azul para mazos
+                        />
+                        <div className="text-sm text-darkInfo">
+                            Total: <span className="font-semibold text-darkPSText">{decks?.length || 0}</span> mazos
+                        </div>
+                    </div>
+
+                    {/* Tabla de mazos */}
                     <DecksTable
-                        data={decks.map(deck => ({
-                            deckId: deck.deckId, // Use deckId consistently
+                        data={displayedDecks.map(deck => ({
+                            deckId: deck.deckId,
                             title: deck.title,
                             body: deck.body
                         }))}
@@ -38,6 +87,11 @@ const MisMazos = () => {
                             try {
                                 await deleteDeck(deckId);
                                 await refetch();
+                                const newTotal = (decks?.length || 1) - 1;
+                                const newTotalPages = pageSize === 'Todas' ? 1 : Math.ceil(newTotal / Number(pageSize));
+                                if (currentPage > newTotalPages && newTotalPages > 0) {
+                                    setCurrentPage(newTotalPages);
+                                }
                             } catch (error) {
                                 console.error("Error deleting deck:", error);
                             }
@@ -51,37 +105,35 @@ const MisMazos = () => {
                             }
                         }}
                     />
-                    <div className="flex justify-end mt-4 gap-2 self-end">
+
+                    {/* Paginación compacta azul */}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        pageSize={pageSize}
+                        totalItems={decks?.length || 0}
+                        variant="blue" // Azul para mazos
+                    />
+
+                    {/* Botón crear mazo */}
+                    <div className="flex justify-end mt-6 w-full">
                         <ButtonCustom
                             type="button"
                             text="Crear nuevo mazo"
                             onClick={() => setIsModalOpen(true)}
                             isGradient={true}
                             gradientDirection="to bottom"
-                            gradientColors={['#0C3BEB', '#1A368B']}
+                            gradientColors={['#A683FF', '#5311F8']}
                             color="#fff"
                             hoverColor="#fff"
-                            hoverBackground="#0C3BEB"
+                            hoverBackground="#8C4FFF"
                             width="180px"
                             height="35px"
                         />
-
-                        <ButtonCustom
-                            type="button"
-                            text="Siguiente"
-                            onClick={() => console.log("Siguiente")}
-                            isGradient={true}
-                            gradientDirection="to bottom"
-                            gradientColors={['#0C3BEB', '#0C3BEB']}
-                            color="#fff"
-                            hoverColor="#fff"
-                            hoverBackground="#0C3BEB"
-                            width="150px"
-                            height="35px"
-                            icon={< ChevronRight />}
-                        />
                     </div>
                 </div>
+
                 <footer className="w-full mt-10">
                     <Footer />
                 </footer>
@@ -90,9 +142,9 @@ const MisMazos = () => {
                 <CreateDeckModal
                     onClose={() => setIsModalOpen(false)}
                     onCreate={async (title, body) => {
-                        await createDeck(title, body); // crea el mazo
-                        await refetch(); // refetch después de crear
-                        setIsModalOpen(false); // cierra el modal
+                        await createDeck(title, body);
+                        await refetch();
+                        setIsModalOpen(false);
                     }}
                 />
             )}

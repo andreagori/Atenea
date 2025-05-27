@@ -61,7 +61,7 @@ export function CreateDeckModal({
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30 ">
+        <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30 z-[9999]">
             <div className="bg-darkComponent2 rounded-lg shadow-lg w-4/12 h-7/13 border-2 border-darkComponentText">
                 <h1 className="text-3xl font-bold mt-4 text-center text-darkComponentText">
                     {editMode ? 'Editar mazo' : 'Crear un mazo'}
@@ -237,7 +237,7 @@ export function CreateCardModal({ onClose, onCreateCard }: CreateCardModalProps)
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30">
+        <div className="fixed inset-0 flex items-center justify-center font-primary backdrop-blur-sm bg-black/30 z-[9999]">
 
             <div className="mt-15 bg-darkPrimaryPurple2 rounded-lg shadow-lg w-5/12 border-2 border-darkSecondaryPurple text-darkSecondaryPurple flex flex-col max-h-[90vh] overflow-y-auto">
                 <h1 className="text-3xl font-bold mt-4 text-center">Agregar una carta</h1>

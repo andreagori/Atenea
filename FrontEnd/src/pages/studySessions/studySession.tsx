@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { NavbarLoginIn } from "../../components/Navbar";
 import SelectDecksStudySession from "../../libs/daisyUI/SelectDecksStudySession";
 import StudySessionsOptions from "../../components/StudySessionsOptions";
@@ -7,17 +7,24 @@ import { useStudySession } from "@/hooks/useStudySessions";
 import { useStudySessionDefaults } from "@/hooks/useStudySessionsDefaults";
 import { CreateStudySessionDto } from "@/types/studySessions.types";
 
-{/* Después hacer un hook con esto */ }
 function sesionEstudio() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [sessionConfig, setSessionConfig] = useState<CreateStudySessionDto | null>(null);
+  const [searchParams] = useSearchParams();
   const { createStudySession } = useStudySession();
   const defaultConfig = useStudySessionDefaults(selectedOption);
   const navigate = useNavigate();
 
-  const handleConfigSave = (config: CreateStudySessionDto) => {
+  // Preseleccionar mazo si viene del botón "Estudiar"
+  useEffect(() => {
+    const deckIdFromUrl = searchParams.get('deckId');
+    if (deckIdFromUrl) {
+      setSelectedDeckId(parseInt(deckIdFromUrl));
+    }
+  }, [searchParams]);
 
+  const handleConfigSave = (config: CreateStudySessionDto) => {
     setSessionConfig(config);
   };
 
@@ -28,24 +35,24 @@ function sesionEstudio() {
     }
 
     try {
-        // Use custom config if available, otherwise use default
-        const configToUse = sessionConfig || defaultConfig;
+      // Use custom config if available, otherwise use default
+      const configToUse = sessionConfig || defaultConfig;
 
-        if (!configToUse) {
-            throw new Error('No se pudo obtener la configuración');
-        }
+      if (!configToUse) {
+        throw new Error('No se pudo obtener la configuración');
+      }
 
-        console.log('Using configuration:', configToUse);
-        
-        const response = await createStudySession(selectedDeckId, configToUse);
+      console.log('Using configuration:', configToUse);
+      
+      const response = await createStudySession(selectedDeckId, configToUse);
 
-        if (response && response.sessionId) {
-            const path = `/sesionesEstudio/${selectedOption}/${response.sessionId}`;
-            navigate(path, { replace: true });
-        }
+      if (response && response.sessionId) {
+        const path = `/sesionesEstudio/${selectedOption}/${response.sessionId}`;
+        navigate(path, { replace: true });
+      }
     } catch (err) {
-        console.error('Error creating study session:', err);
-        alert('Error al crear la sesión de estudio');
+      console.error('Error creating study session:', err);
+      alert('Error al crear la sesión de estudio');
     }
   };
 
@@ -66,7 +73,10 @@ function sesionEstudio() {
         <p className="text-2xl mt-2 mb-2 text-lightComponent">
           Selecciona el mazo a estudiar:
         </p>
-        <SelectDecksStudySession onDeckSelect={setSelectedDeckId} />
+        <SelectDecksStudySession 
+          onDeckSelect={setSelectedDeckId}
+          preselectedDeckId={selectedDeckId} // Pasar el mazo preseleccionado
+        />
         <p className="text-2xl mt-10 text-lightComponent">
           Selecciona el tipo de sesión de estudio:
         </p>
@@ -77,6 +87,7 @@ function sesionEstudio() {
           disabled={!selectedDeckId}
           onConfigSave={handleConfigSave}
         />
+        
         {/* Botones */}
         <div className="mt-10 flex gap-6 m-10">
           <button
@@ -99,7 +110,6 @@ function sesionEstudio() {
             </svg>
             Regresar
           </button>
-
 
           <button
             onClick={handleStart}

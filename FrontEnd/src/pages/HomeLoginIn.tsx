@@ -7,9 +7,7 @@ import { NavbarLoginIn } from "../components/Navbar";
 import { useUser } from "@/hooks/useUser";
 
 const HomeLoginIn = () => {
-  // Custom hook to fetch user data
   const { user, loading } = useUser();
-  // Check if user data is still loading
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-lightComponent">Cargando...</div>;
   }

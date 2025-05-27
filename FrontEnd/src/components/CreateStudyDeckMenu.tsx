@@ -5,7 +5,7 @@ import { ButtonCustom } from "./Buttons"
 function MazoSesionCardsHome() {
     return (
         <div className="w-full flex justify-center items-center font-primary">
-            <div className="grid grid-cols-2 h-6/12 w-7/12 mt-5">
+            <div className="grid grid-cols-2 h-6/12 w-7/12 mt-2">
                 {/* Primera carta, crear mazo */}
 
                 <SpotlightCard className=""

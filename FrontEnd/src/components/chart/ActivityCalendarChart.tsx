@@ -19,15 +19,22 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
     );
   }
 
-  const getIntensityColor = (intensity: number) => {
-    const colors = [
-      '#002456', // Sin actividad - darkComponent2
-      '#75CDF820', // Muy baja - darkPSText con transparencia
-      '#75CDF840', // Baja
-      '#75CDF880', // Media
-      '#75CDF8', // Alta - darkPSText
-    ];
-    return colors[Math.min(intensity, 4)];
+  // 🎨 Nueva función que usa rangos de sesiones
+  const getIntensityColorBySessions = (sessions: number) => {
+    if (sessions === 0) return '#002456';      // Sin actividad - darkComponent2
+    if (sessions <= 2) return '#75CDF820';     // 1-2 sesiones - Muy baja
+    if (sessions <= 10) return '#75CDF840';     // 3-5 sesiones - Baja  
+    if (sessions <= 20) return '#75CDF880';    // 6-10 sesiones - Media
+    return '#75CDF8';                          // 11+ sesiones - Alta
+  };
+
+  // 📊 Función para obtener la intensidad visual basada en sesiones
+  const getIntensityLevel = (sessions: number) => {
+    if (sessions === 0) return 0;
+    if (sessions <= 2) return 1;
+    if (sessions <= 10) return 2;
+    if (sessions <= 20) return 3;
+    return 4;
   };
 
   const getTooltipText = (day: ActivityCalendarData) => {
@@ -42,7 +49,14 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
       return `${formattedDate}: Sin actividad`;
     }
     
-    return `${formattedDate}: ${day.sessions} sesión(es), ${day.minutes} min`;
+    // 🏷️ Agregar nivel de actividad al tooltip
+    let activityLevel = '';
+    if (day.sessions <= 2) activityLevel = ' (Baja)';
+    else if (day.sessions <= 5) activityLevel = ' (Media)';
+    else if (day.sessions <= 10) activityLevel = ' (Alta)';
+    else activityLevel = ' (Muy Alta)';
+    
+    return `${formattedDate}: ${day.sessions} sesión(es), ${day.minutes} min${activityLevel}`;
   };
 
   // Generar últimos 30 días desde hoy
@@ -63,13 +77,13 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
       if (existingData) {
         days.push(existingData);
       } else {
-        // Generar datos de ejemplo para fechas sin datos
-        const randomIntensity = Math.floor(Math.random() * 5);
+        // 🎲 Generar datos de ejemplo más realistas
+        const randomSessions = Math.floor(Math.random() * 15); // 0-14 sesiones
         days.push({
           date: date.toISOString().split('T')[0],
-          sessions: randomIntensity > 0 ? randomIntensity : 0,
-          minutes: randomIntensity > 0 ? randomIntensity * 25 : 0,
-          intensity: randomIntensity,
+          sessions: randomSessions,
+          minutes: randomSessions > 0 ? randomSessions * 25 : 0,
+          intensity: getIntensityLevel(randomSessions), // Calcular intensidad basada en sesiones
           dayOfWeek: 0,
           week: 0
         });
@@ -107,9 +121,10 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Calendario de Actividad */}
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col h-full">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
+              <span className="text-lg">📅</span>
               <h3 className="text-base font-bold text-lightNeutral">Actividad (30 días)</h3>
             </div>
             <div className="text-sm text-lightNeutral opacity-70">
@@ -119,15 +134,15 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
 
           {/* Calendar Grid - Ocupando toda la mitad */}
           <div className="flex-1 flex flex-col justify-center">
-            <div className="flex justify-center mb-1">
+            <div className="flex justify-center">
               <div className="inline-block">
                 {weeks.map((week, weekIndex) => (
                   <div key={weekIndex} className="flex">
                     {week.map((day, dayIndex) => (
                       <div
                         key={`${weekIndex}-${dayIndex}`}
-                        className="w-14 h-10 m-0.5 rounded-sm cursor-pointer hover:ring-1 hover:ring-[#75CDF8] transition-all duration-200 group relative"
-                        style={{ backgroundColor: getIntensityColor(day.intensity) }}
+                        className="w-15 h-10 m-0.5 rounded-sm cursor-pointer hover:ring-1 hover:ring-[#75CDF8] transition-all duration-200 group relative"
+                        style={{ backgroundColor: getIntensityColorBySessions(day.sessions) }}
                       >
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2  bg-[#000416] text-lightNeutral text-xs rounded border border-[#75CDF8] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 shadow-lg">
                           {getTooltipText(day)}
@@ -139,20 +154,29 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
               </div>
             </div>
 
-            {/* Intensity Legend */}
+            {/* Intensity Legend con rangos de sesiones */}
             <div className="flex items-center justify-center mb-2">
               <div className="flex items-center gap-4 text-xs text-lightNeutral">
-                <span>Menos</span>
+                <span className="opacity-70">Menos</span>
                 <div className="flex items-center gap-1">
-                  {[0, 1, 2, 3, 4].map(intensity => (
-                    <div
-                      key={intensity}
-                      className="w-3 h-3 rounded-sm"
-                      style={{ backgroundColor: getIntensityColor(intensity) }}
-                    />
+                  {[
+                    { sessions: 0, label: '0' },
+                    { sessions: 1, label: '1-2' },
+                    { sessions: 3, label: '3-5' },
+                    { sessions: 6, label: '6-10' },
+                    { sessions: 11, label: '11+' }
+                  ].map((item, index) => (
+                    <div key={index} className="flex flex-col items-center">
+                      <div
+                        className="w-3 h-3 rounded-sm mb-1"
+                        style={{ backgroundColor: getIntensityColorBySessions(item.sessions) }}
+                        title={`${item.label} sesiones`}
+                      />
+                      <span className="text-xs opacity-60">{item.label}</span>
+                    </div>
                   ))}
                 </div>
-                <span>Más</span>
+                <span className="opacity-70">Más</span>
               </div>
             </div>
           </div>
@@ -161,11 +185,11 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
           <div className="grid grid-cols-2 gap-3 mt-auto">
             <div className="bg-gradient-to-br from-[#75CDF8] to-[#027CE6] rounded-lg p-3 text-center">
               <div className="text-xl font-bold text-darkBackground">{totalSessions}</div>
-              <div className="text-sm text-darkBackground">Sesiones</div>
+              <div className="text-sm text-darkBackground opacity-80">Sesiones</div>
             </div>
             <div className="bg-gradient-to-br from-[#027CE6] to-[#002FE1] rounded-lg p-3 text-center">
               <div className="text-xl font-bold text-white">{Math.round(totalMinutes / 60)}</div>
-              <div className="text-sm text-white">Horas</div>
+              <div className="text-sm text-white opacity-80">Horas</div>
             </div>
           </div>
         </div>
@@ -173,6 +197,7 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
         {/* Mazos Más Estudiados */}
         <div>
           <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">📚</span>
             <h3 className="text-base font-bold text-lightNeutral">Mazos Más Estudiados</h3>
           </div>
 
@@ -210,7 +235,7 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
                 </div>
 
                 {/* Stats del mazo */}
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-3 gap-2 text-xs mt-6">
                   <div className="text-center">
                     <div className="text-[#75CDF8] font-bold">{Math.round(deck.totalMinutes / 60)}</div>
                     <div className="text-lightNeutral opacity-70">Horas</div>
@@ -229,12 +254,12 @@ export const ActivityCalendarChart: React.FC<ActivityCalendarChartProps> = ({ da
           </div>
 
           {/* Resumen total */}
-          <div className="mt-8 p-3 bg-gradient-to-r from-[#75CDF8] to-[#027CE6] rounded-lg">
+          <div className="mt-3 p-3 bg-gradient-to-r from-[#75CDF8] to-[#027CE6] rounded-lg">
             <div className="text-center">
-              <div className="text-sm font-bold mt-1.5 text-darkBackground">
+              <div className="text-sm font-bold text-darkBackground">
                 {deckProgress.reduce((acc, deck) => acc + deck.totalSessions, 0)} sesiones totales
               </div>
-              <div className="text-xs text-darkBackground mb-1.5">
+              <div className="text-xs text-darkBackground opacity-80">
                 en {deckProgress.length} mazos diferentes
               </div>
             </div>
