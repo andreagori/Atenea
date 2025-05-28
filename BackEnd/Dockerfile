@@ -11,6 +11,9 @@ RUN npm ci --ignore-scripts
 # Copiar el código fuente
 COPY . .
 
+# Verificar que los archivos estén copiados (para debug)
+RUN ls -la src/auth/
+
 # Generar Prisma después de copiar el código
 RUN npx prisma generate
 
