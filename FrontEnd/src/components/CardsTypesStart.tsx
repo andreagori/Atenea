@@ -14,11 +14,11 @@ function CardsTypesStart() {
                 colors={["#75CDF8", "#027CE6", "#002FE1", "#75CDF8", "#027CE6", "#002FE1", "#75CDF8"]}
                 animationSpeed={6}
                 showBorder={false}
-                className="text-7xl font-bold text-center mb-5 mt-15"
+                className="text-7xl font-bold text-center mb-2 mt-19"
             >
                 Tipos de cartas
             </GradientText>
-            <p className='text-white text-2xl font-bold mb-5 text-center'>
+            <p className='text-white text-2xl font-bold mb-2 text-center'>
                 Estos son los tipos de carta que puedes crear para cada mazo
             </p>
 
@@ -26,23 +26,23 @@ function CardsTypesStart() {
                 {[
                     {
                         title: "Repaso activo",
-                        text: "Se compone por un titulo  y una descripción.",
+                        text: "Estas cartas se componen por un titulo que podria ser una pregunta, y una respuesta en texto.",
                         backgroundColor: "#027CE6",
                     },
                     {
                         title: "Método de cornell",
-                        text: "Se compone por un titulo, una nota principal, una nota corta y preguntas sobre el tema.",
+                        text: "Estas cartas se componen por un titulo, una nota principal, una nota corta y preguntas sobre las notas.",
                         backgroundColor: "#5311F8",
                     },
                     {
                         title: "Cartas visuales",
-                        text: "Se compone por un titulo, y esta, a diferencias de las demás, le permite al usuario agregar una imagen.",
+                        text: "Se compone por un titulo, y esta, a diferencias de las demás, su contenido es una imagen.",
                         backgroundColor: "#002FE1",
                     },
                 ].map(({ title, text, backgroundColor }, index) => (
                     <SpotlightCard
                         key={index}
-                        className="aspect-[11/12] max-w-[300px] justify-between overflow-hidden"
+                        className="aspect-[13/14] max-w-[290px] justify-between overflow-hidden"
                         withBorder={true}
                         spotlightColor="var(--color-white)"
                         backgroundColor={backgroundColor}
@@ -51,7 +51,7 @@ function CardsTypesStart() {
                         <h3 className="text-white text-2xl font-bold mb-3">
                             {title}
                         </h3>
-                        <p className="text-white text-xl line-clamp-5">
+                        <p className="text-white text-xl line-clamp-5 text-justify">
                             {text}
                         </p>
                     </SpotlightCard>

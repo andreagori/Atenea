@@ -7,15 +7,10 @@ const Register = () => {
       style={{
         backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
       }}>
-      {/* Encabezado con fondo distinto */}
       <NavbarForms />
-      <h1 className="text-5xl mt-20 mb-8 text-darkPSText font-primary text-center">
-        Comienza a estudiar
-        <br />
-        con nosotros
-      </h1>
+      <div className="h-12/12 w-10/12 mt-25">
       <FormRegister />
-      <div className="h-10 mt-25"></div>
+      </div>
       <img
         src="./AteneaFullBlue.svg"
         alt="Atenea Logo"

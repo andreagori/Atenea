@@ -24,13 +24,13 @@ const ExampleChart = () => {
       {
         label: 'Correctas',
         data: [12, 15, 18, 16, 20],
-        backgroundColor: '#027CE6',
+        backgroundColor: '#8C4FFF',
         borderRadius: 4,
       },
       {
         label: 'Incorrectas',
         data: [3, 2, 1, 3, 1],
-        backgroundColor: '#FF6266',
+        backgroundColor: '#FF6275',
         borderRadius: 4,
       },
     ],

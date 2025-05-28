@@ -7,7 +7,7 @@ const Login = () => {
       style={{
         backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
       }}>
-      {/* Encabezado con fondo distinto */}
+z
       <NavbarForms />
       <h1 className="text-5xl mt-20 mb-8 text-darkSecondaryPurple font-primary text-center">
         Sigue estudiando

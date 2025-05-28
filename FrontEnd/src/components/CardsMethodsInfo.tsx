@@ -14,7 +14,7 @@ function MetodosCardsHome() {
         colors={["#C6B3F8", "#A683FF", "#7525FF", "#C6B3F8", "#A683FF", "#7525FF", "#C6B3F8"]}
         animationSpeed={6}
         showBorder={false}
-        className="text-7xl font-bold text-center mb-5 mt-20"
+        className="text-7xl font-bold text-center mb-5 mt-19"
       >
         Métodos
       </GradientText>
@@ -22,21 +22,21 @@ function MetodosCardsHome() {
         Estos son los métodos de estudio que puedes usar en la aplicación
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
         {[
           {
             title: "Memorización espaciada",
-            text: "Memorización Espaciada: Técnica que fortalece la memoria repasando información en intervalos crecientes.",
+            text: "Técnica de estudio que fortalece la memoria repasando información en intervalos crecientes.",
             backgroundColor: "#027CE6",
           },
           {
             title: "Pomodoro",
-            text: "Técnica para gestionar el tiempo de estudio, alternando entre períodos de trabajo y descanso.",
+            text: "Técnica de estudio para gestionar el tiempo de concentración, entre períodos de trabajo y descanso, alternando.",
             backgroundColor: "#002FE1",
           },
           {
             title: "Pruebas simuladas",
-            text: "Simula exámenes para evaluar tus conocimientos antes de una evaluación real.",
+            text: "Técnica de estudio que simula exámenes para evaluar los conocimientos del usuario antes de una evaluación real.",
             backgroundColor: "#5311F8",
           },
         ].map(({ title, text, backgroundColor }, index) => (
@@ -51,7 +51,7 @@ function MetodosCardsHome() {
             <h3 className="text-white text-2xl font-bold mb-3">
               {title}
             </h3>
-            <p className="text-white text-xl line-clamp-5">
+            <p className="text-white text-xl line-clamp-5 text-justify">
               {text}
             </p>
           </SpotlightCard>
