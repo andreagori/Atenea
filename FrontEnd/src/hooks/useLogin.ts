@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {API_CONFIG} from "../config"; 
 import Cookies from "js-cookie";
 
 export function useLogin() {
@@ -8,7 +9,7 @@ export function useLogin() {
 
     const login = async (username: string, password: string) => {
         try {
-            const response = await fetch("http://localhost:3000/auth/sign-in", {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/auth/sign-in`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

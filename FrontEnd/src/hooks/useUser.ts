@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
+import { API_CONFIG } from "@/config";
 
 export const useUser = () => {
     const [user, setUser] = useState<{ username: string } | null>(null);
@@ -16,7 +17,7 @@ export const useUser = () => {
 
         const fetchUser = async () => {
             try {
-                const response = await axios.get<{ username: string }>("http://localhost:3000/auth/profile", {
+                const response = await axios.get<{ username: string }>(`${API_CONFIG.BASE_URL}/auth/profile`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

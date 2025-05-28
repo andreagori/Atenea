@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { API_CONFIG } from '@/config';
 
 export const useDeckIdByTitle = (title: string | undefined) => {
   const [deckId, setDeckId] = useState<number | null>(null);
@@ -26,7 +27,7 @@ export const useDeckIdByTitle = (title: string | undefined) => {
         setLoading(true);
         const encodedTitle = encodeURIComponent(title);
         const response = await axios.get<{ deckId: number }>(
-          `http://localhost:3000/deck/by-title/${encodedTitle}`,
+          `${API_CONFIG.BASE_URL}/deck/by-title/${encodedTitle}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

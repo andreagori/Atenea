@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from "js-cookie";
+import { API_CONFIG } from '@/config';
 
 export interface Deck {
     deckId: number;
@@ -31,7 +32,7 @@ export const useDecks = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get<Deck[]>('http://localhost:3000/deck', {
+            const response = await axios.get<Deck[]>(`${API_CONFIG.BASE_URL}/deck`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -54,7 +55,7 @@ export const useDecks = () => {
 
         try {
             const response = await axios.post<Deck>(
-                'http://localhost:3000/deck',
+                `${API_CONFIG.BASE_URL}/deck`,
                 { title, body },
                 {
                     headers: {
@@ -77,7 +78,7 @@ export const useDecks = () => {
         }
 
         try {
-            await axios.delete(`http://localhost:3000/deck/${deckId}`, {
+            await axios.delete(`${API_CONFIG.BASE_URL}/deck/${deckId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -97,7 +98,7 @@ export const useDecks = () => {
 
         try {
             const response = await axios.patch<Deck>(
-                `http://localhost:3000/deck/${id}`,
+                `${API_CONFIG.BASE_URL}/deck/${id}`,
                 data,
                 {
                     headers: {

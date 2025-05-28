@@ -80,7 +80,7 @@ export const useCards = (deckId: number | undefined) => {
 
         try {
             setLoading(true);
-            const response = await axios.get<Card[]>(`http://localhost:3000/card/deck/${deckId}`, {
+            const response = await axios.get<Card[]>(`${API_CONFIG.BASE_URL}/card/deck/${deckId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -133,7 +133,7 @@ export const useCards = (deckId: number | undefined) => {
                 formData.append('learningMethod', cardData.learningMethod);
 
                 const response = await axios.post(
-                    `http://localhost:3000/card/deck/${deckId}`,
+                    `${API_CONFIG.BASE_URL}/card/deck/${deckId}`,
                     formData,
                     {
                         headers: {
@@ -147,7 +147,7 @@ export const useCards = (deckId: number | undefined) => {
             } else {
                 // Para otros tipos, enviar como JSON normal
                 const response = await axios.post(
-                    `http://localhost:3000/card/deck/${deckId}`,
+                    `${API_CONFIG.BASE_URL}/card/deck/${deckId}`,
                     payload,
                     {
                         headers: {
@@ -174,7 +174,7 @@ export const useCards = (deckId: number | undefined) => {
 
         try {
             await axios.delete(
-                `http://localhost:3000/card/${cardId}/deck/${deckId}`,
+                `${API_CONFIG.BASE_URL}/card/${cardId}/deck/${deckId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,

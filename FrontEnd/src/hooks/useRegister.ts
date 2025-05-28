@@ -1,3 +1,4 @@
+import { API_CONFIG } from "@/config";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,7 +8,7 @@ export function useRegister() {
 
   const register = async (username: string, password: string) => {
     try {
-      const response = await fetch("http://localhost:3000/auth/sign-up", {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/sign-up`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { TestResultDto } from '@/types/simulatedStudySessions.types';
+import { API_CONFIG } from '@/config';
 
 interface CreateStudySessionDto {
     studyMethod: 'spacedRepetition' | 'pomodoro' | 'simulatedTest';
@@ -108,7 +109,7 @@ export const useStudySession = () => {
             setError(null);
 
             const response = await axios.post<StudySessionResponse>(
-                `http://localhost:3000/study-sessions/deck/${deckId}`,
+                `${API_CONFIG.BASE_URL}/study-sessions/deck/${deckId}`,
                 sessionConfig,
                 {
                     headers: {
@@ -138,7 +139,7 @@ export const useStudySession = () => {
         try {
             setLoading(true);
             const response = await axios.get<CardResponse>(
-                `http://localhost:3000/study-sessions/${sessionId}/next-card`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/next-card`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
@@ -194,7 +195,7 @@ export const useStudySession = () => {
         try {
             setLoading(true);
             await axios.post(
-                `http://localhost:3000/card-reviews/session/${sessionId}/card/${cardId}`,
+                `${API_CONFIG.BASE_URL}/card-reviews/session/${sessionId}/card/${cardId}`,
                 {
                     evaluation,
                     timeSpent: 1
@@ -231,7 +232,7 @@ export const useStudySession = () => {
         try {
             setLoading(true);
             await axios.post(
-                `http://localhost:3000/study-sessions/${sessionId}/finish`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/finish`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` }
@@ -255,7 +256,7 @@ export const useStudySession = () => {
         if (!token) throw new Error("No authentication token found");
         try {
             const response = await axios.get(
-                `http://localhost:3000/study-sessions/${sessionId}/test-question`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/test-question`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
@@ -296,7 +297,7 @@ export const useStudySession = () => {
             });
 
             const response = await axios.post(
-                `http://localhost:3000/study-sessions/${sessionId}/test-answer`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/test-answer`,
                 {
                     questionId,
                     selectedOptionIndex,
@@ -318,7 +319,7 @@ export const useStudySession = () => {
     const getTestProgress = async (sessionId: number) => {
         try {
             const response = await axios.get(
-                `http://localhost:3000/study-sessions/${sessionId}/test-progress`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/test-progress`,
                 {
                     headers: { Authorization: `Bearer ${Cookies.get('auth_token')}` }
                 }
@@ -333,7 +334,7 @@ export const useStudySession = () => {
     const getTestResult = async (sessionId: number): Promise<TestResultDto> => {
         try {
             const response = await axios.get<TestResultDto>(
-                `http://localhost:3000/study-sessions/${sessionId}/test-result`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/test-result`,
                 {
                     headers: { Authorization: `Bearer ${Cookies.get('auth_token')}` }
                 }
@@ -353,7 +354,7 @@ export const useStudySession = () => {
         try {
             setLoading(true);
             const response = await axios.get<CardResponse>(
-                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/next-card`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/pomodoro/next-card`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
@@ -414,7 +415,7 @@ export const useStudySession = () => {
 
         try {
             const response = await axios.get<PomodoroProgress>(
-                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/progress`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/pomodoro/progress`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
@@ -433,7 +434,7 @@ export const useStudySession = () => {
         try {
             setLoading(true);
             const response = await axios.post(
-                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/evaluate`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/pomodoro/evaluate`,
                 {
                     cardId,
                     evaluation
@@ -457,7 +458,7 @@ export const useStudySession = () => {
 
         try {
             const response = await axios.post(
-                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/start-break`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/pomodoro/start-break`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` }
@@ -476,7 +477,7 @@ export const useStudySession = () => {
 
         try {
             const response = await axios.post(
-                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/end-break`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/pomodoro/end-break`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` }
@@ -495,7 +496,7 @@ export const useStudySession = () => {
 
         try {
             const response = await axios.get<PomodoroStatus>(
-                `http://localhost:3000/study-sessions/${sessionId}/pomodoro/status`,
+                `${API_CONFIG.BASE_URL}/study-sessions/${sessionId}/pomodoro/status`,
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
