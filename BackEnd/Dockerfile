@@ -43,7 +43,6 @@ RUN npm ci --only=production
 
 # Copiar archivos compilados desde la fase anterior
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/.env ./
 
 # Definir variables de entorno
 ENV NODE_ENV=production
