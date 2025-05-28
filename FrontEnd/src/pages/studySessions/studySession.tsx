@@ -7,7 +7,7 @@ import { useStudySession } from "@/hooks/useStudySessions";
 import { useStudySessionDefaults } from "@/hooks/useStudySessionsDefaults";
 import { CreateStudySessionDto } from "@/types/studySessions.types";
 
-function sesionEstudio() {
+function StudySession() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [sessionConfig, setSessionConfig] = useState<CreateStudySessionDto | null>(null);
@@ -141,4 +141,4 @@ function sesionEstudio() {
   );
 };
 
-export default sesionEstudio;
+export default StudySession;
