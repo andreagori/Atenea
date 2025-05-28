@@ -2,12 +2,92 @@ import { useStudySession } from "@/hooks/useStudySessions";
 import { useState } from "react";
 import { ButtonCustom } from "./Buttons";
 import { CreateStudySessionDto, LearningMethod, StudyMethod } from "@/types/studySessions.types";
+import { X, Clock, Target, BookOpen, Eye, FileText, Brain } from 'lucide-react';
 
 interface ModalProps {
   onClose: () => void;
   onSave: (config: CreateStudySessionDto) => void;
   deckId: number;
 }
+
+const LearningMethodSelector = ({
+  selectedMethods,
+  setSelectedMethods
+}: {
+  selectedMethods: LearningMethod[],
+  setSelectedMethods: (methods: LearningMethod[]) => void
+}) => {
+  const allMethods = [
+    { value: LearningMethod.ACTIVE_RECALL, label: 'Repaso Activo', icon: Brain },
+    { value: LearningMethod.CORNELL, label: 'Método Cornell', icon: FileText },
+    { value: LearningMethod.VISUAL_CARD, label: 'Cartas Visuales', icon: Eye }
+  ];
+
+  const toggleMethod = (method: LearningMethod) => {
+    if (selectedMethods.includes(method)) {
+      setSelectedMethods(selectedMethods.filter(m => m !== method));
+    } else {
+      setSelectedMethods([...selectedMethods, method]);
+    }
+  };
+
+  const toggleAll = () => {
+    if (selectedMethods.length === allMethods.length) {
+      setSelectedMethods([]);
+    } else {
+      setSelectedMethods(allMethods.map(m => m.value));
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-semibold text-white">Tipos de cartas a estudiar:</label>
+        <button
+          type="button"
+          onClick={toggleAll}
+          className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-full transition-colors"
+        >
+          {selectedMethods.length === allMethods.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+        </button>
+      </div>
+
+      <div className="grid gap-2">
+        {allMethods.map((method) => {
+          const Icon = method.icon;
+          const isSelected = selectedMethods.includes(method.value);
+
+          return (
+            <button
+              key={method.value}
+              type="button"
+              onClick={() => toggleMethod(method.value)}
+              className={`flex items-center gap-2 p-2 rounded-lg border-2 transition-all duration-200 ${
+                isSelected
+                  ? 'border-purple-500 bg-purple-500/20 text-white'
+                  : 'border-gray-600 bg-gray-800/50 text-gray-300 hover:border-gray-500 hover:bg-gray-700/50'
+              }`}
+            >
+              <div className={`p-1.5 rounded-lg ${
+                isSelected ? 'bg-purple-500 text-white' : 'bg-gray-700 text-gray-400'
+              }`}>
+                <Icon className="w-3 h-3" />
+              </div>
+              <span className="font-medium text-sm">{method.label}</span>
+              {isSelected && (
+                <div className="ml-auto w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export function StudySessionsOptionsConfig_Regular({ onClose, onSave }: ModalProps) {
   const [numCards, setNumCards] = useState('');
@@ -40,65 +120,81 @@ export function StudySessionsOptionsConfig_Regular({ onClose, onSave }: ModalPro
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
-      <div className="bg-darkSecondary p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center text-white">
-          Configura tu sesión regular de estudio:
-        </h2>
-        <form name="config" onSubmit={handleSubmit}>
-          <p className="mt-4 text-white">Ingresa el número de cartas a revisar en la sesión: </p>
-          <input
-            className="input-primary input validator mt-2 w-full bg-white"
-            type="number"
-            value={numCards}
-            onChange={(e) => setNumCards(e.target.value)}
-            placeholder="Debe ser un número entre 1 y 99"
-            min="1"
-            max="99"
-            required
+    <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/40 p-4">
+      <div className="bg-gradient-to-br from-darkSecondary to-darkPrimary rounded-xl shadow-2xl w-full max-w-sm border border-purple-500/20 transform transition-all duration-300 ease-out">
+
+        {/* Header más pequeño */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl p-3 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+          <div className="relative z-10 flex items-center justify-center space-x-2">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <Clock className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Sesión Regular</h2>
+              <p className="text-purple-100 text-xs">Repetición espaciada</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content más compacto */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+
+          {/* Number of cards */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Target className="w-4 h-4 text-purple-400" />
+              Número de cartas a revisar:
+            </label>
+            <input
+              className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 placeholder-gray-400"
+              type="number"
+              value={numCards}
+              onChange={(e) => setNumCards(e.target.value)}
+              placeholder="Número entre 1 y 99"
+              min="1"
+              max="99"
+              required
+            />
+          </div>
+
+          {/* Learning methods selector */}
+          <LearningMethodSelector
+            selectedMethods={selectedMethods}
+            setSelectedMethods={setSelectedMethods}
           />
 
-          <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
-          <select
-            multiple
-            value={selectedMethods}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions).map(
-              option => option.value as LearningMethod);
-              setSelectedMethods(options);
-            }}
-            required
-            className="select select-m select-primary w-full bg-white mt-2 text-black/50">
-            <option disabled={true}>Tipo de cartas</option>
-            <option value={LearningMethod.ACTIVE_RECALL}>Repaso Activo</option>
-            <option value={LearningMethod.CORNELL}>Método de cornell</option>
-            <option value={LearningMethod.VISUAL_CARD}>Cartas visuales</option>
-          </select>
-
+          {/* Error message */}
           {(validateError || error) && (
-            <p className="text-red-500 mt-2">
-              {validateError || error}
-            </p>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2">
+              <p className="text-red-400 text-sm flex items-center gap-2">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {validateError || error}
+              </p>
+            </div>
           )}
 
-          {/* Buttons Form */}
-          <div className="flex justify-between mt-4">
+          {/* Buttons */}
+          <div className="flex justify-between gap-3 pt-2">
             <ButtonCustom
               type="button"
               text="Cerrar"
-              onClick={() => { onClose() }}
+              onClick={onClose}
               isGradient={true}
               gradientDirection="to bottom"
               gradientColors={['#FF2F2F', '#650707']}
               color="#fff"
               hoverColor="#fff"
               hoverBackground="#FF2F2F"
-              width="80px"
-              height="35px"
+              width="90px"
+              height="36px"
+              fontSize="13px"
             />
             <ButtonCustom
               type="submit"
-              text="Guardar"
+              text={loading ? "Guardando..." : "Guardar"}
               disabled={loading}
               onClick={() => { }}
               isGradient={true}
@@ -107,13 +203,14 @@ export function StudySessionsOptionsConfig_Regular({ onClose, onSave }: ModalPro
               color="#fff"
               hoverColor="#fff"
               hoverBackground="#0C3BEB"
-              width="80px"
-              height="35px"
+              width="110px"
+              height="36px"
+              fontSize="13px"
             />
           </div>
         </form>
       </div>
-    </div >
+    </div>
   );
 }
 
@@ -152,86 +249,117 @@ export function StudySessionsOptionsConfig_Pomodoro({ onClose, onSave }: ModalPr
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
-      <div className="bg-darkPrimary2 p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center text-white">
-          Configura tu sesión pomodoro de estudio:
-        </h2>
-        <form name="config" onSubmit={handleSubmit}>
-          <p className="mt-4 text-white">Ingresa el número de cartas a revisar en la sesión: </p>
-          <input
-            className="input-primary input validator mt-2 w-full bg-white"
-            type="number"
-            value={numCards}
-            onChange={(e) => setNumCards(e.target.value)}
-            placeholder="Debe ser un número entre 1 y 99"
-            min="1"
-            max="99"
-            required
-          />
-          <p className="mt-4 text-white">Ingresa el número de minutos de estudio en la sesión: </p>
-          <input
-            className="input-primary input validator mt-2 w-full bg-white"
-            type="number"
-            value={studyMinutes}
-            onChange={(e) => setStudyMinutes(e.target.value)}
-            placeholder="Debe ser un número entre 1 y 60"
-            min="1"
-            max="60"
-            required
-          />
-          <p className="mt-4 text-white">Ingresa el número de minutos de descanso en la sesión: </p>
-          <input
-            className="input-primary input validator mt-2 w-full bg-white"
-            type="number"
-            value={restMinutes}
-            onChange={(e) => setRestMinutes(e.target.value)}
-            placeholder="Debe ser un número entre 1 y 60"
-            min="1"
-            max="60"
-            required
+    <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/40 p-4">
+      <div className="bg-gradient-to-br from-darkPrimary2 to-darkSecondary rounded-xl shadow-2xl w-full max-w-sm border border-red-500/20 transform transition-all duration-300 ease-out">
+
+        {/* Header más pequeño */}
+        <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-t-xl p-3 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+          <div className="relative z-10 flex items-center justify-center space-x-2">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <Clock className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Sesión Pomodoro</h2>
+              <p className="text-orange-100 text-xs">Técnica de concentración</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content más compacto */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+
+          {/* Number of cards */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Target className="w-4 h-4 text-red-400" />
+              Número de cartas:
+            </label>
+            <input
+              className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 placeholder-gray-400"
+              type="number"
+              value={numCards}
+              onChange={(e) => setNumCards(e.target.value)}
+              placeholder="Entre 1 y 99"
+              min="1"
+              max="99"
+              required
+            />
+          </div>
+
+          {/* Study and rest minutes */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="flex items-center gap-1 text-sm font-semibold text-white">
+                <BookOpen className="w-3 h-3 text-green-400" />
+                Estudio (min):
+              </label>
+              <input
+                className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder-gray-400"
+                type="number"
+                value={studyMinutes}
+                onChange={(e) => setStudyMinutes(e.target.value)}
+                placeholder="1-60"
+                min="1"
+                max="60"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-1 text-sm font-semibold text-white">
+                <Clock className="w-3 h-3 text-blue-400" />
+                Descanso (min):
+              </label>
+              <input
+                className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400"
+                type="number"
+                value={restMinutes}
+                onChange={(e) => setRestMinutes(e.target.value)}
+                placeholder="1-60"
+                min="1"
+                max="60"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Learning methods selector */}
+          <LearningMethodSelector
+            selectedMethods={selectedMethods}
+            setSelectedMethods={setSelectedMethods}
           />
 
-          <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
-          <select
-            multiple
-            value={selectedMethods}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions).map(
-                option => option.value as LearningMethod);
-              setSelectedMethods(options);
-            }}
-            required
-            className="select select-m select-primary w-full bg-white mt-2 text-black/50">
-            <option disabled={true}>Tipo de cartas</option>
-            <option value={LearningMethod.ACTIVE_RECALL}>Repaso Activo</option>
-            <option value={LearningMethod.CORNELL}>Método de cornell</option>
-            <option value={LearningMethod.VISUAL_CARD}>Cartas visuales</option>
-          </select>
-
+          {/* Error message */}
           {(validateError || error) && (
-            <p className="text-red-500 mt-2">
-              {validateError || error}
-            </p>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2">
+              <p className="text-red-400 text-sm flex items-center gap-2">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {validateError || error}
+              </p>
+            </div>
           )}
 
-          <div className="flex justify-between mt-4">
+          {/* Buttons */}
+          <div className="flex justify-between gap-3 pt-2">
             <ButtonCustom
               type="button"
               text="Cerrar"
-              onClick={() => { onClose() }}
+              onClick={onClose}
               isGradient={true}
               gradientDirection="to bottom"
               gradientColors={['#FF2F2F', '#650707']}
               color="#fff"
               hoverColor="#fff"
               hoverBackground="#FF2F2F"
-              width="80px"
-              height="35px"
+              width="90px"
+              height="36px"
+              fontSize="13px"
             />
             <ButtonCustom
               type="submit"
-              text="Guardar"
+              text={loading ? "Guardando..." : "Guardar"}
               disabled={loading}
               onClick={() => { }}
               isGradient={true}
@@ -240,8 +368,9 @@ export function StudySessionsOptionsConfig_Pomodoro({ onClose, onSave }: ModalPr
               color="#fff"
               hoverColor="#fff"
               hoverBackground="#0C3BEB"
-              width="80px"
-              height="35px"
+              width="110px"
+              height="36px"
+              fontSize="13px"
             />
           </div>
         </form>
@@ -283,77 +412,99 @@ export function StudySessionsOptionsConfig_SimulatedTests({ onClose, onSave }: M
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/30">
-      <div className="bg-darkComponent2 p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center text-white">
-          Configura tu sesión de prueba simulada:
-        </h2>
-        <form name="config" onSubmit={handleSubmit}>
-          <p className="mt-4 text-white">Ingresa el número de preguntas a revisar en la sesión: </p>
-          <input
-            className="input-primary input validator mt-2 w-full bg-white"
-            type="number"
-            value={numQuestions}
-            onChange={(e) => setNumQuestions(e.target.value)}
-            placeholder="Debe ser un número entre 1 y 40"
-            min="1"
-            max="40"
-            required
-          />
-          <p className="mt-4 text-white">Ingresa el tiempo de la prueba (minutos): </p>
-          <input
-            className="input-primary input validator mt-2 w-full bg-white"
-            type="number"
-            value={testDuration}
-            onChange={(e) => setTestDuration(e.target.value)}
-            placeholder="Debe ser un número entre 1 y 60"
-            min="1"
-            max="60"
-            required
+    <div className="fixed inset-0 flex items-center justify-center z-50 font-primary backdrop-blur-sm bg-black/40 p-4">
+      <div className="bg-gradient-to-br from-darkComponent2 to-darkPrimary rounded-xl shadow-2xl w-full max-w-sm border border-green-500/20 transform transition-all duration-300 ease-out">
+
+        {/* Header más pequeño */}
+        <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-t-xl p-3 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+          <div className="relative z-10 flex items-center justify-center space-x-2">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <Target className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Prueba Simulada</h2>
+              <p className="text-green-100 text-xs">Evaluación cronometrada</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content más compacto */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+
+          {/* Number of questions and duration */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="flex items-center gap-1 text-sm font-semibold text-white">
+                <Target className="w-3 h-3 text-green-400" />
+                Preguntas:
+              </label>
+              <input
+                className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder-gray-400"
+                type="number"
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(e.target.value)}
+                placeholder="1-40"
+                min="1"
+                max="40"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-1 text-sm font-semibold text-white">
+                <Clock className="w-3 h-3 text-blue-400" />
+                Tiempo (min):
+              </label>
+              <input
+                className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400"
+                type="number"
+                value={testDuration}
+                onChange={(e) => setTestDuration(e.target.value)}
+                placeholder="1-60"
+                min="1"
+                max="60"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Learning methods selector */}
+          <LearningMethodSelector
+            selectedMethods={selectedMethods}
+            setSelectedMethods={setSelectedMethods}
           />
 
-          {/* Settings Form */}
-          <p className="mt-4 text-white">Selecciona el tipo de cartas que deseas estudiar:</p>
-          <select
-            multiple
-            value={selectedMethods}
-            onChange={(e) => {
-              const options = Array.from(e.target.selectedOptions).map(
-                option => option.value as LearningMethod);
-              setSelectedMethods(options);
-            }}
-            required
-            className="select select-m select-primary w-full bg-white mt-2 text-black/50">
-            <option disabled={true}>Tipo de cartas</option>
-            <option value={LearningMethod.ACTIVE_RECALL}>Repaso Activo</option>
-            <option value={LearningMethod.CORNELL}>Método de cornell</option>
-            <option value={LearningMethod.VISUAL_CARD}>Cartas visuales</option>
-          </select>
-
+          {/* Error message */}
           {(validateError || error) && (
-            <p className="text-red-500 mt-2">
-              {validateError || error}
-            </p>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2">
+              <p className="text-red-400 text-sm flex items-center gap-2">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {validateError || error}
+              </p>
+            </div>
           )}
 
-          {/* Buttons Form */}
-          <div className="flex justify-between mt-4">
+          {/* Buttons */}
+          <div className="flex justify-between gap-3 pt-2">
             <ButtonCustom
               type="button"
               text="Cerrar"
-              onClick={() => { onClose() }}
+              onClick={onClose}
               isGradient={true}
               gradientDirection="to bottom"
               gradientColors={['#FF2F2F', '#650707']}
               color="#fff"
               hoverColor="#fff"
               hoverBackground="#FF2F2F"
-              width="80px"
-              height="35px"
+              width="90px"
+              height="36px"
+              fontSize="13px"
             />
             <ButtonCustom
               type="submit"
-              text="Guardar"
+              text={loading ? "Guardando..." : "Guardar"}
               disabled={loading}
               onClick={() => { }}
               isGradient={true}
@@ -362,8 +513,9 @@ export function StudySessionsOptionsConfig_SimulatedTests({ onClose, onSave }: M
               color="#fff"
               hoverColor="#fff"
               hoverBackground="#0C3BEB"
-              width="80px"
-              height="35px"
+              width="110px"
+              height="36px"
+              fontSize="13px"
             />
           </div>
         </form>

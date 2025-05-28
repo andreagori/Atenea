@@ -1,5 +1,6 @@
 import { useDecks } from "@/hooks/useDeck";
 import { useEffect, useState } from "react";
+import { ChevronDown, BookOpen, Loader2, AlertCircle } from "lucide-react";
 
 interface SelectDecksStudySessionProps {
     onDeckSelect?: (deckId: number) => void;
@@ -10,7 +11,6 @@ const SelectDecksStudySession: React.FC<SelectDecksStudySessionProps> = ({ onDec
     const { decks, loading, error } = useDecks();
     const [selectedDeck, setSelectedDeck] = useState<number | null>(preselectedDeckId || null);
 
-    // ✅ useEffect DEBE estar antes de cualquier return condicional
     useEffect(() => {
         if (preselectedDeckId && preselectedDeckId !== selectedDeck) {
             setSelectedDeck(preselectedDeckId);
@@ -20,20 +20,35 @@ const SelectDecksStudySession: React.FC<SelectDecksStudySessionProps> = ({ onDec
         }
     }, [preselectedDeckId, onDeckSelect, selectedDeck]);
 
-    // Ahora sí podemos tener los returns condicionales
     if (loading) {
         return (
-            <select disabled className="select select-lg select-primary bg-darkPSText font-primary font-bold text-lg text-darkComponent rounded-2xl">
-                <option>Cargando mazos...</option>
-            </select>
+            <div className="relative">
+                <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                    </div>
+                    <div>
+                        <p className="text-gray-900 font-medium">Cargando mazos...</p>
+                        <p className="text-gray-500 text-sm">Por favor espera un momento</p>
+                    </div>
+                </div>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <select disabled className="select select-lg select-primary bg-darkPSText font-primary font-bold text-lg text-darkComponent rounded-2xl">
-                <option>Error al cargar mazos</option>
-            </select>
+            <div className="relative">
+                <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200 shadow-sm">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                        <p className="text-red-900 font-medium">Error al cargar mazos</p>
+                        <p className="text-red-600 text-sm">Intenta recargar la página</p>
+                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -46,20 +61,44 @@ const SelectDecksStudySession: React.FC<SelectDecksStudySessionProps> = ({ onDec
     };
 
     return (
-        <select
-            value={selectedDeck || ""}
-            className="select select-lg select-primary bg-darkPSText font-primary font-bold text-lg text-darkComponent rounded-2xl"
-            onChange={handleSelectChange}
-        >
-            <option disabled value="">
-                Nombre del mazo:
-            </option>
-            {decks.map((deck) => (
-                <option key={deck.deckId} value={deck.deckId}>
-                    {deck.title}
-                </option>
-            ))}
-        </select>
+        <div className="relative font-primary">
+            {/* Select minimalista */}
+            <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <BookOpen className="w-5 h-5 text-white" />
+                </div>
+
+                <select
+                    value={selectedDeck || ""}
+                    className="w-full pl-10 pr-10 py-3 bg-darkComponentElement border border-gray-300 rounded-lg text-white font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-darkComponent cursor-pointer"
+                    onChange={handleSelectChange}
+                >
+                    <option disabled value="" className="text-white">
+                        Selecciona un mazo de estudio
+                    </option>
+                    {decks.map((deck) => (
+                        <option 
+                            key={deck.deckId} 
+                            value={deck.deckId}
+                            className="text-white py-2"
+                        >
+                            {deck.title}
+                        </option>
+                    ))}
+                </select>
+
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <ChevronDown className="w-5 h-5 text-white" />
+                </div>
+            </div>
+
+            {/* Contador simple */}
+            <div className="mt-2 text-right">
+                <span className="text-gray-500 text-xs">
+                    {decks.length} {decks.length === 1 ? 'mazo disponible' : 'mazos disponibles'}
+                </span>
+            </div>
+        </div>
     );
 };
 

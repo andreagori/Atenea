@@ -67,7 +67,7 @@ function sesionEstudio() {
         style={{
           backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
         }}>
-        <h1 className="text-6xl text-lightComponent mt-10 mb-8 text-center font-bold">
+        <h1 className="text-6xl text-white mt-10 mb-8 text-center font-bold">
           Sesión de <br /> estudio
         </h1>
         <p className="text-2xl mt-2 mb-2 text-lightComponent">
@@ -92,7 +92,7 @@ function sesionEstudio() {
         <div className="mt-10 flex gap-6 m-10">
           <button
             onClick={handleBack}
-            className="px-6 py-3 rounded text-white hover:bg-darkNeutral hover:text-darkNeutralText transition flex items-center gap-2"
+            className="px-6 py-3 rounded text-white hover:bg-darkNeutral hover:text-darkNeutralText transition flex items-center gap-2 cursor-pointer"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -113,7 +113,7 @@ function sesionEstudio() {
 
           <button
             onClick={handleStart}
-            className={`px-6 py-3 rounded flex items-center gap-2 ${selectedOption && selectedDeckId
+            className={`px-6 py-3 rounded flex items-center gap-2 cursor-pointer ${selectedOption && selectedDeckId
               ? "bg-darkPrimary hover:bg-darkSecondary"
               : "bg-gray-400 cursor-not-allowed"
               } text-white transition`}
