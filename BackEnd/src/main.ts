@@ -31,8 +31,17 @@ async function bootstrap() {
       'https://*.vercel.app'
     ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'Cache-Control'
+    ],
   });
-  const port= process.env.PORT || 3000;
+  const port = process.env.PORT || 3000;
 
   await app.listen(port, '0.0.0.0');
 }
