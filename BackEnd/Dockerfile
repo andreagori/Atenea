@@ -5,13 +5,15 @@ WORKDIR /app
 # Copiar archivos de configuración
 COPY package.json package-lock.json ./
 
-# Instalar todas las dependencias (incluyendo devDependencies)
-RUN npm ci 
+# Instalar dependencias SIN ejecutar postinstall scripts
+RUN npm ci --ignore-scripts
 
 # Copiar el código fuente
 COPY . .
 
+# Generar Prisma después de copiar el código
 RUN npx prisma generate
+
 # Compilar el código TypeScript
 RUN npm run build
 
@@ -32,9 +34,6 @@ RUN npm ci --only=production
 # Copiar archivos compilados desde la fase anterior
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/.env ./
-
-# NO necesitas este RUN porque ya se ejecutó en el postinstall
-# RUN npx prisma generate
 
 # Definir variables de entorno
 ENV NODE_ENV=production
