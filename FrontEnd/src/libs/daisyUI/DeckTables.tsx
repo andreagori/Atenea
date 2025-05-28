@@ -96,7 +96,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                     Estudiar
                   </button>
                   <button
-                    className="btn btn-sm bg-darkSuccess hover:bg-darkSuccess2 text-white border-darkSuccess2 hover:border-green-500 rounded-xl"
+                    className="btn btn-sm bg-green-400 hover:bg-green-200 text-white border-darkSuccess hover:border-green-500 rounded-xl"
                     onClick={(e) => onEdit?.(index, e)}
                     title='Editar mazo'
                   >
@@ -108,7 +108,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                     />
                   </button>
                   <button
-                    className="btn btn-sm bg-darkDanger hover:bg-red-700 text-white border-red-700 hover:border-red-500 rounded-xl"
+                    className="btn btn-sm bg-red-500 hover:bg-red-200 text-white border-red-700 hover:border-red-500 rounded-xl"
                     onClick={(e) => handleDelete(deck, e)}
                     title='Eliminar mazo'
                   >
@@ -234,7 +234,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
               <td>
                 <div className="flex justify-center gap-2">
                   <button
-                    className="btn btn-sm bg-darkSuccess hover:bg-darkSuccess2 text-white border-darkSuccess2 hover:border-green-500 rounded-xl"
+                    className="btn btn-sm bg-green-400 hover:bg-green-200 text-white border-darkSuccess hover:border-green-500 rounded-xl"
                     onClick={() => onEdit(card)}
                     title='Editar carta'
                   >
@@ -245,7 +245,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
                     />
                   </button>
                   <button
-                    className="btn btn-sm bg-darkDanger hover:bg-red-700 text-white border-red-700 hover:border-red-500 rounded-xl"
+                    className="btn btn-sm bg-red-500 hover:bg-red-200 text-white border-red-700 hover:border-red-500 rounded-xl"
                     onClick={() => onDelete(card)}
                     title='Eliminar carta'
                   >
