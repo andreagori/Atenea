@@ -23,16 +23,18 @@ WORKDIR /app
 # Copiar package.json para instalar dependencias de producción
 COPY package.json package-lock.json ./
 
-# Instalar solo dependencias de producción
+# Copiar prisma ANTES de npm ci para que el postinstall funcione
+COPY --from=builder /app/prisma ./prisma
+
+# Instalar solo dependencias de producción (esto ejecutará prisma generate por el postinstall)
 RUN npm ci --only=production
 
 # Copiar archivos compilados desde la fase anterior
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/.env ./
 
-# Generar cliente de Prisma en runtime
-RUN npx prisma generate
+# NO necesitas este RUN porque ya se ejecutó en el postinstall
+# RUN npx prisma generate
 
 # Definir variables de entorno
 ENV NODE_ENV=production
