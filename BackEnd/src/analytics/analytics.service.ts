@@ -434,4 +434,189 @@ export class AnalyticsService {
         : stat.sessions * 2 // Si no hay tests, usar solo cantidad de sesiones
     }));
   }
+
+  async getSessionsPerformance(userId: number, timeRange: TimeRangeDto) {
+    const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
+      : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000));
+
+    // Obtener solo sesiones de tests simulados
+    const simulatedTestSessions = await this.prisma.sessionSimulatedTest.findMany({
+      where: {
+        session: {
+          userId,
+          startTime: {
+            gte: startDate,
+            lte: endDate
+          },
+          endTime: { not: null }
+        }
+      },
+      include: {
+        session: {
+          include: {
+            deck: {
+              select: { title: true }
+            }
+          }
+        },
+        testQuestions: {
+          include: {
+            correctCard: {
+              select: {
+                cardId: true,
+                title: true,
+                learningMethod: true
+              }
+            },
+            selectedAnswer: {
+              select: {
+                cardId: true,
+                title: true,
+                learningMethod: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        session: {
+          startTime: 'desc'
+        }
+      }
+    });
+
+    return simulatedTestSessions.map(testSession => {
+      // Para tests simulados, usamos isCorrect para determinar correctas/incorrectas
+      const correctCards = testSession.testQuestions
+        .filter(question => question.isCorrect === true)
+        .map(question => ({
+          cardId: question.correctCard.cardId,
+          title: question.correctCard.title,
+          learningMethod: question.correctCard.learningMethod,
+          difficulty: 'correct' as const,
+          responseTime: question.timeSpent || 0
+        }));
+
+      const incorrectCards = testSession.testQuestions
+        .filter(question => question.isCorrect === false)
+        .map(question => ({
+          cardId: question.correctCard.cardId,
+          title: question.correctCard.title,
+          learningMethod: question.correctCard.learningMethod,
+          difficulty: 'incorrect' as const,
+          responseTime: question.timeSpent || 0,
+          userAnswer: question.selectedAnswer ? {
+            cardId: question.selectedAnswer.cardId,
+            title: question.selectedAnswer.title
+          } : null
+        }));
+
+      const totalCards = testSession.testQuestions.length;
+      const scorePercentage = totalCards > 0 
+        ? Math.round((correctCards.length / totalCards) * 100) 
+        : 0;
+
+      return {
+        sessionId: testSession.session.sessionId,
+        sessionType: 'Test Simulado',
+        sessionDate: testSession.session.startTime.toISOString(),
+        deckName: testSession.session.deck.title,
+        correctCards,
+        incorrectCards,
+        totalCards,
+        scorePercentage
+      };
+    });
+  }
+
+  async getSpacedRepetitionStats(userId: number, timeRange: TimeRangeDto) {
+    const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
+      : new Date(endDate.getTime() - ((timeRange.days ?? 7) * 24 * 60 * 60 * 1000));
+
+    // Buscar sesiones de memorización espaciada
+    const sessions = await this.prisma.studySession.findMany({
+      where: {
+        userId,
+        studyMethod: 'spacedRepetition', // Corregido según el schema
+        startTime: {
+          gte: startDate,
+          lte: endDate
+        },
+        endTime: { not: null }
+      },
+      include: {
+        deck: {
+          select: { title: true }
+        },
+        cardReviews: {
+          include: {
+            card: {
+              select: {
+                cardId: true,
+                title: true,
+                learningMethod: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        startTime: 'desc'
+      }
+    });
+
+    return sessions.map(session => {
+      // Agrupar cartas por dificultad según el schema: dificil, masomenos, bien, facil
+      const cardsByDifficulty = {
+        facil: session.cardReviews
+          .filter(review => review.evaluation === 'facil')
+          .map(review => ({
+            cardId: review.card.cardId,
+            title: review.card.title,
+            learningMethod: review.card.learningMethod,
+            difficulty: 'facil' as const,
+            responseTime: review.timeSpent || 0
+          })),
+        bien: session.cardReviews
+          .filter(review => review.evaluation === 'bien')
+          .map(review => ({
+            cardId: review.card.cardId,
+            title: review.card.title,
+            learningMethod: review.card.learningMethod,
+            difficulty: 'bien' as const,
+            responseTime: review.timeSpent || 0
+          })),
+        masomenos: session.cardReviews
+          .filter(review => review.evaluation === 'masomenos')
+          .map(review => ({
+            cardId: review.card.cardId,
+            title: review.card.title,
+            learningMethod: review.card.learningMethod,
+            difficulty: 'masomenos' as const,
+            responseTime: review.timeSpent || 0
+          })),
+        dificil: session.cardReviews
+          .filter(review => review.evaluation === 'dificil')
+          .map(review => ({
+            cardId: review.card.cardId,
+            title: review.card.title,
+            learningMethod: review.card.learningMethod,
+            difficulty: 'dificil' as const,
+            responseTime: review.timeSpent || 0
+          }))
+      };
+
+      return {
+        sessionId: session.sessionId,
+        sessionDate: session.startTime.toISOString(),
+        deckName: session.deck.title,
+        cardsByDifficulty,
+        totalCards: session.cardReviews.length
+      };
+    });
+  }
 }

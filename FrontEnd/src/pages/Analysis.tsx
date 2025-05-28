@@ -5,6 +5,8 @@ import { DailyStudyTimeChart } from "../components/chart/DailyStudyTimeChart";
 import { TestScoresChart } from "../components/chart/TestScoresChart";
 import { MethodsDistributionChart } from "../components/chart/MethodsDistributionChart";
 import { ActivityCalendarChart } from "../components/chart/ActivityCalendarChart";
+import { SessionsPerformanceChart } from "../components/chart/SessionsPerformanceChart";
+import { SpacedRepetitionChart } from "../components/chart/SpacedRepetitionChart";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { TimeRange } from "../types/analytics.types";
 
@@ -62,6 +64,11 @@ const Analisis = () => {
             <div className="lg:col-span-2">
               <DailyStudyTimeChart data={data.dailyStudyTime} loading={loading} />
             </div>
+
+            {/* Rendimiento por Sesión */}
+            <SessionsPerformanceChart data={data.sessionsPerformance} loading={loading} />
+            {/* Memorización Espaciada */}
+            <SpacedRepetitionChart data={data.spacedRepetitionStats} loading={loading} />
             {/* Calendario de Actividad - Ancho completo */}
             <div className="lg:col-span-2">
               <ActivityCalendarChart data={data.activityCalendar} deckProgress={data.deckProgress} loading={loading} />

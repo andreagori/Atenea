@@ -9,7 +9,9 @@ import {
   MethodEfficiencyData,
   DeckProgressData,
   CardRetentionData,
-  ProductiveHoursData
+  ProductiveHoursData,
+  SessionPerformanceData,
+  SpacedRepetitionData
 } from '../types/analytics.types';
 
 interface AnalyticsData {
@@ -21,6 +23,8 @@ interface AnalyticsData {
   deckProgress: DeckProgressData[];
   cardRetention: CardRetentionData[];
   productiveHours: ProductiveHoursData[];
+  sessionsPerformance: SessionPerformanceData[];
+  spacedRepetitionStats: SpacedRepetitionData[];
   studyMethods?: { method: string; count: number }[];
   learningMethods?: { method: string; count: number }[];
 }
@@ -37,7 +41,9 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
     methodEfficiency: [],
     deckProgress: [],
     cardRetention: [],
-    productiveHours: []
+    productiveHours: [],
+    sessionsPerformance: [],
+    spacedRepetitionStats: []
   });
 
   const fetchAllData = async () => {
@@ -48,22 +54,25 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
       const [
         dailyStudyTime,
         testScores,
-        methodsDistribution, // Para métodos, obtener datos históricos completos
+        methodsDistribution,
         activityCalendar,
         methodEfficiency,
         deckProgress,
         cardRetention,
-        productiveHours
+        productiveHours,
+        sessionsPerformance,
+        spacedRepetitionStats
       ] = await Promise.all([
         AnalyticsService.getDailyStudyTime(timeRange),
         AnalyticsService.getTestScores(timeRange),
-        // ✅ Para métodos de distribución, usar un rango histórico completo
-        AnalyticsService.getMethodsDistribution({ days: 365 }), // Último año completo
+        AnalyticsService.getMethodsDistribution({ days: 365 }),
         AnalyticsService.getActivityCalendar(),
         AnalyticsService.getMethodEfficiency(timeRange),
         AnalyticsService.getDeckProgress(timeRange),
         AnalyticsService.getCardRetention(),
-        AnalyticsService.getProductiveHours(timeRange)
+        AnalyticsService.getProductiveHours(timeRange),
+        AnalyticsService.getSessionsPerformance(timeRange),
+        AnalyticsService.getSpacedRepetitionStats(timeRange)
       ]);
 
       setData({
@@ -74,7 +83,9 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
         methodEfficiency,
         deckProgress,
         cardRetention,
-        productiveHours
+        productiveHours,
+        sessionsPerformance,
+        spacedRepetitionStats
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching analytics data');

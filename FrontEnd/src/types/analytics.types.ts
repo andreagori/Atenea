@@ -74,3 +74,35 @@ export interface ProductiveHoursData {
   averageMinutes: number;
   productivity: number;
 }
+
+export interface SessionPerformanceData {
+  sessionId: number;
+  sessionType: string;
+  sessionDate: string;
+  deckName: string;
+  correctCards: CardDetail[];
+  incorrectCards: CardDetail[];
+  totalCards: number;
+  scorePercentage: number;
+}
+
+export interface CardDetail {
+  cardId: number;
+  title: string;
+  learningMethod: string;
+  difficulty?: 'correct' | 'incorrect' | 'facil' | 'bien' | 'masomenos' | 'dificil';
+  responseTime?: number;
+}
+
+export interface SpacedRepetitionData {
+  sessionId: number;
+  sessionDate: string;
+  deckName: string;
+  cardsByDifficulty: {
+    facil: CardDetail[];
+    bien: CardDetail[];
+    masomenos: CardDetail[];
+    dificil: CardDetail[];
+  };
+  totalCards: number;
+}

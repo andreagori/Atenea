@@ -9,8 +9,11 @@ import {
   MethodEfficiencyData,
   DeckProgressData,
   CardRetentionData,
-  ProductiveHoursData
+  ProductiveHoursData,
+  SessionPerformanceData,
+  SpacedRepetitionData
 } from '../types/analytics.types';
+
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -23,6 +26,14 @@ export class AnalyticsService {
     return {
       Authorization: `Bearer ${token}`,
     };
+  }
+
+  private static buildTimeRangeParams(timeRange: TimeRange): URLSearchParams {
+    const params = new URLSearchParams();
+    if (timeRange.days) params.append('days', timeRange.days.toString());
+    if (timeRange.startDate) params.append('startDate', timeRange.startDate);
+    if (timeRange.endDate) params.append('endDate', timeRange.endDate);
+    return params;
   }
 
   static async getDailyStudyTime(timeRange: TimeRange): Promise<DailyStudyData[]> {
@@ -168,4 +179,35 @@ export class AnalyticsService {
       throw new Error(err.response?.data?.message || 'Error al obtener horas productivas');
     }
   }
+
+  static async getSessionsPerformance(timeRange: TimeRange): Promise<SessionPerformanceData[]> {
+    try {
+      const params = this.buildTimeRangeParams(timeRange);
+      const response = await axios.get<SessionPerformanceData[]>(
+        `${API_BASE_URL}/analytics/sessions-performance?${params}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Error al obtener rendimiento de sesiones');
+    }
+  }
+
+  static async getSpacedRepetitionStats(timeRange: TimeRange): Promise<SpacedRepetitionData[]> {
+    try {
+      const params = this.buildTimeRangeParams(timeRange);
+      const response = await axios.get<SpacedRepetitionData[]>(
+        `${API_BASE_URL}/analytics/spaced-repetition-stats?${params}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Error al obtener estadísticas de memorización espaciada');
+    }
+  }
+  
 }

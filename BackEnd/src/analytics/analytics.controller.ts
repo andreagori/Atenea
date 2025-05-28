@@ -81,4 +81,22 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getProductiveHours(req.user.userId, timeRange);
   }
+
+  @Get('sessions-performance')
+  @ApiResponse({ status: 200, description: 'Rendimiento por sesión' })
+  async getSessionsPerformance(
+    @Query() timeRange: TimeRangeDto,
+    @Request() req
+  ) {
+    return this.analyticsService.getSessionsPerformance(req.user.userId, timeRange);
+  }
+
+  @Get('spaced-repetition-stats')
+  @ApiResponse({ status: 200, description: 'Estadísticas de memorización espaciada' })
+  async getSpacedRepetitionStats(
+    @Query() timeRange: TimeRangeDto,
+    @Request() req
+  ) {
+    return this.analyticsService.getSpacedRepetitionStats(req.user.userId, timeRange);
+  }
 }

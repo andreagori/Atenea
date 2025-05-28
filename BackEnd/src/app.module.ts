@@ -5,7 +5,6 @@ import { PrismaService } from "./app.service";
 import { UserModule } from './user/user.module';
 import { DeckModule } from './deck/deck.module';
 import { CardModule } from './card/card.module';
-import { ExamModule } from './exam/exam.module';
 import { AuthModule } from './auth/auth.module';
 import { StudySessionsModule } from './study-sessions/study-sessions.module';
 import { SessionResultsModule } from './session-results/session-results.module';
@@ -17,7 +16,7 @@ import { TestQuestionModule } from './test-question/test-question.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, DeckModule, CardModule, ExamModule, AuthModule, StudySessionsModule, SessionResultsModule, CardReviewsModule, SimulatedTestsModule, UserStatsModule, CloudinaryModule, TestQuestionModule, AnalyticsModule],
+  imports: [PrismaModule, UserModule, DeckModule, CardModule, AuthModule, StudySessionsModule, SessionResultsModule, CardReviewsModule, SimulatedTestsModule, UserStatsModule, CloudinaryModule, TestQuestionModule, AnalyticsModule],
   controllers: [PrismaController],
   providers: [PrismaService],
   exports: [PrismaService],
