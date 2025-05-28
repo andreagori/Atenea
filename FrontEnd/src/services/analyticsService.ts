@@ -13,9 +13,10 @@ import {
   SessionPerformanceData,
   SpacedRepetitionData
 } from '../types/analytics.types';
+import { API_CONFIG } from '../config';
 
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = process.env.VITE_API_URL;
 
 export class AnalyticsService {
   private static getAuthHeaders() {
@@ -97,7 +98,7 @@ export class AnalyticsService {
     try {
       const params = year ? `?year=${year}` : '';
       const response = await axios.get<ActivityCalendarData[]>(
-        `${API_BASE_URL}/analytics/activity-calendar${params}`,
+        `${API_CONFIG.BASE_URL}/analytics/activity-calendar${params}`,
         {
           headers: this.getAuthHeaders(),
         }

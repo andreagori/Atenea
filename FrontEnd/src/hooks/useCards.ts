@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from "js-cookie";
+import { API_CONFIG } from '../config';
 
 interface ActiveRecall {
     cardId: number;
@@ -194,10 +195,9 @@ export const useCards = (deckId: number | undefined) => {
         }
 
         try {
-            // Si es FormData (para actualizar imagen)
             if (cardData instanceof FormData) {
                 const response = await axios.patch(
-                    `http://localhost:3000/card/${cardId}/deck/${deckId}`,
+                    `${API_CONFIG.BASE_URL}/card/${cardId}/deck/${deckId}`,
                     cardData,
                     {
                         headers: {
@@ -209,9 +209,8 @@ export const useCards = (deckId: number | undefined) => {
                 await fetchCards();
                 return response.data;
             } else {
-                // Para actualización normal
                 const response = await axios.patch(
-                    `http://localhost:3000/card/${cardId}/deck/${deckId}`,
+                    `${API_CONFIG.BASE_URL}/card/${cardId}/deck/${deckId}`,
                     cardData,
                     {
                         headers: {
