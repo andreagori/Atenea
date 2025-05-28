@@ -1,5 +1,5 @@
 import GradientText from '../libs/reactbits/GradientText';
-import AteneaIcon from '../../public/ateneaIcon.svg';
+import AteneaIcon from '/ateneaIcon.svg';
 import Footer from './Footer';
 
 function QuienesSomosContainer() {
