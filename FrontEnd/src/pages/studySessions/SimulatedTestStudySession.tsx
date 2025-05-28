@@ -350,7 +350,10 @@ const SimulatedTestStudySession = () => {
     // Renderizar resultados
     if (results) {
         return (
-            <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
+            <div className="font-primary scroll-smooth scrollbar-hide text-white"
+                style={{
+                    background: "radial-gradient(ellipse at bottom, #1e3a8a 0%, #1e1b4b 40%, #000000 100%)"
+                }}>
                 <NavbarStudySession />
                 <div className="w-full min-h-screen flex flex-col items-center justify-center p-8">
                     <div className="bg-darkSecondary p-8 rounded-lg max-w-md w-full text-center">
@@ -384,19 +387,22 @@ const SimulatedTestStudySession = () => {
     const visualProgress = getVisualProgress();
 
     return (
-        <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
-            <NavbarStudySession />
+        <div className="font-primary scroll-smooth scrollbar-hide text-white"
+            style={{
+                background: "radial-gradient(ellipse at bottom, #1e3a8a 0%, #1e1b4b 40%, #000000 100%)"
+            }}>
+            <NavbarStudySession sessionType="simulated" />
             <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden p-8">
                 {/* Progress Bar */}
                 {progress && question && (
-                    <div className="w-full max-w-3xl mb-8">
+                    <div className="w-full max-w-3xl mb-5 mt-5">
                         <div className="flex justify-between mb-2">
                             <span>Pregunta {visualProgress.current} de {visualProgress.total}</span>
                             <span>Correctas: {progress.correctAnswers} | Incorrectas: {progress.incorrectAnswers}</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2.5">
                             <div
-                                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                                className="bg-darkPrimary h-2.5 rounded-full transition-all duration-300"
                                 style={{ width: `${visualProgress.percentage}%` }}
                             ></div>
                         </div>
@@ -411,7 +417,7 @@ const SimulatedTestStudySession = () => {
                 {/* Question */}
                 {question && !isSessionFinished && (
                     <>
-                        <h1 className="text-4xl font-bold text-center mb-10">
+                        <h1 className="text-4xl font-bold text-center mb-5">
                             {question.title}
                         </h1>
 
@@ -425,7 +431,7 @@ const SimulatedTestStudySession = () => {
                                         ${selectedOption === index && isCorrect === true ? 'bg-green-600 border-2 border-green-400' : ''}
                                         ${selectedOption === index && isCorrect === false ? 'bg-red-600 border-2 border-red-400' : ''}
                                         ${selectedOption === index && isCorrect === null ? 'bg-darkPrimary border-2 border-blue-400' : ''}
-                                        ${selectedOption !== index && selectedOption === null ? 'bg-darkSecondary hover:bg-darkPrimary/80 border-2 border-transparent' : ''}
+                                        ${selectedOption !== index && selectedOption === null ? 'bg-darkComponent hover:bg-darkPrimary/80 border-2 border-transparent' : ''}
                                         ${selectedOption !== null && selectedOption !== index ? 'bg-darkSecondary/50 opacity-50' : ''}
                                         ${processingAnswer ? 'cursor-not-allowed' : 'cursor-pointer'}
                                     `}
@@ -443,7 +449,7 @@ const SimulatedTestStudySession = () => {
                         {selectedOption !== null && isCorrect !== null && (
                             <div className={`mt-6 p-4 text-center font-bold rounded-lg text-xl transition-all duration-300
                                 ${isCorrect ? 'bg-green-700 text-green-100' : 'bg-red-700 text-red-100'}`}>
-                                {isCorrect ? '¡Correcto! 🎉' : 'Incorrecto 😔'}
+                                {isCorrect ? '¡Correcto!' : 'Incorrecto'}
                             </div>
                         )}
 

@@ -54,7 +54,7 @@ export default function StudySessionsRemember({ currentCard, showAnswer }: Study
 };
 
     return (
-        <div className="w-6/12 bg-darkComponentElement rounded-lg shadow-lg">
+        <div className="w-9/12 bg-darkComponentElement rounded-lg shadow-lg">
             {!showAnswer ? (
                 <div className="flex flex-col items-center p-5">
                     <h2 className="text-xl font-bold text-center mt-5 mb-2 text-white">

@@ -2,7 +2,7 @@ import { useStudySession } from "@/hooks/useStudySessions";
 import { useState } from "react";
 import { ButtonCustom } from "./Buttons";
 import { CreateStudySessionDto, LearningMethod, StudyMethod } from "@/types/studySessions.types";
-import { X, Clock, Target, BookOpen, Eye, FileText, Brain } from 'lucide-react';
+import { Clock, Target, BookOpen, Eye, FileText, Brain } from 'lucide-react';
 
 interface ModalProps {
   onClose: () => void;

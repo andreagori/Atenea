@@ -47,9 +47,7 @@ const PomodoroStudySession = () => {
     // Cargar estado inicial
     useEffect(() => {
         if (sessionId) {
-            loadInitialData();
-            const interval = setInterval(checkPomodoroStatus, 5000); // Check every 30 seconds
-            return () => clearInterval(interval);
+            loadInitialData();;
         }
     }, [sessionId]);
 
@@ -63,6 +61,7 @@ const PomodoroStudySession = () => {
                 getPomodoroProgress(sessionIdNum)
             ]);
 
+            
             setPomodoroStatus(status);
             setProgress(progressData);
             setIsOnBreak(status.isOnBreak);
@@ -70,6 +69,10 @@ const PomodoroStudySession = () => {
             // Si no está en descanso, cargar la siguiente carta
             if (!status.isOnBreak) {
                 await loadNextCard();
+            } else {
+                // Si ya está en descanso, limpiar carta
+                setCurrentCard(null);
+                setShowAnswer(false);
             }
         } catch (err) {
             console.error('Error loading initial data:', err);
@@ -84,7 +87,13 @@ const PomodoroStudySession = () => {
                 getPomodoroProgress(sessionIdNum)
             ]);
 
-            console.log('Status update:', status);
+            console.log('Status check:', {
+                oldBreak: isOnBreak,
+                newBreak: status.isOnBreak,
+                timeRemaining: status.timeRemaining,
+                currentPhase: status.currentPhase
+            });
+
             setPomodoroStatus(status);
             setProgress(progressData);
 
@@ -92,14 +101,28 @@ const PomodoroStudySession = () => {
             if (status.isOnBreak !== isOnBreak) {
                 console.log(`Break state changed: ${isOnBreak} -> ${status.isOnBreak}`);
                 setIsOnBreak(status.isOnBreak);
-                if (!status.isOnBreak) {
-                    // Si salió del descanso, cargar nueva carta
+
+                if (status.isOnBreak) {
+                    // Entró en descanso - limpiar la tarjeta actual
+                    console.log('Entering break mode - clearing current card');
+                    setCurrentCard(null);
+                    setShowAnswer(false);
+                } else {
+                    // Salió del descanso - cargar nueva carta
+                    console.log('Exiting break mode - loading next card');
                     await loadNextCard();
                 }
             }
+
         } catch (err) {
             console.error('Error checking status:', err);
         }
+    };
+
+    // Función para forzar verificación cuando el timer llegue a 0
+    const handleTimerComplete = async () => {
+        console.log('Timer completed - forcing status check');
+        await checkPomodoroStatus();
     };
 
     const loadNextCard = async () => {
@@ -108,29 +131,44 @@ const PomodoroStudySession = () => {
             const card = await getPomodoroNextCard(sessionIdNum);
 
             if (!card) {
-                // En Pomodoro, esto no debería suceder a menos que haya un error
-                console.warn('No card received, but Pomodoro should continue until break time');
-                setIsSessionComplete(true);
+                console.warn('No card received');
+                // Verificar si está en descanso
+                const status = await getPomodoroStatus(sessionIdNum);
+                if (status.isOnBreak) {
+                    console.log('No card because session is on break');
+                    setIsOnBreak(true);
+                    setCurrentCard(null);
+                    setPomodoroStatus(status);
+                } else {
+                    console.log('No more cards - session might be complete');
+                    setIsSessionComplete(true);
+                }
                 return;
             }
 
+            console.log('Loaded card:', card);
             setCurrentCard(card);
             setShowAnswer(false);
+
         } catch (err: any) {
-            if (err.message?.includes('está en descanso')) {
-                setIsOnBreak(true);
-                setCurrentCard(null); // Limpiar la carta actual cuando entra en descanso
-            } else if (err.message?.includes('Tiempo de estudio completado')) {
-                // El tiempo de estudio se completó automáticamente
+            console.error('Error loading next card:', err);
+
+            if (err.message?.includes('está en descanso') || err.message?.includes('Tiempo de estudio completado')) {
+                console.log('Session entered break mode due to time completion');
                 setIsOnBreak(true);
                 setCurrentCard(null);
-                // Actualizar el estado
-                const status = await getPomodoroStatus(parseInt(sessionId!));
-                setPomodoroStatus(status);
+                setShowAnswer(false);
+
+                // Actualizar el estado desde el servidor
+                try {
+                    const status = await getPomodoroStatus(parseInt(sessionId!));
+                    setPomodoroStatus(status);
+                    console.log('Updated status after break:', status);
+                } catch (statusErr) {
+                    console.error('Error updating status:', statusErr);
+                }
             } else {
-                console.error('Error loading next card:', err);
-                // En caso de error, no marcar como completado inmediatamente
-                // El usuario puede intentar continuar o finalizar manualmente
+                console.error('Unexpected error loading card:', err);
             }
         }
     };
@@ -145,17 +183,44 @@ const PomodoroStudySession = () => {
         try {
             const sessionIdNum = parseInt(sessionId);
 
-            // Usar el método específico de Pomodoro
+            console.log('Evaluating card:', currentCard.cardId, 'with evaluation:', evaluation);
+
             await evaluatePomodoroCard(sessionIdNum, currentCard.cardId, evaluation);
 
             // Actualizar progreso
             const progressData = await getPomodoroProgress(sessionIdNum);
             setProgress(progressData);
 
-            // Cargar siguiente carta
-            await loadNextCard();
-        } catch (err) {
+            // Verificar estado antes de cargar siguiente carta
+            const status = await getPomodoroStatus(sessionIdNum);
+            setPomodoroStatus(status);
+
+            if (status.isOnBreak) {
+                console.log('Session entered break after evaluation');
+                setIsOnBreak(true);
+                setCurrentCard(null);
+                setShowAnswer(false);
+            } else {
+                // Cargar siguiente carta solo si no está en descanso
+                await loadNextCard();
+            }
+
+        } catch (err: any) {
             console.error('Error evaluating card:', err);
+
+            if (err.message?.includes('está en descanso') || err.message?.includes('Tiempo de estudio completado')) {
+                console.log('Entered break mode after evaluation');
+                setIsOnBreak(true);
+                setCurrentCard(null);
+                setShowAnswer(false);
+
+                try {
+                    const status = await getPomodoroStatus(parseInt(sessionId!));
+                    setPomodoroStatus(status);
+                } catch (statusErr) {
+                    console.error('Error updating status after evaluation:', statusErr);
+                }
+            }
         }
     };
 
@@ -165,6 +230,7 @@ const PomodoroStudySession = () => {
             await startPomodoroBreak(sessionIdNum);
             setIsOnBreak(true);
             setCurrentCard(null);
+            setShowAnswer(false);
 
             // Actualizar estado
             const status = await getPomodoroStatus(sessionIdNum);
@@ -265,7 +331,7 @@ const PomodoroStudySession = () => {
     if (isSessionComplete) {
         return (
             <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
-                <NavbarStudySession />
+                <NavbarStudySession sessionType="pomodoro" />
                 <div className="w-full min-h-screen flex flex-col items-center justify-center overflow-x-hidden">
                     <h1 className="text-4xl font-bold text-center mb-10">
                         ¡Sesión Completada!
@@ -283,29 +349,32 @@ const PomodoroStudySession = () => {
     }
 
     return (
-        <div className="font-primary scroll-smooth scrollbar-hide bg-gradient-to-b from-darkBackground via-darkGradientBlueText to-darkPrimary text-white">
+        <div className="font-primary scroll-smooth scrollbar-hide text-white"
+            style={{
+                background: "radial-gradient(ellipse at bottom, #1e3a8a 0%, #1e1b4b 40%, #000000 100%)"
+            }}>
             <NavbarStudySession />
             <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden">
                 {/* Progress and Timer */}
-                <div className="w-full max-w-4xl px-4 mt-25">
-                    <PomodoroProgress progress={progress} />
+                <div className="w-full px-4 mt-18">
                     <PomodoroTimer
                         status={pomodoroStatus}
                         onStartBreak={handleStartBreak}
                         onEndBreak={handleEndBreak}
                         isOnBreak={isOnBreak}
+                        onTimerComplete={handleTimerComplete}
                     />
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 flex flex-col items-center justify-center px-4">
+                <div className="flex-1 flex flex-col items-center justify-center mt-5">
                     {isOnBreak ? (
                         <div className="text-center">
                             <h1 className="text-4xl font-bold mb-6">¡Tiempo de Descanso!</h1>
                             <p className="text-xl mb-8">Relájate por unos minutos</p>
                             <button
                                 onClick={handleEndBreak}
-                                className="btn btn-primary"
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
                             >
                                 Finalizar Descanso
                             </button>
@@ -314,12 +383,16 @@ const PomodoroStudySession = () => {
                         <>
                             {renderCardContent()}
 
-                            <div className="flex flex-col items-center mt-8">
+                            <div className="flex flex-col items-center mt-15 mb-5">
                                 {!showAnswer ? (
                                     <button
                                         onClick={handleShowAnswer}
-                                        className="btn btn-primary"
+                                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
                                     >
+                                        <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
                                         Mostrar respuesta
                                     </button>
                                 ) : (
@@ -337,13 +410,19 @@ const PomodoroStudySession = () => {
                 </div>
 
                 {/* Controls */}
-                <div className="w-full flex justify-center pb-8">
+                <div className="flex justify-center">
                     <button
                         onClick={handleFinishSession}
-                        className="btn btn-secondary"
+                        className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
                     >
+                        <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
                         Finalizar Sesión
                     </button>
+                </div>
+                <div className="w-full px-4 mt-4">
+                    <PomodoroProgress progress={progress} />
                 </div>
             </div>
         </div>

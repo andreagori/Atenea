@@ -5,24 +5,25 @@ interface PomodoroTimerProps {
     onStartBreak: () => void;
     onEndBreak: () => void;
     isOnBreak: boolean;
+    onTimerComplete?: () => void; // Nueva prop
 }
 
 export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     status,
-    onStartBreak,
-    onEndBreak,
-    isOnBreak
+    isOnBreak,
+    onTimerComplete
 }) => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+    const [hasTriggeredComplete, setHasTriggeredComplete] = useState(false);
 
     // Actualizar cuando cambia el status del servidor
     useEffect(() => {
         if (status && status.timeRemaining !== undefined) {
-            // timeRemaining ahora viene en segundos desde el backend
             setTimeLeft(status.timeRemaining);
             setLastUpdateTime(Date.now());
-            console.log(`Timer updated from server: ${status.timeRemaining}s, phase: ${status.currentPhase}`);
+            setHasTriggeredComplete(false); // Reset cuando se actualiza desde servidor
+            console.log(`Timer updated from server: ${status.timeRemaining}s, phase: ${status.currentPhase}, isOnBreak: ${status.isOnBreak}`);
         }
     }, [status]);
 
@@ -35,8 +36,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             setTimeLeft(prev => {
                 const newTime = Math.max(0, prev - 1);
                 
-                // Si han pasado más de 15 segundos desde la última actualización del servidor,
-                // no confiar tanto en el timer local
+                // Si llegó a 0 y no hemos disparado el evento aún
+                if (newTime === 0 && !hasTriggeredComplete && onTimerComplete) {
+                    console.log('Timer reached 0 - triggering completion check');
+                    setHasTriggeredComplete(true);
+                    // Disparar después de un pequeño delay para evitar conflictos
+                    setTimeout(() => {
+                        onTimerComplete();
+                    }, 500);
+                }
+                
                 if (timeSinceLastUpdate > 15) {
                     console.log('Timer local might be out of sync, will sync with next server update');
                 }
@@ -46,7 +55,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [lastUpdateTime]);
+    }, [lastUpdateTime, hasTriggeredComplete, onTimerComplete]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -54,66 +63,45 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const getPhaseText = () => {
-        if (isOnBreak) return 'Descanso';
-        return 'Estudio';
-    };
+    // Usar el estado del servidor como prioridad, fallback a la prop
+    const currentlyOnBreak = status?.isOnBreak !== undefined ? status.isOnBreak : isOnBreak;
 
     const getPhaseColor = () => {
-        if (isOnBreak) return 'text-green-400';
+        if (currentlyOnBreak) return 'text-green-400';
         return 'text-blue-400';
     };
 
     const isTimeUp = timeLeft <= 0;
 
     return (
-        <div className="bg-darkComponent2 rounded-lg p-6 text-center mb-6">
-            <h3 className={`text-2xl font-bold mb-4 ${getPhaseColor()}`}>
-                {getPhaseText()} - Ciclo {status?.currentCycle || 1}
-            </h3>
-            <div className={`text-6xl font-mono font-bold mb-4 ${isTimeUp ? 'text-red-400 animate-pulse' : getPhaseColor()}`}>
+        <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-3">
+            {/* Indicador de fase */}
+            <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${currentlyOnBreak ? 'bg-green-400' : 'bg-blue-400'} ${isTimeUp ? 'animate-pulse' : ''}`}></div>
+                <span className={`text-sm font-medium ${getPhaseColor()}`}>
+                    {currentlyOnBreak ? 'Descanso' : 'Estudio'}
+                </span>
+            </div>
+
+            {/* Separador */}
+            <div className="w-px h-6 bg-white/20"></div>
+
+            {/* Timer */}
+            <div className={`text-2xl font-mono font-bold ${isTimeUp ? 'text-red-400 animate-pulse' : getPhaseColor()}`}>
                 {formatTime(timeLeft)}
             </div>
-            <div className="flex gap-4 justify-center">
-                {!isOnBreak && isTimeUp && (
-                    <button 
-                        onClick={onStartBreak}
-                        className="btn btn-success animate-pulse"
-                    >
-                        ¡Tiempo de Descanso!
-                    </button>
-                )}
-                {!isOnBreak && !isTimeUp && (
-                    <button 
-                        onClick={onStartBreak}
-                        className="btn btn-outline btn-sm"
-                    >
-                        Iniciar Descanso Anticipado
-                    </button>
-                )}
-                {isOnBreak && (
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={onEndBreak}
-                            className="btn btn-primary"
-                        >
-                            Continuar Estudiando
-                        </button>
-                        {isTimeUp && (
-                            <span className="text-green-400 font-semibold animate-pulse">
-                                ¡Descanso completado!
-                            </span>
-                        )}
-                    </div>
-                )}
-            </div>
-            <div className="mt-4 text-sm text-gray-400">
-                Objetivo: {status?.studyDuration || 25}min estudio / {status?.breakDuration || 5}min descanso
-            </div>
-            
-            {/* Debug info - remover en producción */}
-            <div className="mt-2 text-xs text-gray-500">
-                Debug: Server time: {status?.timeRemaining}s | Local: {timeLeft}s | Phase: {status?.currentPhase}
+
+            {/* Separador */}
+            <div className="w-px h-6 bg-white/20"></div>
+
+            {/* Ciclo */}
+            <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span className="text-sm text-gray-300 font-medium">
+                    {status?.currentCycle || 1}
+                </span>
             </div>
         </div>
     );
