@@ -60,8 +60,8 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
 
   return (
     <div className="overflow-x-auto w-full rounded-4xl">
-      <table className="table table-md border-10 w-full text-lightComponent text-center border-darkComponent">
-        <thead className="text-xl text-white bg-darkComponent border-b-3 border-white">
+      <table className="table table-md border-10 w-full text-lightComponent text-center border-darkComponent2">
+        <thead className="text-xl text-white bg-darkComponent2 border-b-3 border-darkPSText">
           <tr>
             <th className="px-2 py-2 w-1/12">#</th>
             <th className="px-4 py-2">Título</th>
@@ -69,11 +69,11 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
             <th className="px-4 py-2 w-1/4">Opciones</th>
           </tr>
         </thead>
-        <tbody className="text-white bg-darkComponent">
+        <tbody className="text-white bg-darkComponent2">
           {data.map((deck, index) => (
             <tr
               key={index}
-              className="hover:bg-darkComponentElement transition-all duration-200"
+              className="hover:bg-darkComponent transition-all duration-200"
               style={{ height: '60px' }}
               onClick={() => handleRowClick(index)}
             >
@@ -83,7 +83,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
               <td>
                 <div className="flex justify-center gap-2">
                   <button
-                    className="btn btn-sm btn-info"
+                    className="btn btn-sm bg-darkSecondary hover:bg-darkPSText text-white border-darkPSText hover:border-blue-500 rounded-xl"
                     onClick={(e) => onStudy(deck, e)}
                     title="Estudiar mazo"
                   >
@@ -96,7 +96,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                     Estudiar
                   </button>
                   <button
-                    className="btn btn-sm btn-accent"
+                    className="btn btn-sm bg-darkSuccess hover:bg-darkSuccess2 text-white border-darkSuccess2 hover:border-green-500 rounded-xl"
                     onClick={(e) => onEdit?.(index, e)}
                     title='Editar mazo'
                   >
@@ -108,7 +108,7 @@ const DecksTable: React.FC<DaisyTableProps> = ({ data, onDelete, onUpdate }) => 
                     />
                   </button>
                   <button
-                    className="btn btn-sm btn-error"
+                    className="btn btn-sm bg-darkDanger hover:bg-red-700 text-white border-red-700 hover:border-red-500 rounded-xl"
                     onClick={(e) => handleDelete(deck, e)}
                     title='Eliminar mazo'
                   >
@@ -212,8 +212,8 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
 
   return (
     <div className="overflow-x-auto w-full rounded-4xl mt-2">
-      <table className="table table-md border-10 w-full text-lightComponent text-center border-darkPrimaryPurple2">
-        <thead className="text-xl text-white bg-darkPrimaryPurple2 border-b-3 border-white">
+      <table className="table table-md border-10 w-full text-lightComponent text-center border-darkComponent">
+        <thead className="text-xl text-white bg-darkComponent border-b-3 border-darkPrimaryPurple">
           <tr>
             <th className="px-2 py-2 w-1/12">#</th>
             <th className="px-4 py-2">Título</th>
@@ -221,11 +221,11 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
             <th className="px-4 py-2 w-1/4">Opciones</th>
           </tr>
         </thead>
-        <tbody className="text-white bg-darkPrimaryPurple2">
+        <tbody className="text-white bg-darkComponent">
           {displayedCards.map((card, index) => (
             <tr
               key={card.cardId}
-              className="hover:bg-darkComponentElement transition-all duration-200"
+              className="hover:bg-darkPrimaryPurple transition-all duration-200"
               style={{ height: '60px' }}
             >
               <td>{getCardNumber(index)}</td>
@@ -234,7 +234,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
               <td>
                 <div className="flex justify-center gap-2">
                   <button
-                    className="btn btn-sm btn-accent"
+                    className="btn btn-sm bg-darkSuccess hover:bg-darkSuccess2 text-white border-darkSuccess2 hover:border-green-500 rounded-xl"
                     onClick={() => onEdit(card)}
                     title='Editar carta'
                   >
@@ -245,7 +245,7 @@ const CardsTable: React.FC<DaisyTableProps2> = ({
                     />
                   </button>
                   <button
-                    className="btn btn-sm btn-error"
+                    className="btn btn-sm bg-darkDanger hover:bg-red-700 text-white border-red-700 hover:border-red-500 rounded-xl"
                     onClick={() => onDelete(card)}
                     title='Eliminar carta'
                   >

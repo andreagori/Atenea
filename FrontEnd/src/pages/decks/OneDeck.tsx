@@ -105,28 +105,33 @@ const OneDeck = () => {
                 style={{
                     backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
                 }}>
-                <h1 className="mt-20 text-6xl font-bold text-darkSecondaryPurple">
+                <h1 className="mt-20 text-6xl font-bold text-white">
                     {decodeURIComponent(title || "Nombre de mazo")}
                 </h1>
 
-                <div className="flex flex-col justify-center items-center mt-10 w-10/12 flex-grow">
-                    <p className="text-darkSecondaryPurple mt-2 text-3xl font-semibold">
+                <div className="flex flex-col justify-center items-center mt-5 w-10/12 flex-grow">
+                    <p className="text-darkPrimaryPurple text-xl">
                         Cartas del mazo:
                     </p>
 
+                    <div className="flex justify-end mb-2 mt-4 gap-2 self-end">
+                        <ButtonCustom
+                            type="button"
+                            text="Agregar nueva carta"
+                            onClick={() => setIsModalOpen(true)}
+                            isGradient={true}
+                            gradientDirection="to bottom"
+                            gradientColors={['#9625FF', '#1700A4']}
+                            color="#fff"
+                            hoverColor="#fff"
+                            hoverBackground="#9625FF"
+                            width="180px"
+                            height="35px"
+                        />
+                    </div>
+
                     {cards && cards.length > 0 ? (
                         <>
-                            <div className="flex justify-between items-center w-full mb-4">
-                                <PageSizeSelector
-                                    pageSize={pageSize}
-                                    onPageSizeChange={handlePageSizeChange}
-                                    totalItems={cards.length}
-                                    variant="purple" // Morado para cartas
-                                />
-                                <div className="text-sm text-darkInfo">
-                                    Total: <span className="font-semibold text-darkPSText">{cards.length}</span> cartas
-                                </div>
-                            </div>
 
                             <CardsTable
                                 deckId={deckId}
@@ -141,6 +146,17 @@ const OneDeck = () => {
                                 onUpdateCard={handleUpdateCard}
                             />
 
+                            <div className="flex justify-between items-center w-full mt-4">
+                                <PageSizeSelector
+                                    pageSize={pageSize}
+                                    onPageSizeChange={handlePageSizeChange}
+                                    totalItems={cards.length}
+                                    variant="purple" // Morado para cartas
+                                />
+                                <div className="text-sm text-darkInfo">
+                                    Total: <span className="font-semibold text-darkPSText">{cards.length}</span> cartas
+                                </div>
+                            </div>
                             {/* Paginación compacta morada */}
                             <Pagination
                                 currentPage={currentPage}
@@ -154,39 +170,6 @@ const OneDeck = () => {
                     ) : (
                         <p className="text-white mt-4">No hay cartas en este mazo</p>
                     )}
-
-                    <div className="flex justify-end mt-4 gap-2 self-end">
-                        <ButtonCustom
-                            type="button"
-                            text="Agregar nueva carta"
-                            onClick={() => setIsModalOpen(true)}
-                            isGradient={true}
-                            gradientDirection="to bottom"
-                            gradientColors={['#9625FF', '#1700A4']}
-                            color="#fff"
-                            hoverColor="#fff"
-                            hoverBackground="#9625FF"
-                            width="180px"
-                            height="35px"
-                        />
-
-                        {cards && cards.length > 0 && (
-                            <ButtonCustom
-                                type="button"
-                                text="Comenzar estudio"
-                                onClick={() => navigate(`/sesionesEstudio/${deckId}`)}
-                                isGradient={true}
-                                gradientDirection="to bottom"
-                                gradientColors={['#8C4FFF', '#8C4FFF']}
-                                color="#fff"
-                                hoverColor="#fff"
-                                hoverBackground="#9625FF"
-                                width="150px"
-                                height="35px"
-                                icon={<ChevronRight />}
-                            />
-                        )}
-                    </div>
                 </div>
 
                 <footer className="w-full mt-10">

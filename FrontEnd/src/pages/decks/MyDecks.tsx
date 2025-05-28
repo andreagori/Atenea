@@ -33,7 +33,7 @@ const MisMazos = () => {
 
     const handlePageSizeChange = (newSize: PageSize) => {
         setPageSize(newSize);
-        setCurrentPage(1); 
+        setCurrentPage(1);
     };
 
     if (loading) return (
@@ -55,27 +55,31 @@ const MisMazos = () => {
                 style={{
                     backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
                 }}>
-                <h1 className="mt-20 text-6xl font-bold text-lightComponent">
+                <h1 className="mt-20 text-6xl font-bold text-white">
                     Mis mazos
                 </h1>
-                <p className="text-lightComponent mt-2 text-xl">
+                <p className="text-darkPSText mt-2 text-xl">
                     Selecciona el mazo para editarlo o acceder a las cartas
                 </p>
 
                 <div className="flex flex-col justify-center items-center mt-10 w-10/12 max-w-6xl">
                     {decks && decks.length > 0 ? (
                         <>
-                            {/* Selector de tamaño de página */}
-                            <div className="flex justify-between items-center w-full mb-4">
-                                <PageSizeSelector
-                                    pageSize={pageSize}
-                                    onPageSizeChange={handlePageSizeChange}
-                                    totalItems={decks.length}
-                                    variant="blue" // Azul para mazos
+                            {/* Botón crear mazo */}
+                            <div className="flex justify-end mb-4 w-full">
+                                <ButtonCustom
+                                    type="button"
+                                    text="Crear nuevo mazo"
+                                    onClick={() => setIsModalOpen(true)}
+                                    isGradient={true}
+                                    gradientDirection="to bottom"
+                                    gradientColors={['#95C4FF', '#205DAA']}
+                                    color="#fff"
+                                    hoverColor="#fff"
+                                    hoverBackground="#205DAA"
+                                    width="180px"
+                                    height="35px"
                                 />
-                                <div className="text-sm text-darkInfo">
-                                    Total: <span className="font-semibold text-darkPSText">{decks.length}</span> mazos
-                                </div>
                             </div>
 
                             {/* Tabla de mazos */}
@@ -108,6 +112,17 @@ const MisMazos = () => {
                                 }}
                             />
 
+                            <div className="flex justify-between items-center w-full mt-4">
+                                <PageSizeSelector
+                                    pageSize={pageSize}
+                                    onPageSizeChange={handlePageSizeChange}
+                                    totalItems={decks.length}
+                                    variant="blue"
+                                />
+                                <div className="text-sm text-darkInfo">
+                                    Total: <span className="font-semibold text-darkPSText">{decks.length}</span> mazos
+                                </div>
+                            </div>
                             {/* Paginación compacta azul */}
                             <Pagination
                                 currentPage={currentPage}
@@ -121,23 +136,6 @@ const MisMazos = () => {
                     ) : (
                         <p className="text-darkSecondary mt-4">No hay mazos creados</p>
                     )}
-
-                    {/* Botón crear mazo */}
-                    <div className="flex justify-end mt-6 w-full">
-                        <ButtonCustom
-                            type="button"
-                            text="Crear nuevo mazo"
-                            onClick={() => setIsModalOpen(true)}
-                            isGradient={true}
-                            gradientDirection="to bottom"
-                            gradientColors={['#0C3BEB', '#1700A4']}
-                            color="#fff"
-                            hoverColor="#fff"
-                            hoverBackground="#0C3BEB"
-                            width="180px"
-                            height="35px"
-                        />
-                    </div>
                 </div>
 
                 <footer className="w-full mt-10">

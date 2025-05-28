@@ -5,8 +5,8 @@ import StatsAnalysisSummary from "./StatsAnalysisSummary"
 function ResumenAnalisis() {
     return (
         <>
-            <div className="mt-5 w-8/14 h-full rounded-2xl bg-darkPrimaryPurple font-primary border-2 border-darkSecondaryPurple shadow-lg">
-                <div className="h-11/12 flex flex-col items-center justify-center mt-5">
+            <div className="mt-5 h-full w-12/15 rounded-2xl bg-darkPrimaryPurple2 font-primary border-1 border-white shadow-lg">
+                <div className="flex flex-col items-center justify-center mt-5">
                     <StatsAnalysisSummary />
                     <div className="flex justify-end mt-4 mr-4 mb-3">
                         <Link to="/analisis">
@@ -20,7 +20,7 @@ function ResumenAnalisis() {
                                 color="#400CC2"
                                 hoverColor="#E9D7F9"
                                 hoverBackground="#774CFB"
-                                width="280px"
+                                width="580px"
                                 height="35px"
                             />
                         </Link>
