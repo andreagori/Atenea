@@ -56,11 +56,6 @@ export function ButtonCustom({
         background: disabledBackground,
     };
 
-    const hoverStyle: React.CSSProperties = {
-        color: hoverColor,
-        background: hoverBackground,
-    };
-
     return (
         <button
             className={`btn btn-custom ${disabled ? 'btn-disabled' : ''}`}

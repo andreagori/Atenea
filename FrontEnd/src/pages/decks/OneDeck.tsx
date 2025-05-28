@@ -6,7 +6,6 @@ import { NavbarLoginIn } from "../../components/Navbar"
 import { CardsTable } from "../../libs/daisyUI/DeckTables"
 import { ButtonCustom } from '@/components/Buttons';
 import { CreateCardModal } from "@/components/CreateDeckModal";
-import { ChevronRight } from 'lucide-react';
 import { CreateCardPayload } from "@/types/card.types";
 import { Pagination } from "@/components/Pagination";
 import { PageSizeSelector } from "@/components/PageSizeSelector";
@@ -22,7 +21,7 @@ const OneDeck = () => {
     const { title } = useParams<{ title: string }>();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { deckId, loading: loadingDeckId, error: deckError } = useDeckIdByTitle(title);
-    const { cards, loading, error, createCard, updateCard, deleteCard, refetchCards } = useCards(deckId ?? undefined);
+    const { cards, loading, createCard, updateCard, deleteCard, refetchCards } = useCards(deckId ?? undefined);
     const [pageSize, setPageSize] = useState<PageSize>(10);
     const [currentPage, setCurrentPage] = useState(1);
 

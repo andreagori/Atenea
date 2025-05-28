@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { NavbarLoginIn, NavbarStudySession } from "../../components/Navbar";
+import { NavbarLoginIn } from "../../components/Navbar";
 import SelectDecksStudySession from "../../libs/daisyUI/SelectDecksStudySession";
 import StudySessionsOptions from "../../components/StudySessionsOptions";
 import { useStudySession } from "@/hooks/useStudySessions";

@@ -8,7 +8,7 @@ import HomeLoginIn from "../pages/HomeLoginIn";
 import MisMazos from "../pages/decks/MyDecks";
 import OneDeck from "../pages/decks/OneDeck";
 import Analisis from "../pages/Analysis";
-import SesionEstudio from "../pages/studySessions/StudySession";
+import StudySession from '../pages/studySessions/StudySession';
 import RegularStudySession from "../pages/studySessions/RegularStudySession";
 import PomodoroStudySession from "../pages/studySessions/PomodoroStudySession";
 import SimulatedTestStudySession from "../pages/studySessions/SimulatedTestStudySession";
@@ -53,7 +53,7 @@ const AppRouter = () => {
           path="/sesionesEstudio"
           element={
             <PrivateRoute>
-              <SesionEstudio />
+              <StudySession />
             </PrivateRoute>
           }
         />

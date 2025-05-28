@@ -47,7 +47,7 @@ export const TestScoresChart: React.FC<TestScoresChartProps> = ({ data, loading 
   };
 
   const chartData = {
-    labels: data.map((d, index) => `Test ${index + 1}`),
+    labels: data.map((_, index) => `Test ${index + 1}`),
     datasets: [
       {
         label: 'Puntuación (%)',
