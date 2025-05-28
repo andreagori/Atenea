@@ -1,13 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import svgr from 'vite-plugin-svgr'
 import path from "path"
-
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), svgr()],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -15,10 +12,14 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      // Remover configuraciones externas problemáticas
     },
-    // Aumentar el límite de chunk size si es necesario
     chunkSizeWarningLimit: 1600,
+    outDir: 'dist',
+    sourcemap: false
   },
-  // Configuración para archivos estáticos
-  assetsInclude: ['**/*.svg']
+  assetsInclude: ['**/*.svg'],
+  define: {
+    global: 'globalThis',
+  }
 })

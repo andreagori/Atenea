@@ -57,6 +57,9 @@
     "vite-plugin-svgr": "^4.3.0"
   },
   "overrides": {
-    "react-is": "^19.0.0-rc-69d4b800-20241021"
+    "@tremor/react": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
 }
