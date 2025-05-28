@@ -11,8 +11,15 @@ RUN npm ci --ignore-scripts
 # Copiar el código fuente
 COPY . .
 
-# Verificar que los archivos estén copiados (para debug)
+# Verificaciones de debug más detalladas
+RUN echo "=== Verificando estructura de carpetas ==="
+RUN ls -la src/
+RUN echo "=== Contenido de src/auth/ ==="
 RUN ls -la src/auth/
+RUN echo "=== Verificando constants.ts específicamente ==="
+RUN cat src/auth/constants.ts
+RUN echo "=== Contenido de src/jwt/ ==="
+RUN ls -la src/jwt/ || echo "Carpeta src/jwt no existe"
 
 # Generar Prisma después de copiar el código
 RUN npx prisma generate
