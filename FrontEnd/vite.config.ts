@@ -13,4 +13,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+    },
+    // Aumentar el límite de chunk size si es necesario
+    chunkSizeWarningLimit: 1600,
+  },
+  // Configuración para archivos estáticos
+  assetsInclude: ['**/*.svg']
 })
