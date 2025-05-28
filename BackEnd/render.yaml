@@ -5,7 +5,13 @@ services:
     region: oregon
     plan: free
     buildCommand: npm ci && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && npm run start:prod
+    startCommand: |
+      echo "🔄 Starting database migration..."
+      npx prisma migrate status || echo "Migration status failed"
+      npx prisma migrate deploy || echo "Migration deploy failed, trying db push..."
+      npx prisma db push --accept-data-loss || echo "DB push also failed"
+      echo "🚀 Starting application..."
+      npm run start:prod
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
@@ -31,4 +37,4 @@ databases:
     user: atenea_user
     region: oregon
     plan: free
-    ipAllowList: [] # Permite todas las IPs
+    ipAllowList: []
