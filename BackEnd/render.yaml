@@ -2,33 +2,12 @@ services:
   - type: web
     name: atenea-backend
     env: node
-    region: oregon
-    plan: free
-    buildCommand: npm ci && npx prisma generate && npm run build
-    startCommand: npm run deploy
+    buildCommand: npm ci && npm install && npm run build
+    startCommand: npx prisma migrate deploy && npm run start:prod
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
-      - key: DATABASE_URL
-        fromDatabase:
-          name: atenea-db
-          property: connectionString
-      - key: JWT_SECRET
-        value: abcdefgGFEDCBA{}[]*!
-      - key: CLOUDINARY_CLOUD_NAME
-        value: dwhmopxey
-      - key: CLOUDINARY_API_KEY
-        value: 657495451759477
-      - key: CLOUDINARY_API_SECRET
-        value: PX8s9E68RjuoYw2uv_9iLB7EUyI
-
-databases:
-  - name: atenea-db
-    databaseName: atenea_db
-    user: atenea_user
-    region: oregon
-    plan: free
+        -key: PORT 
+        value: '10000'
     ipAllowList: []
