@@ -13,11 +13,13 @@ export class CardReviewsService {
   // PrismaService instance for database operations.
   constructor(private readonly prisma: PrismaService) { }
 
+  // Method to check if the session type is valid for creating a card review.
   private isValidSessionType(session: { studyMethod: StudyMethod }): boolean {
     return session.studyMethod === StudyMethod.spacedRepetition ||
       session.studyMethod === StudyMethod.pomodoro;
   }
 
+  // CREATE A CARD REVIEW
   async create(sessionId: number, cardId: number, userId: number, createCardReviewDto: CreateCardReviewDto) {
     const session = await this.prisma.studySession.findFirst({
       where: {
@@ -50,6 +52,7 @@ export class CardReviewsService {
     });
   }
 
+  // CALCULATE THE REVIEW INTERVAL BASED ON THE EVALUATION
   private calculateReviewInterval(evaluation: Evaluation): number {
     const intervals = {
       dificil: 1,      // Revisar en 1 minuto
@@ -61,6 +64,7 @@ export class CardReviewsService {
     return intervals[evaluation];
   }
 
+  // FIND ALL REVIEWS FOR A SESSION
   async findBySession(sessionId: number, userId: number) {
     return this.prisma.cardReview.findMany({
       where: {

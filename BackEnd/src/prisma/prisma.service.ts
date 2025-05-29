@@ -25,9 +25,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
               mostUsedStudyM: null
             }
           });
-          this.logger.log(`✅ Estadísticas creadas automáticamente para usuario ${result.userId}`);
+          this.logger.log(`Estadísticas creadas automáticamente para usuario ${result.userId}`);
         } catch (error) {
-          this.logger.error(`❌ Error creando estadísticas para usuario ${result.userId}:`, error.message);
+          this.logger.error(`Error creando estadísticas para usuario ${result.userId}:`, error.message);
         }
         
         return result;

@@ -10,6 +10,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 export class CardReviewsController {
   constructor(private readonly cardReviewsService: CardReviewsService) { }
 
+  // ENDPOINTS FOR CARD REVIEWS. CREATE A REVIEW FOR A CARD IN A SESSION.
   @ApiResponse({ status: 201, description: 'Revisión de carta creada' })
   @Post('session/:sessionId/card/:cardId')
   create(
@@ -26,6 +27,7 @@ export class CardReviewsController {
     );
   }
 
+  // GET ALL REVIEWS FOR A SESSION. THIS IS USED TO DISPLAY THE REVIEWS IN THE FRONTEND.
   @ApiResponse({ status: 200, description: 'Revisión de carta encontrada' })
   @Get('session/:sessionId')
   findAllBySession(

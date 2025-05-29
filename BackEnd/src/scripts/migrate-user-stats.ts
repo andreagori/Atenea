@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { UserStatsService } from '../user-stats/user-stats.service';
-import { PrismaService } from '../prisma/prisma.service'; // ← Agregar esta importación
+import { PrismaService } from '../prisma/prisma.service'; 
 
+// USAGE: THIS WAS DONE TO MIGRATE USER STATS FROM OLD VERSION TO NEW VERSION.
 async function migrateUserStats() {
-  console.log('🚀 Iniciando migración de estadísticas de usuarios...');
+  console.log('Iniciando migración de estadísticas de usuarios...');
   
   const app = await NestFactory.createApplicationContext(AppModule);
   
@@ -26,11 +27,11 @@ async function migrateUserStats() {
 
     for (const user of users) {
       try {
-        console.log(`📝 Procesando usuario ${user.userId} (${user.username || 'Sin nombre'})...`);
+        console.log(`Procesando usuario ${user.userId} (${user.username || 'Sin nombre'})...`);
         
         const stats = await userStatsService.calculateAndUpdateUserStats(user.userId);
         
-        console.log(`✅ Usuario ${user.userId} completado:`, {
+        console.log(`Usuario ${user.userId} completado:`, {
           totalSessions: stats.totalSessions,
           totalStudyMin: stats.totalStudyMin,
           mostUsedStudyM: stats.mostUsedStudyM,
@@ -39,20 +40,20 @@ async function migrateUserStats() {
         
         processed++;
       } catch (error) {
-        console.error(`❌ Error procesando usuario ${user.userId}:`, error.message);
+        console.error(`Error procesando usuario ${user.userId}:`, error.message);
         errors++;
       }
     }
     
     console.log('\n🎉 Migración completada!');
-    console.log(`✅ Usuarios procesados: ${processed}`);
-    console.log(`❌ Errores: ${errors}`);
+    console.log(`Usuarios procesados: ${processed}`);
+    console.log(`Errores: ${errors}`);
     
   } catch (error) {
-    console.error('💥 Error durante la migración:', error);
+    console.error('Error durante la migración:', error);
   } finally {
     await app.close();
-    console.log('🔄 Aplicación cerrada');
+    console.log('Aplicación cerrada');
   }
 }
 

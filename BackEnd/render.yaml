@@ -3,7 +3,7 @@ services:
     name: atenea-backend
     env: node
     buildCommand: npm ci && npm install && npm run build
-    startCommand: npx prisma migrate deploy && npm run start:prod
+    startCommand: npx prisma db push --accept-data-loss && npm run start:prod
     healthCheckPath: /
     envVars:
       - key: NODE_ENV

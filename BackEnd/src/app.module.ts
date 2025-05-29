@@ -7,16 +7,13 @@ import { DeckModule } from './deck/deck.module';
 import { CardModule } from './card/card.module';
 import { AuthModule } from './auth/auth.module';
 import { StudySessionsModule } from './study-sessions/study-sessions.module';
-import { SessionResultsModule } from './session-results/session-results.module';
 import { CardReviewsModule } from './card-reviews/card-reviews.module';
-import { SimulatedTestsModule } from './simulated-tests/simulated-tests.module';
 import { UserStatsModule } from './user-stats/user-stats.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { TestQuestionModule } from './test-question/test-question.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, DeckModule, CardModule, AuthModule, StudySessionsModule, SessionResultsModule, CardReviewsModule, SimulatedTestsModule, UserStatsModule, CloudinaryModule, TestQuestionModule, AnalyticsModule],
+  imports: [PrismaModule, UserModule, DeckModule, CardModule, AuthModule, StudySessionsModule, CardReviewsModule, UserStatsModule, CloudinaryModule, AnalyticsModule],
   controllers: [PrismaController],
   providers: [PrismaService],
   exports: [PrismaService],
