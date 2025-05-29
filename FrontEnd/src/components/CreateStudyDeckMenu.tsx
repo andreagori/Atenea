@@ -47,7 +47,7 @@ function MazoSesionCardsHome() {
                     borderColor="var(--color-white)">
 
                     <div className="flex flex-col h-full text-white">
-                        <img src="/src/assets/studySessionIcon.svg" alt="Mazo" className="w-10 h-10 justify-start" />
+                        <img src="/../../studySessionIcon.svg" alt="Mazo" className="w-10 h-10 justify-start" />
                         <h2 className="text-5xl font-bold">Estudiar. </h2> <br />
                         <p className="mb-2 text-xl">
                             Inicia una sesión de estudio con cualquier mazo.
