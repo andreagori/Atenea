@@ -6,11 +6,10 @@ services:
     plan: free
     buildCommand: npm ci && npx prisma generate && npm run build
     startCommand: |
-      echo "🔄 Starting database migration..."
-      npx prisma migrate status || echo "Migration status failed"
-      npx prisma migrate deploy || echo "Migration deploy failed, trying db push..."
-      npx prisma db push --accept-data-loss || echo "DB push also failed"
-      echo "🚀 Starting application..."
+      echo "🔄 Sincronizando base de datos..."
+      npx prisma db push --accept-data-loss
+      echo "✅ Tablas creadas exitosamente"
+      echo "🚀 Iniciando aplicación..."
       npm run start:prod
     healthCheckPath: /
     envVars:

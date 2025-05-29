@@ -35,7 +35,7 @@ const options = [
     id: "simuladas",
     title: "Pruebas simuladas",
     description:
-      "En esta sesión puedes practicar con preguntas de opción múltiple y de verdadero o falso. Puedes personalizar cantidad y tiempo.",
+      "En esta sesión puedes practicar con preguntas de opción múltiple. Puedes personalizar cantidad y tiempo.",
     background: "var(--color-darkComponent2)",
     accentColor: "#002FE1",
     lightAccent: "#002FE1"

@@ -391,7 +391,7 @@ const SimulatedTestStudySession = () => {
             style={{
                 background: "radial-gradient(ellipse at bottom, #1e3a8a 0%, #1e1b4b 40%, #000000 100%)"
             }}>
-            <NavbarStudySession sessionType="simulated" />
+            <NavbarStudySession sessionType="simuladas" />
             <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden p-8">
                 {/* Progress Bar */}
                 {progress && question && (

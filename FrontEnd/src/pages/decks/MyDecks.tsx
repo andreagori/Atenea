@@ -61,26 +61,26 @@ const MisMazos = () => {
                 <p className="text-darkPSText mt-2 text-xl">
                     Selecciona el mazo para editarlo o acceder a las cartas
                 </p>
+                {/* Botón crear mazo */}
+                <div className="flex justify-end w-10/12">
+                    <ButtonCustom
+                        type="button"
+                        text="Crear nuevo mazo"
+                        onClick={() => setIsModalOpen(true)}
+                        isGradient={true}
+                        gradientDirection="to bottom"
+                        gradientColors={['#95C4FF', '#205DAA']}
+                        color="#fff"
+                        hoverColor="#fff"
+                        hoverBackground="#205DAA"
+                        width="180px"
+                        height="35px"
+                    />
+                </div>
 
-                <div className="flex flex-col justify-center items-center mt-10 w-10/12 max-w-6xl">
+                <div className="flex flex-col justify-center items-center mt-5 w-10/12 max-w-6xl">
                     {decks && decks.length > 0 ? (
                         <>
-                            {/* Botón crear mazo */}
-                            <div className="flex justify-end mb-4 w-full">
-                                <ButtonCustom
-                                    type="button"
-                                    text="Crear nuevo mazo"
-                                    onClick={() => setIsModalOpen(true)}
-                                    isGradient={true}
-                                    gradientDirection="to bottom"
-                                    gradientColors={['#95C4FF', '#205DAA']}
-                                    color="#fff"
-                                    hoverColor="#fff"
-                                    hoverBackground="#205DAA"
-                                    width="180px"
-                                    height="35px"
-                                />
-                            </div>
 
                             {/* Tabla de mazos */}
                             <DecksTable
