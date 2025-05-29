@@ -5,12 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: npm ci && npx prisma generate && npm run build
-    startCommand: |
-      echo "🔄 Sincronizando base de datos..."
-      npx prisma db push --accept-data-loss
-      echo "✅ Tablas creadas exitosamente"
-      echo "🚀 Iniciando aplicación..."
-      npm run start:prod
+    startCommand: npm run deploy
     healthCheckPath: /
     envVars:
       - key: NODE_ENV

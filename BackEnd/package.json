@@ -7,11 +7,11 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "deploy": "npx prisma db push --accept-data-loss && npm run start:prod",
     "migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "postinstall": "prisma generate",
