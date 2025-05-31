@@ -1,7 +1,7 @@
 # 🏛️ Atenea - Plataforma de Aprendizaje Personalizada
 
 <div align="center">
-<img src="./public/AteneaIcon.svg" alt="Atenea Logo" width="40"/>
+<img src="./FrontEnd/public/AteneaIcon.svg" alt="Atenea Logo" width="40"/>
   Una plataforma de aprendizaje adaptativa que emplea diferentes métodos de estudio para ofrecer una experiencia educativa única y personalizada.
 </div>
 
