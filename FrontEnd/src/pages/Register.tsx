@@ -1,24 +1,44 @@
-import { NavbarForms } from "../components/Navbar";
-import { FormRegister } from "../components/FormLoginRegister";
+import {
+  AuthShowcasePanel,
+  AuthFormShell,
+  RegisterForm,
+  MiniDeckLibraryCard,
+} from "@/components/auth";
 
-const Register = () => {
-  return (
-    <div className="flex flex-col justify-center items-center h-screen bg-darkBackground overflow-hidden"
-      style={{
-        backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
-      }}>
-      <NavbarForms />
-      <div className="h-12/12 w-10/12 mt-25">
-      <FormRegister />
-      </div>
-      <img
-        src="./AteneaFullBlue.svg"
-        alt="Atenea Logo"
-        className="absolute bottom-0 left-0 w-1/4 h-1/4 mb-10 ml-10"
-      />
-
-    </div>
-  );
-}
+const Register = () => (
+  <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr] bg-v2-bg">
+    <AuthShowcasePanel
+      eyebrow="Primeros pasos"
+      title={
+        <>
+          Tres tipos de carta.
+          <br />
+          Un <em>mazo</em>.
+        </>
+      }
+      description="Repaso activo para preguntas, Cornell para temas complejos, visual para diagramas. Crea tu primer mazo en minutos."
+    >
+      <MiniDeckLibraryCard />
+    </AuthShowcasePanel>
+    <AuthFormShell
+      topPrompt={{
+        text: "¿Ya tienes cuenta?",
+        cta: "Inicia sesión",
+        to: "/inicioSesion",
+      }}
+      eyebrow="Crear cuenta"
+      title={
+        <>
+          Empieza tu
+          <br />
+          primer <em>mazo</em>.
+        </>
+      }
+      subtitle="Tres minutos para crear tu cuenta. Después, tus mazos te esperan."
+    >
+      <RegisterForm />
+    </AuthFormShell>
+  </div>
+);
 
 export default Register;

@@ -12,8 +12,8 @@ services:
     depends_on:
       - db
     restart: unless-stopped
-    environment:
-      DATABASE_URL: "postgresql://root:123@db:5432/atenea"
+    env_file:
+      - ./BackEnd/.env
 
   # PostgreSQL Database
   db:

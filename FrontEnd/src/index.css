@@ -5,6 +5,62 @@
 @plugin "daisyui";
 
 @theme {
+  /* ============================================
+     V2 DESIGN TOKENS (in-flight redesign)
+     Source of truth: .design_review/project/index.html
+     Prefixed `v2-` so existing dark/shadcn palettes can
+     coexist during the screen-by-screen migration.
+     ============================================ */
+
+  /* surfaces */
+  --color-v2-bg: #FAFBFD;
+  --color-v2-surface: #FFFFFF;
+  --color-v2-paper: #F5F4EE;
+
+  /* text */
+  --color-v2-ink: #1B1D2D;
+  --color-v2-ink-2: #686868;
+  --color-v2-ink-3: rgba(27, 29, 45, 0.5);
+
+  /* lines */
+  --color-v2-line: #E0E5F5;
+  --color-v2-line-2: #C6D2FF;
+
+  /* primary
+     - primary       : brand fill (#567DF1)
+     - primary-deep  : hover / dark CTAs (#344FA4)
+     - primary-soft  : saturated mid-blue (avatars, progress gradient endpoint)
+     - primary-tint  : selection ring, gentle highlights (#C6D2FF)
+     - primary-pale  : subtle background tint (eyebrow chips, recommendation callouts, active nav) */
+  --color-v2-primary: #567DF1;
+  --color-v2-primary-deep: #344FA4;
+  --color-v2-primary-soft: #90A5F5;
+  --color-v2-primary-tint: #C6D2FF;
+  --color-v2-primary-pale: #EBF0FF;
+
+  /* accents */
+  --color-v2-violet: #A683FF;
+  --color-v2-magenta: #C055E7;
+  --color-v2-coral: #FF4540;
+  --color-v2-green: oklch(0.72 0.12 155);
+  --color-v2-amber: oklch(0.78 0.14 75);
+
+  /* radii */
+  --radius-v2-sm: 12px;
+  --radius-v2-md: 18px;
+  --radius-v2-lg: 25px;
+  --radius-v2-xl: 32px;
+
+  /* shadows */
+  --shadow-v2-sm: 0 1px 2px rgba(13, 21, 41, 0.04);
+  --shadow-v2-md: 0 8px 24px -12px rgba(27, 29, 45, 0.12), 0 2px 6px rgba(27, 29, 45, 0.05);
+  --shadow-v2-lg: 0 24px 48px -20px rgba(27, 29, 45, 0.18), 0 4px 12px rgba(27, 29, 45, 0.06);
+
+  /* fonts */
+  --font-v2-sans: "Funnel Sans", system-ui, sans-serif;
+  --font-v2-serif: "Instrument Serif", serif;
+  --font-v2-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, monospace;
+
   /* FONTS ----------------------------------- */
   --font-primary: "Funnel Sans", sans-serif;
   --breakpoint-3xl: 120rem;
@@ -94,6 +150,36 @@ funnel-sans-uniquifier
 .animate-gradient {
   animation: gradientMove linear infinite;
   background-size: 300% 100%;
+}
+
+/* V2 fade-in (page mount) */
+@keyframes v2FadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-v2-fade {
+  animation: v2FadeIn 0.25s ease-out;
+}
+
+/* V2 3D card flip — keep -webkit- prefixes intentionally,
+   they fix a Safari/iOS flip bug observed in the prototype. */
+.v2-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+.v2-flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.v2-flip-back {
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
 }
 
 html, body {

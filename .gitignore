@@ -1,0 +1,4 @@
+# Working folder for the V2 design handoff bundle (HTML/CSS/JS prototype).
+# Kept locally as a reference while implementing the redesign — not part of the codebase.
+.design_review/
+/.claude
