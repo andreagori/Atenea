@@ -6,6 +6,8 @@ import {
   Brain,
   BarChart3,
   LogOut,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,11 @@ export interface SidebarProps {
   collapsed: boolean;
   user?: SidebarUser | null;
   onLogout?: () => void;
+  /**
+   * If provided, renders a chevron toggle below the logo so the user can
+   * collapse / expand the sidebar manually.
+   */
+  onToggleCollapse?: () => void;
   /** Replace the default text logo. */
   logo?: ReactNode;
   className?: string;
@@ -79,6 +86,7 @@ export const Sidebar = ({
   collapsed,
   user,
   onLogout,
+  onToggleCollapse,
   logo,
   className,
 }: SidebarProps) => {
@@ -93,13 +101,28 @@ export const Sidebar = ({
         className
       )}
     >
-      <div
-        className={cn(
-          "flex items-center gap-1 h-9",
-          collapsed && "justify-center"
-        )}
-      >
+      {/* Logo + collapse toggle on the same row */}
+      <div className="flex items-center justify-between gap-2 h-9">
         {logo ?? <DefaultLogo collapsed={collapsed} />}
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={
+              collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"
+            }
+            title={
+              collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"
+            }
+            className={cn(
+              "w-7 h-7 flex-shrink-0 inline-flex items-center justify-center rounded-md",
+              "text-v2-ink-3 hover:bg-v2-primary/[0.06] hover:text-v2-primary-deep",
+              "transition-colors duration-150"
+            )}
+          >
+            {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+          </button>
+        )}
       </div>
 
       <nav className="mt-8 flex flex-col gap-1.5">

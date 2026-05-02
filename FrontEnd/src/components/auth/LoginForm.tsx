@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Input } from "@/components/ui";
 import { useLogin } from "@/hooks/useLogin";
+import { cn } from "@/lib/utils";
 import { PasswordInput } from "./PasswordInput";
 
 interface FieldErrors {
@@ -8,7 +9,13 @@ interface FieldErrors {
   password?: string;
 }
 
-const FieldLabel = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
+const FieldLabel = ({
+  children,
+  htmlFor,
+}: {
+  children: ReactNode;
+  htmlFor: string;
+}) => (
   <label
     htmlFor={htmlFor}
     className="block font-v2-mono text-xs tracking-[1.2px] uppercase text-v2-ink-3 mb-2 font-medium"
@@ -17,16 +24,16 @@ const FieldLabel = ({ children, htmlFor }: { children: React.ReactNode; htmlFor:
   </label>
 );
 
-const FieldError = ({ children }: { children: React.ReactNode }) => (
+const FieldError = ({ children }: { children: ReactNode }) => (
   <p className="text-xs text-v2-coral mt-1.5 m-0">{children}</p>
 );
 
+// Mirrors BackEnd/src/auth/dto/sign-up.dto.ts limits so any account that
+// could exist on the server passes these checks.
 const validate = (username: string, password: string): FieldErrors => {
   const errs: FieldErrors = {};
-  if (username.length < 3)
-    errs.username = "El usuario debe tener al menos 3 caracteres";
-  if (password.length < 6)
-    errs.password = "La contraseña debe tener al menos 6 caracteres";
+  if (username.length === 0) errs.username = "Ingresa tu usuario.";
+  if (password.length === 0) errs.password = "Ingresa tu contraseña.";
   return errs;
 };
 
@@ -88,8 +95,16 @@ export const LoginForm = () => {
       </div>
 
       {message && (
-        <div className="mb-4 text-[13px] text-v2-ink-2 px-4 py-2.5 rounded-v2-sm bg-v2-primary-pale">
-          {message}
+        <div
+          role={message.kind === "error" ? "alert" : "status"}
+          className={cn(
+            "mb-4 text-[13px] px-4 py-2.5 rounded-v2-sm border",
+            message.kind === "error"
+              ? "text-v2-coral bg-v2-coral/[0.08] border-v2-coral/20"
+              : "text-v2-primary-deep bg-v2-primary-pale border-v2-primary-tint/40"
+          )}
+        >
+          {message.text}
         </div>
       )}
 

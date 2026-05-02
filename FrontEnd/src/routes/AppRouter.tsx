@@ -9,6 +9,7 @@ import Register from "../pages/Register";
 import HomeLoginIn from "../pages/HomeLoginIn";
 import MisMazos from "../pages/decks/MyDecks";
 import OneDeck from "../pages/decks/OneDeck";
+import NewCard from "../pages/decks/NewCard";
 import Analisis from "../pages/Analysis";
 import StudySession from "../pages/studySessions/StudySession";
 import RegularStudySession from "../pages/studySessions/RegularStudySession";
@@ -54,6 +55,14 @@ const AppRouter = () => (
         element={
           <Private>
             <OneDeck />
+          </Private>
+        }
+      />
+      <Route
+        path="/mazos/:title/nueva-carta"
+        element={
+          <Private>
+            <NewCard />
           </Private>
         }
       />

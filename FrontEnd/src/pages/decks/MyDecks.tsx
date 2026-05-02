@@ -1,159 +1,102 @@
-import { useState, useMemo } from "react";
-import { NavbarLoginIn } from "../../components/Navbar"
-import { DecksTable } from "../../libs/daisyUI/DeckTables"
+import { useState } from "react";
+import { Plus } from "lucide-react";
 import { useDecks } from "@/hooks/useDeck";
-import { ButtonCustom } from '@/components/Buttons';
-import { CreateDeckModal } from "@/components/CreateDeckModal";
-import { Pagination } from "@/components/Pagination";
-import { PageSizeSelector } from "@/components/PageSizeSelector";
-import Footer from "../../components/Footer";
+import { Button } from "@/components/ui";
+import {
+  DeckCard,
+  DeckCardSkeleton,
+  CreateDeckCard,
+  CreateDeckModal,
+} from "@/components/decks";
 
-type PageSize = 5 | 10 | 25 | 50 | 'Todas';
+const SKELETON_COUNT = 6;
 
-const MisMazos = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [pageSize, setPageSize] = useState<PageSize>(10);
-    const [currentPage, setCurrentPage] = useState(1);
-    const { decks, loading, error, deleteDeck, createDeck, updateDeck, refetch } = useDecks();
+const ErrorBanner = ({ message }: { message: string }) => (
+  <div
+    role="alert"
+    className="text-[14px] px-4 py-3 rounded-v2-sm border text-v2-coral bg-v2-coral/[0.08] border-v2-coral/20"
+  >
+    No se pudieron cargar los mazos. {message}
+  </div>
+);
 
-    const displayedDecks = useMemo(() => {
-        if (!decks) return [];
-        if (pageSize === 'Todas') return decks;
+const EmptyState = ({ onCreate }: { onCreate: () => void }) => (
+  <div className="bg-v2-surface border-2 border-dashed border-v2-line rounded-v2-lg px-8 py-16 text-center">
+    <div className="inline-flex w-14 h-14 rounded-full bg-v2-primary-pale text-v2-primary-deep items-center justify-center mb-4">
+      <Plus size={26} />
+    </div>
+    <h2 className="text-[22px] font-medium m-0 mb-2 text-v2-ink">
+      Crea tu primer mazo
+    </h2>
+    <p className="text-[15px] text-v2-ink-2 m-0 mb-6 max-w-md mx-auto leading-[1.55]">
+      Cada mazo es un tema o materia. Dentro guardas las cartas que vas a
+      estudiar.
+    </p>
+    <Button onClick={onCreate} variant="primary" size="lg">
+      <Plus size={16} /> Crear mi primer mazo
+    </Button>
+  </div>
+);
 
-        const start = (currentPage - 1) * Number(pageSize);
-        const end = start + Number(pageSize);
-        return decks.slice(start, end);
-    }, [decks, pageSize, currentPage]);
+const MyDecks = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const { decks, loading, error, createDeck, refetch } = useDecks();
 
-    const totalPages = useMemo(() => {
-        if (!decks) return 0;
-        if (pageSize === 'Todas') return 1;
-        return Math.ceil(decks.length / Number(pageSize));
-    }, [decks, pageSize]);
+  const count = decks.length;
 
-    const handlePageSizeChange = (newSize: PageSize) => {
-        setPageSize(newSize);
-        setCurrentPage(1);
-    };
-
-    if (loading) return (
-        <div className="flex justify-center items-center h-screen text-lightComponent">
-            <span className="loading loading-spinner loading-lg text-darkSecondaryPurple"></span>
+  return (
+    <div className="animate-v2-fade">
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-7">
+        <div>
+          <div className="text-[18px] text-v2-ink-3 font-normal mb-1.5">
+            {loading
+              ? "Cargando…"
+              : count > 0
+                ? `${count} mazo${count === 1 ? "" : "s"} en tu biblioteca`
+                : "Aún no tienes mazos"}
+          </div>
+          <h1 className="text-[38px] font-medium m-0 leading-[1.05] tracking-[-0.5px]">
+            Mis Mazos
+          </h1>
         </div>
-    );
+        <Button
+          onClick={() => setModalOpen(true)}
+          variant="primary"
+          className="self-end"
+        >
+          <Plus size={16} /> Crear mazo
+        </Button>
+      </div>
 
-    if (error) return (
-        <div className="flex justify-center items-center h-screen text-red-500">
-            Error: {error}
+      {error ? (
+        <ErrorBanner message={error} />
+      ) : loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+            <DeckCardSkeleton key={i} />
+          ))}
         </div>
-    );
+      ) : count === 0 ? (
+        <EmptyState onCreate={() => setModalOpen(true)} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {decks.map((d) => (
+            <DeckCard key={d.deckId} deck={d} />
+          ))}
+          <CreateDeckCard onClick={() => setModalOpen(true)} />
+        </div>
+      )}
 
-    return (
-        <>
-            <NavbarLoginIn />
-            <div className="w-full min-h-screen flex bg-darkBackground font-primary flex-col items-center overflow-y-auto scrollbar-hide scroll-smooth"
-                style={{
-                    backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
-                }}>
-                <h1 className="mt-20 text-6xl font-bold text-white">
-                    Mis mazos
-                </h1>
-                <p className="text-darkPSText mt-2 text-xl">
-                    Selecciona el mazo para editarlo o acceder a las cartas
-                </p>
-                {/* Botón crear mazo */}
-                <div className="flex justify-end w-10/12">
-                    <ButtonCustom
-                        type="button"
-                        text="Crear nuevo mazo"
-                        onClick={() => setIsModalOpen(true)}
-                        isGradient={true}
-                        gradientDirection="to bottom"
-                        gradientColors={['#95C4FF', '#205DAA']}
-                        color="#fff"
-                        hoverColor="#fff"
-                        hoverBackground="#205DAA"
-                        width="180px"
-                        height="35px"
-                    />
-                </div>
+      <CreateDeckModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreate={async (title, body) => {
+          await createDeck(title, body);
+          await refetch();
+        }}
+      />
+    </div>
+  );
+};
 
-                <div className="flex flex-col justify-center items-center mt-5 w-10/12 max-w-6xl">
-                    {decks && decks.length > 0 ? (
-                        <>
-
-                            {/* Tabla de mazos */}
-                            <DecksTable
-                                data={displayedDecks.map(deck => ({
-                                    deckId: deck.deckId,
-                                    title: deck.title,
-                                    body: deck.body
-                                }))}
-                                onDelete={async (deckId: number) => {
-                                    try {
-                                        await deleteDeck(deckId);
-                                        await refetch();
-                                        const newTotal = (decks?.length || 1) - 1;
-                                        const newTotalPages = pageSize === 'Todas' ? 1 : Math.ceil(newTotal / Number(pageSize));
-                                        if (currentPage > newTotalPages && newTotalPages > 0) {
-                                            setCurrentPage(newTotalPages);
-                                        }
-                                    } catch (error) {
-                                        console.error("Error deleting deck:", error);
-                                    }
-                                }}
-                                onUpdate={async (deckId: number, title: string, body: string) => {
-                                    try {
-                                        await updateDeck(deckId, { title, body });
-                                        await refetch();
-                                    } catch (error) {
-                                        console.error("Error updating deck:", error);
-                                    }
-                                }}
-                            />
-
-                            <div className="flex justify-between items-center w-full mt-4">
-                                <PageSizeSelector
-                                    pageSize={pageSize}
-                                    onPageSizeChange={handlePageSizeChange}
-                                    totalItems={decks.length}
-                                    variant="blue"
-                                />
-                                <div className="text-sm text-darkInfo">
-                                    Total: <span className="font-semibold text-darkPSText">{decks.length}</span> mazos
-                                </div>
-                            </div>
-                            {/* Paginación compacta azul */}
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                                pageSize={pageSize}
-                                totalItems={decks.length}
-                                variant="blue" // Azul para mazos
-                            />
-                        </>
-                    ) : (
-                        <p className="text-darkSecondary mt-4">No hay mazos creados</p>
-                    )}
-                </div>
-
-                <footer className="w-full mt-10">
-                    <Footer />
-                </footer>
-            </div>
-            {isModalOpen && (
-                <CreateDeckModal
-                    onClose={() => setIsModalOpen(false)}
-                    onCreate={async (title, body) => {
-                        await createDeck(title, body);
-                        await refetch();
-                        setIsModalOpen(false);
-                    }}
-                />
-            )}
-        </>
-    )
-}
-
-export default MisMazos
+export default MyDecks;
