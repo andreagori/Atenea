@@ -1,476 +1,392 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { NavbarStudySession } from "@/components/Navbar";
-import { useStudySession } from '@/hooks/useStudySessions';
-import { TestQuestion, TestProgress, TestResultDto } from '@/types/simulatedStudySessions.types';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ClipboardList, Clock, ArrowLeft } from "lucide-react";
+import { Button, useToast } from "@/components/ui";
+import { useStudySession } from "@/hooks/useStudySessions";
+import {
+  TestQuestion,
+  TestProgress,
+  TestResultDto,
+} from "@/types/simulatedStudySessions.types";
+import {
+  SessionLoading,
+  TestOptionCard,
+} from "@/components/studySessions";
 
 interface ExtendedTestProgress extends TestProgress {
-    isComplete: boolean;
-    sessionMethod?: string;
-    error?: string;
+  isComplete: boolean;
+  sessionMethod?: string;
 }
 
-const SimulatedTestStudySession = () => {
-    const { sessionId } = useParams<{ sessionId: string }>();
-    const navigate = useNavigate();
-    const [question, setQuestion] = useState<TestQuestion | null>(null);
-    const [progress, setProgress] = useState<ExtendedTestProgress | null>(null);
-    const [selectedOption, setSelectedOption] = useState<number | null>(null);
-    const { getTestQuestion, submitTestAnswer, getTestProgress, finishSession, getTestResult } = useStudySession();
-    const [results, setResults] = useState<TestResultDto | null>(null);
-    const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-    const [processingAnswer, setProcessingAnswer] = useState(false);
-    const [startTime, setStartTime] = useState(Date.now());
-    const [isSessionFinished, setIsSessionFinished] = useState(false);
-    const [answeredQuestions, setAnsweredQuestions] = useState(new Set<number>());
-    const [isInitialized, setIsInitialized] = useState(false);
-
-    useEffect(() => {
-        if (!sessionId || isSessionFinished || isInitialized) return;
-
-        const initSession = async () => {
-            try {
-                setIsInitialized(true);
-                await initializeSession();
-            } catch (error) {
-                setIsInitialized(false); // Reset en caso de error
-                throw error;
-            }
-        };
-
-        initSession();
-    }, [sessionId]);
-
-    useEffect(() => {
-        if (!progress?.remainingTime || isSessionFinished) return;
-
-        const timer = setInterval(() => {
-            setProgress(prev => {
-                if (!prev || isSessionFinished) return prev;
-
-                const newTime = prev.remainingTime - 1;
-
-                if (newTime <= 0) {
-                    clearInterval(timer);
-                    handleFinishSession('timeout');
-                    return { ...prev, remainingTime: 0 };
-                }
-
-                return { ...prev, remainingTime: newTime };
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [progress?.remainingTime, isSessionFinished]);
-
-    const initializeSession = async () => {
-        try {
-            console.log('Inicializando sesión...');
-            await loadProgress();
-            await loadQuestion();
-        } catch (err) {
-            console.error('Error inicializando sesión:', err);
-            handleFinishSession('error');
-        }
-    };
-
-    const handleOptionSelect = async (index: number) => {
-        // Evitar selecciones múltiples o durante procesamiento
-        if (!question || !sessionId || selectedOption !== null || processingAnswer || isSessionFinished) {
-            console.log('Selección bloqueada:', { selectedOption, processingAnswer, isSessionFinished });
-            return;
-        }
-
-        // Verificar si esta pregunta ya fue respondida
-        if (answeredQuestions.has(question.questionId)) {
-            console.log('Pregunta ya respondida, ignorando...');
-            return;
-        }
-
-        // Validar índice de opción
-        if (index < 0 || index >= question.options.length) {
-            console.error('Índice de opción inválido:', index);
-            return;
-        }
-
-        // Establecer estados para UI
-        setSelectedOption(index);
-        setProcessingAnswer(true);
-
-        try {
-            const timeSpent = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-
-            console.log('Enviando respuesta:', {
-                sessionId,
-                questionId: question.questionId,
-                index,
-                timeSpent
-            });
-
-            const response = await submitTestAnswer(
-                parseInt(sessionId),
-                question.questionId,
-                index,
-                timeSpent
-            ) as { isCorrect: boolean, correctCardId?: number };
-
-            console.log('Respuesta recibida:', response);
-
-            // Validar respuesta del servidor
-            if (typeof response.isCorrect !== 'boolean') {
-                throw new Error('Respuesta del servidor inválida');
-            }
-
-            // Marcar pregunta como respondida
-            setAnsweredQuestions(prev => new Set([...prev, question.questionId]));
-
-            // Mostrar feedback de respuesta correcta/incorrecta
-            setIsCorrect(response.isCorrect);
-
-            // Esperar un momento para mostrar el feedback visual
-            const feedbackTimeout = setTimeout(async () => {
-                try {
-                    await processAnswerAndContinue();
-                } catch (processError) {
-                    console.error('Error procesando respuesta:', processError);
-                    handleProcessingError();
-                }
-            }, 1500);
-
-            // Limpiar timeout si el componente se desmonta
-            return () => clearTimeout(feedbackTimeout);
-
-        } catch (err) {
-            console.error('Error enviando respuesta:', err);
-
-            // Mostrar error específico al usuario
-            setIsCorrect(null);
-
-            // Resetear estado después de mostrar error
-            const errorTimeout = setTimeout(() => {
-                handleSubmissionError(err);
-            }, 1500);
-
-            return () => clearTimeout(errorTimeout);
-        }
-    };
-
-    // Función auxiliar para manejar errores de procesamiento
-    const handleProcessingError = () => {
-        console.log('Manejando error de procesamiento...');
-        resetQuestionState();
-        // Intentar continuar con la siguiente pregunta
-        continueToNextQuestion().catch(err => {
-            console.error('Error continuando después de error de procesamiento:', err);
-            // Como último recurso, finalizar la sesión
-            handleFinishSession('processing_error');
-        });
-    };
-
-    // Función auxiliar para manejar errores de envío
-    const handleSubmissionError = (error: unknown) => {
-        console.log('Manejando error de envío...');
-
-        // Determinar si es un error de red o del servidor
-        const isNetworkError = error instanceof TypeError ||
-            (error as any)?.message?.includes('fetch');
-
-        if (isNetworkError) {
-            // Para errores de red, permitir reintentar
-            console.log('Error de red detectado, permitiendo reintento...');
-            resetQuestionState();
-        } else {
-            // Para otros errores, continuar con la siguiente pregunta
-            console.log('Error del servidor, continuando...');
-            resetQuestionState();
-            continueToNextQuestion().catch(err => {
-                console.error('Error continuando después de error de envío:', err);
-                handleFinishSession('submission_error');
-            });
-        }
-    };
-
-    const processAnswerAndContinue = async () => {
-        if (isSessionFinished) return;
-
-        try {
-            // Actualizar progreso después de la respuesta
-            const updatedProgress = await getTestProgress(parseInt(sessionId!)) as ExtendedTestProgress;
-            setProgress(updatedProgress);
-
-            console.log('Progreso actualizado:', {
-                answered: updatedProgress.answeredQuestions,
-                total: updatedProgress.totalQuestions,
-                isComplete: updatedProgress.isComplete,
-                questionsInMemory: answeredQuestions.size
-            });
-
-            // Verificar si el test debe finalizar basándose en el progreso del backend
-            if (updatedProgress.isComplete ||
-                updatedProgress.answeredQuestions >= updatedProgress.totalQuestions) {
-                console.log('Test completado según backend, finalizando...');
-                handleFinishSession('completed');
-                return;
-            }
-
-            // Resetear estado y continuar con la siguiente pregunta
-            resetQuestionState();
-            await continueToNextQuestion();
-
-        } catch (err) {
-            console.error('Error procesando respuesta:', err);
-            // En caso de error, intentar continuar
-            resetQuestionState();
-            await continueToNextQuestion();
-        }
-    };
-
-    const resetQuestionState = () => {
-        setSelectedOption(null);
-        setIsCorrect(null);
-        setProcessingAnswer(false);
-        setStartTime(Date.now());
-    };
-
-    const continueToNextQuestion = async () => {
-        if (isSessionFinished) return;
-
-        console.log('Continuando a la siguiente pregunta...');
-
-        // Cargar nueva pregunta
-        await loadQuestion();
-    };
-
-    const handleFinishSession = async (reason: string = 'manual') => {
-        if (isSessionFinished) {
-            console.log('Sesión ya finalizada, ignorando...');
-            return;
-        }
-
-        console.log(`Finalizando sesión por: ${reason}`);
-        setIsSessionFinished(true);
-
-        try {
-            // Finalizar la sesión en el backend
-            if (reason !== 'backend_complete') {
-                await finishSession(parseInt(sessionId!));
-                console.log('Sesión finalizada en backend');
-            }
-
-            // Obtener resultados finales
-            const result = await getTestResult(parseInt(sessionId!));
-            console.log('Resultados obtenidos:', result);
-            setResults(result);
-
-        } catch (err) {
-            console.error('Error finalizando sesión:', err);
-
-            // Crear resultados por defecto si hay error
-            setResults({
-                sessionId: parseInt(sessionId!),
-                correctAnswers: progress?.correctAnswers || 0,
-                incorrectAnswers: progress?.incorrectAnswers || 0,
-                score: progress ? Math.round((progress.correctAnswers / (progress.correctAnswers + progress.incorrectAnswers)) * 100) : 0,
-                timeSpent: 0
-            });
-        }
-    };
-
-    const loadProgress = async () => {
-        try {
-            if (!sessionId || isSessionFinished) return;
-
-            console.log('Cargando progreso...');
-            const currentProgress = await getTestProgress(parseInt(sessionId)) as ExtendedTestProgress;
-            console.log('Progreso cargado:', currentProgress);
-
-            setProgress(currentProgress);
-
-            // Solo verificar finalización si ya se marcó como completo en el backend
-            if (currentProgress?.isComplete) {
-                console.log('Backend indica que el test está completo');
-                handleFinishSession('backend_complete');
-            }
-        } catch (err) {
-            console.error('Error cargando progreso:', err);
-            // No finalizar automáticamente por error de progreso
-        }
-    };
-
-    const loadQuestion = async () => {
-        try {
-            if (isSessionFinished) {
-                console.log('Sesión finalizada, no cargando más preguntas');
-                return;
-            }
-
-            console.log('Cargando nueva pregunta...');
-            const newQuestion = await getTestQuestion(parseInt(sessionId!)) as TestQuestion | null;
-
-            if (!newQuestion) {
-                console.log('No hay más preguntas disponibles');
-                handleFinishSession('no_more_questions');
-                return;
-            }
-
-            console.log('Nueva pregunta cargada:', {
-                questionId: newQuestion.questionId,
-                current: newQuestion.progress.current,
-                total: newQuestion.progress.total,
-                alreadyAnswered: answeredQuestions.has(newQuestion.questionId)
-            });
-
-            // Si la pregunta ya fue respondida, es porque el backend tiene una inconsistencia
-            // En lugar de ignorarla, vamos a limpiar el estado y aceptarla
-            if (answeredQuestions.has(newQuestion.questionId)) {
-                console.warn('Pregunta duplicada detectada. Limpiando estado...');
-                // No la ignoramos, sino que actualizamos el estado
-                setAnsweredQuestions(new Set()); // Reset del set si hay inconsistencias
-            }
-
-            setQuestion(newQuestion);
-
-        } catch (err) {
-            console.error('Error cargando pregunta:', err);
-            handleFinishSession('question_load_error');
-        }
-    };
-
-    // Calcular progreso visual basado en preguntas únicas respondidas
-    const getVisualProgress = () => {
-        if (!question || !progress) return { current: 0, total: 1, percentage: 0 };
-
-        const current = answeredQuestions.size + 1; // +1 para la pregunta actual
-        const total = progress.totalQuestions;
-        const percentage = Math.min((answeredQuestions.size / total) * 100, 100);
-
-        return { current, total, percentage };
-    };
-
-    // Renderizar resultados
-    if (results) {
-        return (
-            <div className="font-primary scroll-smooth scrollbar-hide text-white"
-                style={{
-                    background: "radial-gradient(ellipse at bottom, #1e3a8a 0%, #1e1b4b 40%, #000000 100%)"
-                }}>
-                <NavbarStudySession />
-                <div className="w-full min-h-screen flex flex-col items-center justify-center p-8">
-                    <div className="bg-darkSecondary p-8 rounded-lg max-w-md w-full text-center">
-                        <h2 className="text-3xl font-bold mb-6">¡Test Completado!</h2>
-                        <div className="space-y-4">
-                            <div className="text-xl">
-                                <span className="text-green-400">Correctas: {results.correctAnswers}</span>
-                            </div>
-                            <div className="text-xl">
-                                <span className="text-red-400">Incorrectas: {results.incorrectAnswers}</span>
-                            </div>
-                            <div className="text-2xl font-bold">
-                                Puntuación: <span className="text-blue-400">{results.score}%</span>
-                            </div>
-                            <div className="text-lg">
-                                Tiempo: {results.timeSpent} minutos
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => navigate('/sesionesEstudio')}
-                            className="mt-6 bg-darkPrimary hover:bg-darkPrimary/80 px-6 py-3 rounded-lg transition-colors"
-                        >
-                            Volver a Sesiones
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const visualProgress = getVisualProgress();
-
-    return (
-        <div className="font-primary scroll-smooth scrollbar-hide text-white"
-            style={{
-                background: "radial-gradient(ellipse at bottom, #1e3a8a 0%, #1e1b4b 40%, #000000 100%)"
-            }}>
-            <NavbarStudySession sessionType="simuladas" />
-            <div className="w-full min-h-screen flex flex-col items-center overflow-x-hidden p-8">
-                {/* Progress Bar */}
-                {progress && question && (
-                    <div className="w-full max-w-3xl mb-5 mt-5">
-                        <div className="flex justify-between mb-2">
-                            <span>Pregunta {visualProgress.current} de {visualProgress.total}</span>
-                            <span>Correctas: {progress.correctAnswers} | Incorrectas: {progress.incorrectAnswers}</span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2.5">
-                            <div
-                                className="bg-darkPrimary h-2.5 rounded-full transition-all duration-300"
-                                style={{ width: `${visualProgress.percentage}%` }}
-                            ></div>
-                        </div>
-                        {progress.remainingTime > 0 && (
-                            <div className="text-center mt-2 text-sm">
-                                Tiempo restante: {Math.floor(progress.remainingTime / 60)}:{(progress.remainingTime % 60).toString().padStart(2, '0')}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Question */}
-                {question && !isSessionFinished && (
-                    <>
-                        <h1 className="text-4xl font-bold text-center mb-5">
-                            {question.title}
-                        </h1>
-
-                        <div className="grid gap-4 w-full max-w-3xl">
-                            {question.options.map((option, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handleOptionSelect(index)}
-                                    disabled={selectedOption !== null || processingAnswer}
-                                    className={`p-6 text-left rounded-lg transition-all duration-300 
-                                        ${selectedOption === index && isCorrect === true ? 'bg-green-600 border-2 border-green-400' : ''}
-                                        ${selectedOption === index && isCorrect === false ? 'bg-red-600 border-2 border-red-400' : ''}
-                                        ${selectedOption === index && isCorrect === null ? 'bg-darkPrimary border-2 border-blue-400' : ''}
-                                        ${selectedOption !== index && selectedOption === null ? 'bg-darkComponent hover:bg-darkPrimary/80 border-2 border-transparent' : ''}
-                                        ${selectedOption !== null && selectedOption !== index ? 'bg-darkSecondary/50 opacity-50' : ''}
-                                        ${processingAnswer ? 'cursor-not-allowed' : 'cursor-pointer'}
-                                    `}
-                                >
-                                    {option.type === 'visualCard' ? (
-                                        <img src={option.content} alt="Opción visual" className="max-h-40 mx-auto rounded" />
-                                    ) : (
-                                        <p className="text-lg">{option.content}</p>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Feedback de respuesta */}
-                        {selectedOption !== null && isCorrect !== null && (
-                            <div className={`mt-6 p-4 text-center font-bold rounded-lg text-xl transition-all duration-300
-                                ${isCorrect ? 'bg-green-700 text-green-100' : 'bg-red-700 text-red-100'}`}>
-                                {isCorrect ? '¡Correcto!' : 'Incorrecto'}
-                            </div>
-                        )}
-
-                        {processingAnswer && (
-                            <div className="mt-4 text-center text-blue-400">
-                                <div className="animate-pulse">Procesando respuesta...</div>
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* Loading state */}
-                {!question && !results && !isSessionFinished && (
-                    <div className="flex flex-col items-center justify-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mb-4"></div>
-                        <p className="text-lg">Cargando pregunta...</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+const formatRemaining = (s: number) => {
+  const m = Math.floor(s / 60);
+  const ss = s % 60;
+  return `${m}:${ss.toString().padStart(2, "0")}`;
 };
+
+const SimulatedTestStudySession = () => {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
+  const showToast = useToast();
+  const {
+    getTestQuestion,
+    submitTestAnswer,
+    getTestProgress,
+    finishSession,
+    getTestResult,
+  } = useStudySession();
+
+  const [question, setQuestion] = useState<TestQuestion | null>(null);
+  const [progress, setProgress] = useState<ExtendedTestProgress | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [finished, setFinished] = useState(false);
+  const [results, setResults] = useState<TestResultDto | null>(null);
+  const [answeredIds, setAnsweredIds] = useState<Set<number>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
+  const sessionIdNum = sessionId ? parseInt(sessionId) : null;
+
+  // ── init ────────────────────────────────────────────
+  useEffect(() => {
+    if (!sessionIdNum || initialized || finished) return;
+    setInitialized(true);
+    (async () => {
+      try {
+        const pr = (await getTestProgress(sessionIdNum)) as ExtendedTestProgress;
+        setProgress(pr);
+        if (pr?.isComplete) {
+          await endSession("backend_complete");
+          return;
+        }
+        await loadQuestion();
+      } catch (err) {
+        console.error("Error inicializando sesión:", err);
+        await endSession("error");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionIdNum]);
+
+  // ── countdown ───────────────────────────────────────
+  useEffect(() => {
+    if (!progress?.remainingTime || finished) return;
+    const t = setInterval(() => {
+      setProgress((prev) => {
+        if (!prev || finished) return prev;
+        const next = prev.remainingTime - 1;
+        if (next <= 0) {
+          clearInterval(t);
+          endSession("timeout");
+          return { ...prev, remainingTime: 0 };
+        }
+        return { ...prev, remainingTime: next };
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [progress?.remainingTime, finished]);
+
+  // ── helpers ─────────────────────────────────────────
+  const loadQuestion = async () => {
+    if (!sessionIdNum || finished) return;
+    try {
+      const q = (await getTestQuestion(sessionIdNum)) as TestQuestion | null;
+      if (!q) {
+        await endSession("no_more_questions");
+        return;
+      }
+      // If backend re-serves a question we've already answered, reset the set
+      // to avoid getting stuck.
+      if (answeredIds.has(q.questionId)) setAnsweredIds(new Set());
+      setQuestion(q);
+      setStartTime(Date.now());
+    } catch (err) {
+      console.error("Error cargando pregunta:", err);
+      await endSession("question_load_error");
+    }
+  };
+
+  const handleSelect = async (index: number) => {
+    if (
+      !question ||
+      !sessionIdNum ||
+      selectedIndex !== null ||
+      processing ||
+      finished
+    )
+      return;
+    if (answeredIds.has(question.questionId)) return;
+
+    setSelectedIndex(index);
+    setProcessing(true);
+
+    try {
+      const timeSpent = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+      const res = (await submitTestAnswer(
+        sessionIdNum,
+        question.questionId,
+        index,
+        timeSpent
+      )) as { isCorrect: boolean };
+
+      if (typeof res.isCorrect !== "boolean") {
+        throw new Error("Respuesta del servidor inválida");
+      }
+      setAnsweredIds((prev) => new Set([...prev, question.questionId]));
+      setIsCorrect(res.isCorrect);
+
+      // Hold the visual feedback briefly so the user sees correctness.
+      setTimeout(async () => {
+        try {
+          const pr = (await getTestProgress(
+            sessionIdNum
+          )) as ExtendedTestProgress;
+          setProgress(pr);
+          if (pr.isComplete || pr.answeredQuestions >= pr.totalQuestions) {
+            await endSession("completed");
+            return;
+          }
+          resetQuestion();
+          await loadQuestion();
+        } catch (err) {
+          console.error("Error procesando respuesta:", err);
+          resetQuestion();
+          await loadQuestion();
+        }
+      }, 1500);
+    } catch (err) {
+      console.error("Error enviando respuesta:", err);
+      showToast("No se pudo registrar tu respuesta.", { kind: "error" });
+      setTimeout(() => resetQuestion(), 1200);
+    }
+  };
+
+  const resetQuestion = () => {
+    setSelectedIndex(null);
+    setIsCorrect(null);
+    setProcessing(false);
+    setStartTime(Date.now());
+  };
+
+  const endSession = async (reason: string) => {
+    if (finished) return;
+    setFinished(true);
+    try {
+      if (reason !== "backend_complete") {
+        await finishSession(sessionIdNum!);
+      }
+      const r = await getTestResult(sessionIdNum!);
+      setResults(r);
+    } catch (err) {
+      console.error("Error finalizando sesión:", err);
+      // Best-effort fallback from progress.
+      setResults({
+        sessionId: sessionIdNum!,
+        correctAnswers: progress?.correctAnswers ?? 0,
+        incorrectAnswers: progress?.incorrectAnswers ?? 0,
+        score: progress
+          ? Math.round(
+              (progress.correctAnswers /
+                Math.max(
+                  1,
+                  progress.correctAnswers + progress.incorrectAnswers
+                )) *
+                100
+            )
+          : 0,
+        timeSpent: 0,
+      });
+    }
+  };
+
+  // ── results screen ──────────────────────────────────
+  if (results) {
+    const correct = results.correctAnswers;
+    const incorrect = results.incorrectAnswers;
+    const total = correct + incorrect;
+    return (
+      <div className="animate-v2-fade max-w-[640px] mx-auto min-h-[calc(100vh-64px)] flex flex-col justify-center py-4">
+        <div className="flex items-center gap-2 mb-3">
+          <ClipboardList size={14} className="text-v2-primary-deep" />
+          <span className="font-v2-mono text-[11px] tracking-[1.5px] uppercase text-v2-primary-deep font-medium">
+            Resultado
+          </span>
+        </div>
+        <h1 className="text-[32px] font-medium m-0 mb-2 leading-[1.1] tracking-[-0.3px] text-v2-ink">
+          ¡Test completado!
+        </h1>
+        <p className="text-[15px] text-v2-ink-2 m-0 mb-6">
+          Aquí está tu desempeño en esta prueba.
+        </p>
+
+        <div className="bg-v2-surface border border-v2-line rounded-v2-lg p-7 shadow-v2-sm">
+          <div className="flex items-baseline gap-2 mb-6">
+            <span className="text-[56px] font-medium text-v2-primary-deep leading-none tabular-nums">
+              {results.score}
+            </span>
+            <span className="text-[24px] text-v2-ink-2">%</span>
+            <span className="ml-auto font-v2-mono text-[11px] tracking-[1.5px] uppercase text-v2-ink-3">
+              Puntuación
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <ResultStat
+              label="Correctas"
+              value={correct}
+              accent="text-[color:var(--color-v2-green)]"
+            />
+            <ResultStat
+              label="Incorrectas"
+              value={incorrect}
+              accent="text-v2-coral"
+            />
+            <ResultStat label="Total" value={total} accent="text-v2-ink" />
+          </div>
+
+          {results.timeSpent > 0 && (
+            <p className="text-[12px] text-v2-ink-3 m-0">
+              Tiempo: {results.timeSpent} minutos
+            </p>
+          )}
+        </div>
+
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => navigate("/sesionesEstudio")}
+          >
+            <ArrowLeft size={16} /> Volver a sesiones
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!question && !finished) {
+    return <SessionLoading message="Cargando pregunta…" />;
+  }
+
+  // ── question screen ─────────────────────────────────
+  const visualCurrent = answeredIds.size + 1;
+  const total = progress?.totalQuestions ?? question?.progress.total ?? 1;
+  const pct = Math.min(100, (answeredIds.size / total) * 100);
+
+  return (
+    <div className="animate-v2-fade max-w-[820px] mx-auto min-h-[calc(100vh-64px)] flex flex-col justify-center py-4">
+      {/* Eyebrow */}
+      <div className="flex items-center gap-2 mb-3">
+        <ClipboardList size={14} className="text-v2-primary-deep" />
+        <span className="font-v2-mono text-[11px] tracking-[1.5px] uppercase text-v2-primary-deep font-medium">
+          Prueba simulada
+        </span>
+      </div>
+
+      {/* Progress + timer */}
+      <div className="bg-v2-surface border border-v2-line rounded-v2-md p-4 mb-6">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <span className="text-[14px] text-v2-ink-2">
+            Pregunta{" "}
+            <span className="font-medium text-v2-ink">{visualCurrent}</span> de{" "}
+            <span className="font-medium text-v2-ink">{total}</span>
+          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-[12px] text-v2-ink-3 tabular-nums">
+              ✓ {progress?.correctAnswers ?? 0} · ✕{" "}
+              {progress?.incorrectAnswers ?? 0}
+            </span>
+            {progress && progress.remainingTime > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-[13px] text-v2-primary-deep tabular-nums">
+                <Clock size={14} />
+                {formatRemaining(progress.remainingTime)}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="h-1.5 bg-v2-line rounded-full overflow-hidden">
+          <div
+            className="h-full bg-v2-primary transition-[width] duration-300"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {question && (
+        <>
+          <h1 className="text-[24px] sm:text-[28px] font-medium m-0 mb-6 leading-[1.25] text-v2-ink">
+            {question.title}
+          </h1>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {question.options.map((opt, i) => {
+              let s:
+                | "idle"
+                | "selected-pending"
+                | "correct"
+                | "incorrect"
+                | "muted" = "idle";
+              if (selectedIndex === i) {
+                s =
+                  isCorrect === true
+                    ? "correct"
+                    : isCorrect === false
+                      ? "incorrect"
+                      : "selected-pending";
+              } else if (selectedIndex !== null) {
+                s = "muted";
+              }
+              return (
+                <TestOptionCard
+                  key={i}
+                  index={i}
+                  content={opt.content}
+                  type={opt.type}
+                  status={s}
+                  onClick={() => handleSelect(i)}
+                  disabled={selectedIndex !== null || processing}
+                />
+              );
+            })}
+          </div>
+
+          {selectedIndex !== null && isCorrect !== null && (
+            <div
+              role="status"
+              className={`mt-5 px-4 py-3 rounded-v2-sm text-center text-[14px] font-medium ${
+                isCorrect
+                  ? "bg-v2-green/[0.10] text-[color:var(--color-v2-green)] border border-v2-green/30"
+                  : "bg-v2-coral/[0.08] text-v2-coral border border-v2-coral/30"
+              }`}
+            >
+              {isCorrect ? "¡Correcto!" : "Incorrecto"}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+const ResultStat = ({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent: string;
+}) => (
+  <div>
+    <div className={`text-[28px] font-medium ${accent} tabular-nums leading-none`}>
+      {value}
+    </div>
+    <div className="font-v2-mono text-[10px] tracking-[1.2px] uppercase text-v2-ink-3 mt-1.5">
+      {label}
+    </div>
+  </div>
+);
 
 export default SimulatedTestStudySession;

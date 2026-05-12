@@ -5,7 +5,8 @@ import { Button, IconButton } from "@/components/ui";
 export interface DeckDetailHeaderProps {
   /** Display title of the deck. */
   title: string;
-  /** Original URL slug — needed for the "Estudiar" link target if applicable. */
+  /** Deck id — preselects this deck on the /sesionesEstudio setup page. */
+  deckId: number;
   onAddCard: () => void;
 }
 
@@ -13,11 +14,12 @@ export interface DeckDetailHeaderProps {
  * Top of the deck detail page: back-arrow + breadcrumb + page title +
  * primary actions (Estudiar mazo / Agregar carta).
  *
- * The "Estudiar mazo" CTA links to /sesionesEstudio (the session-setup
- * route); the user picks the deck from there once that screen migrates.
+ * The "Estudiar mazo" CTA links to /sesionesEstudio?deckId=N — the setup
+ * page reads `?deckId` and preselects that deck in its picker.
  */
 export const DeckDetailHeader = ({
   title,
+  deckId,
   onAddCard,
 }: DeckDetailHeaderProps) => (
   <div className="mb-7">
@@ -49,7 +51,7 @@ export const DeckDetailHeader = ({
         <Button onClick={onAddCard} variant="secondary">
           <Plus size={16} /> Agregar carta
         </Button>
-        <Link to="/sesionesEstudio">
+        <Link to={`/sesionesEstudio?deckId=${deckId}`}>
           <Button variant="primary">
             <Brain size={16} /> Estudiar mazo
           </Button>

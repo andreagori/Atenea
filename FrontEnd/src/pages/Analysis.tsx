@@ -1,83 +1,129 @@
-import { useState } from 'react';
-import { NavbarLoginIn } from "../components/Navbar";
-import { AnalyticsFilters } from "../components/AnaliticsFilter";
-import { DailyStudyTimeChart } from "../components/chart/DailyStudyTimeChart";
-import { TestScoresChart } from "../components/chart/TestScoresChart";
-import { MethodsDistributionChart } from "../components/chart/MethodsDistributionChart";
-import { ActivityCalendarChart } from "../components/chart/ActivityCalendarChart";
-import { SessionsPerformanceChart } from "../components/chart/SessionsPerformanceChart";
-import { SpacedRepetitionChart } from "../components/chart/SpacedRepetitionChart";
-import { useAnalytics } from "../hooks/useAnalytics";
-import { TimeRange } from "../types/analytics.types";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronLeft, AlertCircle } from "lucide-react";
+import { IconButton } from "@/components/ui";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { type TimeRange } from "@/types/analytics.types";
+import {
+  TimeRangeFilter,
+  KpiRow,
+  DailyStudyChart,
+  TestScoresChart,
+  MethodsChart,
+  SpacedRepetitionChart,
+  ActivityChart,
+} from "@/components/analytics";
 
-const Analisis = () => {
+/** Convert the active TimeRange into a concrete day-count for KPI hints. */
+const rangeWindow = (r: TimeRange): number => {
+  if (r.days) return r.days;
+  if (r.startDate && r.endDate) {
+    const a = new Date(r.startDate).getTime();
+    const b = new Date(r.endDate).getTime();
+    return Math.max(1, Math.round((b - a) / 86400000) + 1);
+  }
+  return 30;
+};
+
+const Analysis = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>({ days: 30 });
   const { data, loading, error } = useAnalytics(timeRange);
 
-  if (error) {
-    return (
-      <div className="flex flex-col w-full min-h-screen items-center font-primary"
-        style={{
-          backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
-        }}>
-        <NavbarLoginIn />
-        <div className="flex flex-col items-center mt-20 w-full h-full p-6">
-          <div className="bg-red-500 text-white p-4 rounded-lg">
-            Error cargando datos: {error}
-          </div>
-        </div>
-      </div>
+  const windowDays = rangeWindow(timeRange);
+
+  // KPI derivations — purely from real data; if a series is empty, the KPI
+  // value naturally collapses to 0 (or null for the average).
+  const kpi = useMemo(() => {
+    const totalMinutes = data.dailyStudyTime.reduce((a, d) => a + d.minutes, 0);
+    const totalSessions = data.activityCalendar.reduce(
+      (a, d) => a + d.sessions,
+      0
     );
-  }
+    const averageScore =
+      data.testScores.length > 0
+        ? Math.round(
+            data.testScores.reduce((a, d) => a + d.score, 0) /
+              data.testScores.length
+          )
+        : null;
+    const activeDays = data.activityCalendar.filter((d) => d.sessions > 0)
+      .length;
+    return { totalMinutes, totalSessions, averageScore, activeDays };
+  }, [data]);
 
   return (
-    <div className="flex flex-col w-full min-h-screen items-center font-primary"
-      style={{
-        backgroundImage: "radial-gradient(circle at center, #0D1529, #000416)"
-      }}>
-      <NavbarLoginIn />
-      <div className="flex flex-col items-center mt-20 w-full h-full px-6 max-w-7xl">
-        <h1 className="text-6xl text-lightComponent font-bold text-center mb-2">
-          Análisis
-        </h1>
-        <p className='text-lg text-lightComponent text-center mb-8'>
-          Revisa tu progreso y rendimiento de estudio con gráficos interactivos y filtros personalizados.
-        </p>
-        {/* Filtros */}
-        <div className="w-5/6">
-          <AnalyticsFilters
-            onTimeRangeChange={setTimeRange}
-            currentTimeRange={timeRange}
+    <div className="animate-v2-fade">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-3 mb-3">
+        <Link to="/inicio" aria-label="Volver a inicio">
+          <IconButton variant="default" size="sm">
+            <ChevronLeft size={16} />
+          </IconButton>
+        </Link>
+        <Link
+          to="/inicio"
+          className="text-[13px] text-v2-ink-2 hover:text-v2-ink transition-colors"
+        >
+          Inicio
+        </Link>
+        <span className="text-[13px] text-v2-ink-3">/</span>
+        <span className="text-[13px] text-v2-ink font-medium">Análisis</span>
+      </div>
+
+      {/* Title + filter */}
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-7">
+        <div>
+          <h1 className="text-[38px] font-medium m-0 leading-[1.05] tracking-[-0.5px] text-v2-ink">
+            Análisis
+          </h1>
+          <p className="text-[15px] text-v2-ink-2 m-0 mt-1.5">
+            Revisa tu progreso y rendimiento de estudio.
+          </p>
+        </div>
+        <TimeRangeFilter value={timeRange} onChange={setTimeRange} />
+      </div>
+
+      {error ? (
+        <div
+          role="alert"
+          className="flex items-center gap-2.5 px-4 py-3 rounded-v2-sm border text-v2-coral bg-v2-coral/[0.08] border-v2-coral/20 text-[14px]"
+        >
+          <AlertCircle size={18} />
+          No se pudieron cargar los datos de análisis. {error}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <KpiRow
+            totalMinutes={kpi.totalMinutes}
+            totalSessions={kpi.totalSessions}
+            averageScore={kpi.averageScore}
+            activeDays={kpi.activeDays}
+            windowDays={windowDays}
+            loading={loading}
           />
 
+          <DailyStudyChart data={data.dailyStudyTime} loading={loading} />
 
-          {/* Grid de Gráficas */}
-          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Tiempo de Estudio Diario - Ancho completo */}
-
-            {/* Puntuaciones en Tests */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TestScoresChart data={data.testScores} loading={loading} />
-
-            {/* Distribución de Métodos */}
-            <MethodsDistributionChart data={data.methodsDistribution} loading={loading} />
-
-            <div className="lg:col-span-2">
-              <DailyStudyTimeChart data={data.dailyStudyTime} loading={loading} />
-            </div>
-
-            {/* Rendimiento por Sesión */}
-            <SessionsPerformanceChart data={data.sessionsPerformance} loading={loading} />
-            {/* Memorización Espaciada */}
-            <SpacedRepetitionChart data={data.spacedRepetitionStats} loading={loading} />
-            {/* Calendario de Actividad - Ancho completo */}
-            <div className="lg:col-span-2">
-              <ActivityCalendarChart data={data.activityCalendar} deckProgress={data.deckProgress} loading={loading} />
-            </div>
+            <MethodsChart data={data.methodsDistribution} loading={loading} />
           </div>
+
+          <SpacedRepetitionChart
+            data={data.spacedRepetitionStats}
+            loading={loading}
+          />
+
+          <ActivityChart
+            data={data.activityCalendar}
+            deckProgress={data.deckProgress}
+            loading={loading}
+            windowDays={windowDays}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
-export default Analisis;
+export default Analysis;

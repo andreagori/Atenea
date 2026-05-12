@@ -167,7 +167,11 @@ const OneDeck = () => {
 
   return (
     <div className="animate-v2-fade">
-      <DeckDetailHeader title={deck.title} onAddCard={goToCreate} />
+      <DeckDetailHeader
+        title={deck.title}
+        deckId={deck.deckId}
+        onAddCard={goToCreate}
+      />
       <DeckSummaryCard
         description={deck.body}
         cards={cards}
