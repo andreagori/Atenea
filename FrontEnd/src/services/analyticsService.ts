@@ -1,9 +1,9 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { 
-  TimeRange, 
-  DailyStudyData, 
-  TestScoreData, 
+  TimeRange,
+  DailyStudyData,
+  TestScoreData,
   MethodDistribution,
   ActivityCalendarData,
   MethodEfficiencyData,
@@ -11,7 +11,9 @@ import {
   CardRetentionData,
   ProductiveHoursData,
   SessionPerformanceData,
-  SpacedRepetitionData
+  SpacedRepetitionData,
+  ExamCorrelationData,
+  Insight
 } from '../types/analytics.types';
 import { API_CONFIG } from '../config';
 
@@ -210,5 +212,37 @@ export class AnalyticsService {
       throw new Error(err.response?.data?.message || 'Error al obtener estadísticas de memorización espaciada');
     }
   }
-  
+
+  // Track 1 — real exam grades × study/learning method correlation.
+  static async getExamCorrelation(timeRange: TimeRange): Promise<ExamCorrelationData[]> {
+    try {
+      const params = this.buildTimeRangeParams(timeRange);
+      const response = await axios.get<ExamCorrelationData[]>(
+        `${API_BASE_URL}/analytics/exam-correlation?${params}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Error al obtener correlación con exámenes');
+    }
+  }
+
+  // Track 5 — plain-Spanish insights computed over existing aggregations.
+  static async getInsights(timeRange: TimeRange): Promise<Insight[]> {
+    try {
+      const params = this.buildTimeRangeParams(timeRange);
+      const response = await axios.get<Insight[]>(
+        `${API_BASE_URL}/analytics/insights?${params}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || 'Error al obtener insights');
+    }
+  }
+
 }

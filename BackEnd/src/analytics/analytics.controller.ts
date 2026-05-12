@@ -110,4 +110,24 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getSpacedRepetitionStats(req.user.userId, timeRange);
   }
+
+  // GET EXAM CORRELATION — average real exam scores per (studyMethod × learningMethod).
+  @Get('exam-correlation')
+  @ApiResponse({ status: 200, description: 'Correlación entre métodos de estudio y notas reales' })
+  async getExamCorrelation(
+    @Query() timeRange: TimeRangeDto,
+    @Request() req
+  ) {
+    return this.analyticsService.getExamCorrelation(req.user.userId, timeRange);
+  }
+
+  // GET INSIGHTS — rules-based plain-Spanish summaries over existing analytics.
+  @Get('insights')
+  @ApiResponse({ status: 200, description: 'Insights generados a partir de los datos del usuario' })
+  async getInsights(
+    @Query() timeRange: TimeRangeDto,
+    @Request() req
+  ) {
+    return this.analyticsService.getInsights(req.user.userId, timeRange);
+  }
 }

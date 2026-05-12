@@ -7,11 +7,13 @@ import { type TimeRange } from "@/types/analytics.types";
 import {
   TimeRangeFilter,
   KpiRow,
+  InsightsPanel,
   DailyStudyChart,
   TestScoresChart,
   MethodsChart,
   SpacedRepetitionChart,
   ActivityChart,
+  ExamCorrelationChart,
 } from "@/components/analytics";
 
 /** Convert the active TimeRange into a concrete day-count for KPI hints. */
@@ -93,6 +95,8 @@ const Analysis = () => {
         </div>
       ) : (
         <div className="space-y-6">
+          <InsightsPanel insights={data.insights} loading={loading} />
+
           <KpiRow
             totalMinutes={kpi.totalMinutes}
             totalSessions={kpi.totalSessions}
@@ -111,6 +115,11 @@ const Analysis = () => {
 
           <SpacedRepetitionChart
             data={data.spacedRepetitionStats}
+            loading={loading}
+          />
+
+          <ExamCorrelationChart
+            data={data.examCorrelation}
             loading={loading}
           />
 

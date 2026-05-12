@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudySessionDto } from './dto/create-study-session.dto';
-import { StudyMethod, LearningMethod } from '@prisma/client';
+import { StudyMethod, LearningMethod, Evaluation } from '@prisma/client';
 import { TestResultDto } from './dto/test-result.dto';
 import { TestAnswerDto } from '../test-question/dto/test-question.dto';
 import { UserStatsService } from '../user-stats/user-stats.service';
 import { CreateSessionResultDto } from '../session-results/dto/create-session-result.dto';
+import { SchedulingService, LEARNING_GAP } from '../scheduling/scheduling.service';
 
 @Injectable()
 export class StudySessionsService {
@@ -13,7 +14,8 @@ export class StudySessionsService {
   private readonly logger = new Logger(StudySessionsService.name);
   // PrismaService instance for database operations.
   constructor(private readonly prisma: PrismaService,
-    private readonly userStatsService: UserStatsService
+    private readonly userStatsService: UserStatsService,
+    private readonly scheduling: SchedulingService,
   ) { }
 
   // Valores por defecto para cada tipo de sesión
@@ -309,75 +311,122 @@ export class StudySessionsService {
       throw new NotFoundException('Sesión no encontrada o ya finalizada');
     }
 
-    const reviews = await this.prisma.cardReview.findMany({
-      where: {
-        sessionId,
-        userId,
-        nextReviewAt: {
-          gt: new Date() // Solo cartas que no necesitan revisión aún
-        }
-      }
+    const allReviews = await this.prisma.cardReview.findMany({
+      where: { sessionId, userId },
+      orderBy: { reviewedAt: 'asc' },
+      select: { cardId: true, evaluation: true },
     });
+    const reviewedCount = allReviews.length;
 
-    // Get session configuration and card limit based on study method
     let cardLimit: number | undefined;
     switch (session.studyMethod) {
-      case StudyMethod.spacedRepetition:
+      case StudyMethod.spacedRepetition: {
         const activeRecall = await this.prisma.sessionActiveRecall.findUnique({
-          where: { sessionId }
+          where: { sessionId },
         });
         cardLimit = activeRecall?.numCardsSpaced;
         break;
-      case StudyMethod.pomodoro:
+      }
+      case StudyMethod.pomodoro: {
         const pomodoro = await this.prisma.sessionPomodoro.findUnique({
-          where: { sessionId }
+          where: { sessionId },
         });
         cardLimit = pomodoro?.numCards;
         break;
-      case StudyMethod.simulatedTest:
+      }
+      case StudyMethod.simulatedTest: {
         const simulatedTest = await this.prisma.sessionSimulatedTest.findUnique({
-          where: { sessionId }
+          where: { sessionId },
         });
         cardLimit = simulatedTest?.numQuestions;
         break;
+      }
     }
 
-    // Check if we've reached the card limit (-1 means no limit)
-    if (cardLimit !== -1 && cardLimit !== undefined && reviews.length >= cardLimit) {
-      this.logger.debug(`Reached card limit (${reviews.length}/${cardLimit})`);
+    if (cardLimit !== -1 && cardLimit !== undefined && reviewedCount >= cardLimit) {
+      this.logger.debug(`Reached card limit (${reviewedCount}/${cardLimit})`);
       await this.finishSession(sessionId, userId);
       return null;
     }
 
-    // Obtener las cartas disponibles con sus relaciones
-    const availableCards = await this.prisma.card.findMany({
-      where: {
-        deckId: session.deckId,
-        learningMethod: {
-          in: session.learningMethod
-        },
-        NOT: {
-          cardId: {
-            in: reviews.map(review => review.cardId)
-          }
-        }
-      },
-      include: {
-        activeRecall: true,
-        cornell: true,
-        visualCard: true
-      }
+    const lastReviewPosByCard = new Map<number, { evaluation: any; position: number }>();
+    allReviews.forEach((r, idx) => {
+      lastReviewPosByCard.set(r.cardId, { evaluation: r.evaluation, position: idx });
     });
 
-    if (availableCards.length === 0) {
-      await this.checkSessionCompletion(sessionId, userId);
-      return null;
+    const isBlocked = (cardId: number) => {
+      const last = lastReviewPosByCard.get(cardId);
+      if (!last) return false;
+      const gap = LEARNING_GAP[last.evaluation as keyof typeof LEARNING_GAP];
+      // gap = minimum cards between rating and next appearance
+      return reviewedCount - last.position <= gap;
+    };
+
+    const cardInclude = {
+      activeRecall: true,
+      cornell: true,
+      visualCard: true,
+    } as const;
+
+    const cardWhere = {
+      deckId: session.deckId,
+      learningMethod: { in: session.learningMethod },
+    };
+
+    const allDeckCards = await this.prisma.card.findMany({
+      where: cardWhere,
+      include: cardInclude,
+    });
+
+    const states = await this.prisma.cardMemoryState.findMany({
+      where: { userId, card: cardWhere },
+    });
+    const stateByCard = new Map(states.map((s) => [s.cardId, s]));
+
+    const now = new Date();
+    const dueOrLearning: typeof allDeckCards = [];
+    const newCards: typeof allDeckCards = [];
+    const aheadOfSchedule: typeof allDeckCards = [];
+
+    for (const card of allDeckCards) {
+      const state = stateByCard.get(card.cardId);
+      if (!state) {
+        newCards.push(card);
+        continue;
+      }
+      const isDue =
+        state.level === 0 ||
+        (state.nextReviewAt !== null && state.nextReviewAt <= now);
+      if (isDue) dueOrLearning.push(card);
+      else aheadOfSchedule.push(card);
     }
 
-    // Seleccionar una carta aleatoria
-    const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+    const primaryRaw = [...dueOrLearning, ...newCards];
+    const primaryPool = primaryRaw.filter((c) => !isBlocked(c.cardId));
 
-    return randomCard;
+    if (primaryPool.length > 0) {
+      return primaryPool[Math.floor(Math.random() * primaryPool.length)];
+    }
+
+    const fallbackPool = aheadOfSchedule.filter((c) => !isBlocked(c.cardId));
+    if (fallbackPool.length > 0) {
+      return fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
+    }
+
+    // Last resort: pool exists but blocking removed everything (e.g. tiny deck).
+    // Show the least-recently-rated card so the user isn't kicked out.
+    const lastResort = primaryRaw.length > 0 ? primaryRaw : aheadOfSchedule;
+    if (lastResort.length > 0) {
+      const pickByOldestRating = [...lastResort].sort((a, b) => {
+        const pa = lastReviewPosByCard.get(a.cardId)?.position ?? -1;
+        const pb = lastReviewPosByCard.get(b.cardId)?.position ?? -1;
+        return pa - pb;
+      });
+      return pickByOldestRating[0];
+    }
+
+    await this.checkSessionCompletion(sessionId, userId);
+    return null;
   }
 
   async getSpacedRepetitionProgress(sessionId: number, userId: number) {
@@ -1400,44 +1449,32 @@ export class StudySessionsService {
       throw new NotFoundException('Carta no encontrada en este deck');
     }
 
-    // Calcular el próximo intervalo basado en la evaluación
-    const intervals = this.getSpacedRepetitionIntervals(evaluation);
-    const nextReviewAt = new Date(Date.now() + intervals.minutes * 60 * 1000);
+    const scheduled = await this.scheduling.applyRating(
+      userId,
+      cardId,
+      evaluation as Evaluation,
+    );
 
-    // Crear la revisión de la carta
     const cardReview = await this.prisma.cardReview.create({
       data: {
         sessionId,
         cardId,
         userId,
-        evaluation: evaluation as any, // Cast to Evaluation enum
+        evaluation: evaluation as Evaluation,
         reviewedAt: new Date(),
-        nextReviewAt,
-        intervalMinutes: intervals.minutes
-      }
+        nextReviewAt: scheduled.nextReviewAt,
+        intervalMinutes: scheduled.intervalMinutes,
+      },
     });
 
     return {
       success: true,
       cardReview,
-      nextReviewAt,
-      intervalMinutes: intervals.minutes
+      nextReviewAt: scheduled.nextReviewAt,
+      intervalMinutes: scheduled.intervalMinutes,
+      level: scheduled.level,
+      graduated: scheduled.graduated,
     };
-  }
-
-  private getSpacedRepetitionIntervals(evaluation: string) {
-    switch (evaluation) {
-      case 'dificil':
-        return { minutes: 1 }; // Revisar en 1 minuto
-      case 'masomenos':
-        return { minutes: 5 }; // Revisar en 5 minutos
-      case 'bien':
-        return { minutes: 15 }; // Revisar en 15 minutos
-      case 'facil':
-        return { minutes: 30 }; // Revisar en 30 minutos
-      default:
-        return { minutes: 5 }; // Default a 5 minutos
-    }
   }
 
   /**

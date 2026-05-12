@@ -11,9 +11,10 @@ import { CardReviewsModule } from './card-reviews/card-reviews.module';
 import { UserStatsModule } from './user-stats/user-stats.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ExamModule } from './exam/exam.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, DeckModule, CardModule, AuthModule, StudySessionsModule, CardReviewsModule, UserStatsModule, CloudinaryModule, AnalyticsModule],
+  imports: [PrismaModule, UserModule, DeckModule, CardModule, AuthModule, StudySessionsModule, CardReviewsModule, UserStatsModule, CloudinaryModule, AnalyticsModule, ExamModule],
   controllers: [PrismaController],
   providers: [PrismaService],
   exports: [PrismaService],

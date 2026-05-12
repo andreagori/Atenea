@@ -1,23 +1,23 @@
 import { useUser } from "@/hooks/useUser";
 import { useDecks } from "@/hooks/useDeck";
+import { useDueToday } from "@/hooks/useDueToday";
 import {
   DashboardHeader,
   DashboardKpiRow,
   DashboardActions,
   RecentDecksSection,
+  DueTodaySection,
 } from "@/components/dashboard";
 
-/**
- * Authenticated home page. Renders inside the AppShell sidebar layout
- * (wired in AppRouter), so this component composes only the inner sections.
- */
 const HomeLoginIn = () => {
   const { user, loading: userLoading } = useUser();
   const { decks, loading: decksLoading } = useDecks();
+  const { decks: dueDecks, total: dueTotal, loading: dueLoading } = useDueToday();
 
   return (
     <div className="animate-v2-fade">
       <DashboardHeader username={user?.username} loading={userLoading} />
+      <DueTodaySection decks={dueDecks} total={dueTotal} loading={dueLoading} />
       <DashboardKpiRow deckCount={decks.length} decksLoading={decksLoading} />
       <DashboardActions />
       <RecentDecksSection decks={decks} loading={decksLoading} />

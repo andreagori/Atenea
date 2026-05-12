@@ -2,6 +2,7 @@
 
 export { TimeRangeFilter, type TimeRangeFilterProps } from "./TimeRangeFilter";
 export { KpiRow, type KpiRowProps } from "./KpiRow";
+export { InsightsPanel, type InsightsPanelProps } from "./InsightsPanel";
 
 export {
   DailyStudyChart,
@@ -17,3 +18,7 @@ export {
   type SpacedRepetitionChartProps,
 } from "./charts/SpacedRepetitionChart";
 export { ActivityChart, type ActivityChartProps } from "./charts/ActivityChart";
+export {
+  ExamCorrelationChart,
+  type ExamCorrelationChartProps,
+} from "./charts/ExamCorrelationChart";

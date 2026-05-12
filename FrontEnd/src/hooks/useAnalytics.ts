@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { AnalyticsService } from '../services/analyticsService';
-import { 
-  TimeRange, 
-  DailyStudyData, 
-  TestScoreData, 
+import {
+  TimeRange,
+  DailyStudyData,
+  TestScoreData,
   MethodDistribution,
   ActivityCalendarData,
   MethodEfficiencyData,
@@ -11,7 +11,9 @@ import {
   CardRetentionData,
   ProductiveHoursData,
   SessionPerformanceData,
-  SpacedRepetitionData
+  SpacedRepetitionData,
+  ExamCorrelationData,
+  Insight
 } from '../types/analytics.types';
 
 interface AnalyticsData {
@@ -25,6 +27,8 @@ interface AnalyticsData {
   productiveHours: ProductiveHoursData[];
   sessionsPerformance: SessionPerformanceData[];
   spacedRepetitionStats: SpacedRepetitionData[];
+  examCorrelation: ExamCorrelationData[];
+  insights: Insight[];
   studyMethods?: { method: string; count: number }[];
   learningMethods?: { method: string; count: number }[];
 }
@@ -43,13 +47,15 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
     cardRetention: [],
     productiveHours: [],
     sessionsPerformance: [],
-    spacedRepetitionStats: []
+    spacedRepetitionStats: [],
+    examCorrelation: [],
+    insights: []
   });
 
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const [
         dailyStudyTime,
@@ -61,7 +67,9 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
         cardRetention,
         productiveHours,
         sessionsPerformance,
-        spacedRepetitionStats
+        spacedRepetitionStats,
+        examCorrelation,
+        insights
       ] = await Promise.all([
         AnalyticsService.getDailyStudyTime(timeRange),
         AnalyticsService.getTestScores(timeRange),
@@ -72,7 +80,9 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
         AnalyticsService.getCardRetention(),
         AnalyticsService.getProductiveHours(timeRange),
         AnalyticsService.getSessionsPerformance(timeRange),
-        AnalyticsService.getSpacedRepetitionStats(timeRange)
+        AnalyticsService.getSpacedRepetitionStats(timeRange),
+        AnalyticsService.getExamCorrelation(timeRange),
+        AnalyticsService.getInsights(timeRange)
       ]);
 
       setData({
@@ -85,7 +95,9 @@ export const useAnalytics = (timeRange: TimeRange = { days: 7 }) => {
         cardRetention,
         productiveHours,
         sessionsPerformance,
-        spacedRepetitionStats
+        spacedRepetitionStats,
+        examCorrelation,
+        insights
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching analytics data');

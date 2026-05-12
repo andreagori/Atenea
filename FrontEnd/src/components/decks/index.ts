@@ -46,3 +46,10 @@ export {
   LiveCardPreview,
   type LiveCardPreviewProps,
 } from "./LiveCardPreview";
+
+// Exam logging (deck-scoped)
+export { LogExamModal, type LogExamModalProps } from "./LogExamModal";
+export {
+  ExamHistoryPanel,
+  type ExamHistoryPanelProps,
+} from "./ExamHistoryPanel";

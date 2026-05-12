@@ -619,4 +619,266 @@ export class AnalyticsService {
       };
     });
   }
+
+  // 11. Correlación entre métodos de estudio y notas reales de examen.
+  //
+  // Para cada examen del usuario en el rango (que tenga deckId asignado),
+  // se buscan las sesiones de estudio sobre ese mazo en los 30 días previos
+  // al examen, se identifican los pares únicos (studyMethod × learningMethod)
+  // usados en esa ventana, y se atribuye la nota del examen a cada par.
+  //
+  // El resultado es la nota promedio por combinación de método + el tamaño
+  // de muestra (cuántos exámenes contribuyeron a ese promedio). El frontend
+  // usa sampleSize para decidir cuándo mostrar la combinación (umbral
+  // sugerido: ≥3 antes de tratarla como señal).
+  //
+  // Limitaciones: este endpoint mide correlación, no causalidad. La nota
+  // se expresa como porcentaje del máximo del examen para que escalas
+  // distintas (10/20, 0/100, etc.) sean comparables.
+  async getExamCorrelation(userId: number, timeRange: TimeRangeDto) {
+    const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
+      : new Date(endDate.getTime() - ((timeRange.days ?? 30) * 24 * 60 * 60 * 1000));
+
+    const exams = await this.prisma.exam.findMany({
+      where: {
+        userId,
+        examDate: { gte: startDate, lte: endDate },
+        deckId: { not: null }, // solo exámenes correlacionables
+      },
+    });
+
+    const ATTRIBUTION_DAYS = 30;
+    type Key = string; // `${studyMethod}|${learningMethod}`
+    const acc = new Map<Key, number[]>();
+
+    for (const exam of exams) {
+      const examScorePct = exam.maxScore > 0
+        ? (exam.examScore / exam.maxScore) * 100
+        : exam.examScore;
+
+      const windowStart = new Date(exam.examDate);
+      windowStart.setDate(windowStart.getDate() - ATTRIBUTION_DAYS);
+
+      const sessions = await this.prisma.studySession.findMany({
+        where: {
+          userId,
+          deckId: exam.deckId!,
+          startTime: { gte: windowStart, lte: exam.examDate },
+          endTime: { not: null },
+        },
+        select: {
+          studyMethod: true,
+          learningMethod: true,
+        },
+      });
+
+      // Una misma sesión puede tener varios learningMethods; cada combo
+      // único cuenta como atribución de este examen.
+      const combos = new Set<Key>();
+      for (const s of sessions) {
+        for (const lm of s.learningMethod) {
+          combos.add(`${s.studyMethod}|${lm}`);
+        }
+      }
+
+      for (const k of combos) {
+        const list = acc.get(k) ?? [];
+        list.push(examScorePct);
+        acc.set(k, list);
+      }
+    }
+
+    return Array.from(acc.entries()).map(([key, scores]) => {
+      const [studyMethod, learningMethod] = key.split('|');
+      const sum = scores.reduce((a, b) => a + b, 0);
+      return {
+        studyMethod,
+        learningMethod,
+        avgExamScore: Math.round((sum / scores.length) * 10) / 10,
+        sampleSize: scores.length,
+      };
+    });
+  }
+
+  // 12. Insights — plain-Spanish summaries computed from existing analytics.
+  //
+  // Rules-based engine (no ML). Each rule emits at most one Insight and only
+  // when it has enough data to be useful (see per-rule thresholds below). The
+  // panel on /analisis renders whatever is emitted; if nothing emits, the
+  // panel shows nothing — better than fabricating insights from thin data.
+  //
+  // Insight shape mirrors RESEARCH_IMPLEMENTATION_PLAN.md §4 Track 5:
+  //   key             — stable identifier for the rule
+  //   rq              — research question this insight speaks to
+  //   headline        — short, plain Spanish ("Tu mejor método fue X")
+  //   detail          — supporting line, includes the numbers
+  //   supportingChart — chart key the user can scroll to for more
+  //   confidence      — low/medium/high based on sample size
+  //   computation     — "¿Cómo se calcula?" tooltip body
+  async getInsights(userId: number, timeRange: TimeRangeDto) {
+    type Insight = {
+      key: string;
+      rq: 'RQ1' | 'RQ2' | 'RQ3' | 'RQ4' | 'RQ5' | 'general';
+      headline: string;
+      detail: string;
+      supportingChart?: string;
+      confidence: 'low' | 'medium' | 'high';
+      computation: string;
+    };
+    const out: Insight[] = [];
+
+    const endDate = timeRange.endDate ? new Date(timeRange.endDate) : new Date();
+    const startDate = timeRange.startDate
+      ? new Date(timeRange.startDate)
+      : new Date(endDate.getTime() - ((timeRange.days ?? 30) * 24 * 60 * 60 * 1000));
+    const windowDays = timeRange.days
+      ?? Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1);
+
+    const STUDY_METHOD_LABEL: Record<string, string> = {
+      spacedRepetition: 'Memorización espaciada',
+      simulatedTest: 'Pruebas simuladas',
+      pomodoro: 'Pomodoro',
+    };
+    const LEARNING_METHOD_LABEL: Record<string, string> = {
+      activeRecall: 'Repaso Activo',
+      cornell: 'Cornell',
+      visualCard: 'Visual',
+    };
+
+    // ── Insight 1: best method (real exam grades) ─────────
+    // Re-use the exam-correlation endpoint; emit the top combo if any has
+    // ≥3 samples (matching the chart's display threshold).
+    const examCorr = await this.getExamCorrelation(userId, timeRange);
+    const significant = examCorr.filter((c) => c.sampleSize >= 3);
+    if (significant.length > 0) {
+      const best = significant.sort((a, b) => b.avgExamScore - a.avgExamScore)[0];
+      out.push({
+        key: 'best_method',
+        rq: 'RQ2',
+        headline: `Tu mejor combinación fue ${STUDY_METHOD_LABEL[best.studyMethod] ?? best.studyMethod} con ${LEARNING_METHOD_LABEL[best.learningMethod] ?? best.learningMethod}`,
+        detail: `Promedio de ${best.avgExamScore}% en ${best.sampleSize} ${best.sampleSize === 1 ? 'examen' : 'exámenes'} de los últimos ${windowDays} días.`,
+        supportingChart: 'exam-correlation',
+        confidence: best.sampleSize >= 10 ? 'high' : 'medium',
+        computation:
+          'Promedio de notas reales (%) por cada combinación (método de estudio × tipo de carta) usada en los 30 días previos a cada examen. Solo se consideran combinaciones con al menos 3 exámenes.',
+      });
+    }
+
+    // ── Insight 2: retention quality ──────────────────────
+    const reviews = await this.prisma.cardReview.findMany({
+      where: {
+        userId,
+        reviewedAt: { gte: startDate, lte: endDate },
+      },
+      select: { evaluation: true },
+    });
+    if (reviews.length >= 5) {
+      const good = reviews.filter(
+        (r) => r.evaluation === 'bien' || r.evaluation === 'facil',
+      ).length;
+      const pct = Math.round((good / reviews.length) * 100);
+      let detail: string;
+      if (pct >= 70)
+        detail = `Recordaste bien o fácil ${good} de ${reviews.length} cartas. Tu retención es sólida.`;
+      else if (pct >= 50)
+        detail = `Recordaste bien o fácil ${good} de ${reviews.length} cartas. Repasa más seguido las que marcas como difíciles.`;
+      else
+        detail = `Solo ${good} de ${reviews.length} cartas fueron bien/fácil. Conviene espaciar más tus repasos para consolidar lo difícil.`;
+      out.push({
+        key: 'retention_quality',
+        rq: 'general',
+        headline: `${pct}% de tus repasos fueron "Bien" o "Fácil"`,
+        detail,
+        supportingChart: 'spaced-repetition',
+        confidence: reviews.length >= 30 ? 'high' : reviews.length >= 10 ? 'medium' : 'low',
+        computation: `Porcentaje de evaluaciones marcadas como "Bien" o "Fácil" sobre el total (${reviews.length}) en los últimos ${windowDays} días.`,
+      });
+    }
+
+    // ── Insight 3: adherence (active days) ────────────────
+    if (windowDays >= 7) {
+      // Activity-calendar endpoint is year-bucketed; pull a focused query for
+      // just this window so the calc matches the user's selected range.
+      const sessions = await this.prisma.studySession.findMany({
+        where: {
+          userId,
+          startTime: { gte: startDate, lte: endDate },
+          endTime: { not: null },
+        },
+        select: { startTime: true },
+      });
+      const dayKeys = new Set(
+        sessions.map((s) => s.startTime.toISOString().slice(0, 10)),
+      );
+      const activeDays = dayKeys.size;
+      const pct = Math.round((activeDays / windowDays) * 100);
+      let detail: string;
+      if (pct >= 60)
+        detail =
+          'Tu consistencia es alta; el efecto del aprendizaje espaciado se acumula con el tiempo.';
+      else if (pct >= 30)
+        detail =
+          'Estudiar algunos días seguidos podría acelerar tu progreso. Pequeñas sesiones diarias suelen rendir más que las esporádicas.';
+      else
+        detail =
+          'La frecuencia importa más que la duración. Intenta una sesión breve la mayoría de los días.';
+      out.push({
+        key: 'adherence',
+        rq: 'RQ5',
+        headline: `Estudiaste ${activeDays} de los últimos ${windowDays} días`,
+        detail,
+        supportingChart: 'activity',
+        confidence: 'high',
+        computation:
+          'Número de días en el rango seleccionado con al menos una sesión de estudio finalizada.',
+      });
+    }
+
+    // ── Insight 4: most-used study method (by time) ───────
+    const sessionsForMethod = await this.prisma.studySession.findMany({
+      where: {
+        userId,
+        startTime: { gte: startDate, lte: endDate },
+        endTime: { not: null },
+      },
+      include: { pomodoro: true },
+    });
+    if (sessionsForMethod.length >= 3) {
+      const byMethod = new Map<string, { count: number; minutes: number }>();
+      for (const s of sessionsForMethod) {
+        const mins =
+          s.studyMethod === 'pomodoro' && s.pomodoro
+            ? s.pomodoro.totalStudyTimeMin
+            : s.minDuration ?? 0;
+        const cur = byMethod.get(s.studyMethod) ?? { count: 0, minutes: 0 };
+        cur.count += 1;
+        cur.minutes += mins;
+        byMethod.set(s.studyMethod, cur);
+      }
+      const totalMin = Array.from(byMethod.values()).reduce(
+        (a, m) => a + m.minutes,
+        0,
+      );
+      if (totalMin > 0) {
+        const [topMethod, topStats] = Array.from(byMethod.entries()).sort(
+          ([, a], [, b]) => b.minutes - a.minutes,
+        )[0];
+        const share = Math.round((topStats.minutes / totalMin) * 100);
+        out.push({
+          key: 'most_used_method',
+          rq: 'RQ1',
+          headline: `${STUDY_METHOD_LABEL[topMethod] ?? topMethod} concentró el ${share}% de tu tiempo`,
+          detail: `${topStats.count} ${topStats.count === 1 ? 'sesión' : 'sesiones'} · ${topStats.minutes} minutos en los últimos ${windowDays} días.`,
+          supportingChart: 'methods',
+          confidence: sessionsForMethod.length >= 10 ? 'high' : 'medium',
+          computation:
+            'Tiempo total de estudio agregado por método dentro de la ventana seleccionada. El porcentaje se calcula sobre el tiempo total registrado en ese rango.',
+        });
+      }
+    }
+
+    return out;
+  }
 }

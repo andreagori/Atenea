@@ -94,6 +94,26 @@ export interface CardDetail {
   responseTime?: number;
 }
 
+export interface ExamCorrelationData {
+  studyMethod: string;
+  learningMethod: string;
+  avgExamScore: number;
+  sampleSize: number;
+}
+
+export type InsightRq = 'RQ1' | 'RQ2' | 'RQ3' | 'RQ4' | 'RQ5' | 'general';
+export type InsightConfidence = 'low' | 'medium' | 'high';
+
+export interface Insight {
+  key: string;
+  rq: InsightRq;
+  headline: string;
+  detail: string;
+  supportingChart?: string;
+  confidence: InsightConfidence;
+  computation: string;
+}
+
 export interface SpacedRepetitionData {
   sessionId: number;
   sessionDate: string;

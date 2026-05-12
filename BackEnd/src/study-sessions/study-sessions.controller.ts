@@ -7,12 +7,22 @@ import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
 import { TestQuestionDto, TestAnswerDto } from '../test-question/dto/test-question.dto';
 import { TestResultDto } from './dto/test-result.dto';
 import { CreateSessionResultDto } from '../session-results/dto/create-session-result.dto';
+import { SchedulingService } from '../scheduling/scheduling.service';
 
 @ApiTags('study-sessions')
 @UseGuards(JwtAuthGuard)
 @Controller('study-sessions')
 export class StudySessionsController {
-  constructor(private readonly studySessionsService: StudySessionsService) { }
+  constructor(
+    private readonly studySessionsService: StudySessionsService,
+    private readonly scheduling: SchedulingService,
+  ) { }
+
+  @Get('due-today')
+  @ApiResponse({ status: 200, description: 'Tarjetas pendientes de repaso por mazo' })
+  getDueToday(@Request() req) {
+    return this.scheduling.getDueCountsPerDeck(req.user.userId);
+  }
 
   @Post('deck/:deckId')
   @ApiResponse({ status: 201, description: 'Sesión de estudio creada', type: StudySession })

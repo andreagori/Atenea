@@ -14,129 +14,132 @@ datasource db {
 }
 
 model User {
-  userId       Int       @id @default(autoincrement())
-  username     String    @unique @db.VarChar(20)
-  passwordHash String    @db.VarChar(255)
-  createdAt    DateTime  @default(now())
+  userId       Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(20)
+  passwordHash String   @db.VarChar(255)
+  createdAt    DateTime @default(now())
 
-  decks         Deck[]
-  studySessions StudySession[]
-  exams         Exam[]
-  userStats     UserStats?
-  cardReviews   CardReview[]
+  decks            Deck[]
+  studySessions    StudySession[]
+  exams            Exam[]
+  userStats        UserStats?
+  cardReviews      CardReview[]
+  cardMemoryStates CardMemoryState[]
 }
 
 model Deck {
-  deckId    Int    @id @default(autoincrement())
+  deckId    Int      @id @default(autoincrement())
   userId    Int
-  title     String @db.VarChar(100)
+  title     String   @db.VarChar(100)
   body      String?
   createdAt DateTime @default(now())
 
-  user          User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
   cards         Card[]
   studySessions StudySession[]
+  exams         Exam[]
 }
 
 model Card {
-  cardId         Int       @id @default(autoincrement())
+  cardId         Int            @id @default(autoincrement())
   deckId         Int
-  title          String    @db.VarChar(100)
+  title          String         @db.VarChar(100)
   learningMethod LearningMethod
 
-  deck          Deck @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
+  deck          Deck               @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
   activeRecall  CardsActiveRecall?
   cornell       CardsCornell?
   visualCard    VisualCard?
   reviews       CardReview[]
-  testQuestions TestQuestion[] @relation("CorrectAnswers")
-  userAnswers   TestQuestion[] @relation("UserAnswers")
+  memoryStates  CardMemoryState[]
+  testQuestions TestQuestion[]     @relation("CorrectAnswers")
+  userAnswers   TestQuestion[]     @relation("UserAnswers")
 }
 
 model CardsActiveRecall {
-  cardId       Int     @id
+  cardId        Int    @id
   questionTitle String @db.Text
-  answer       String @db.Text
+  answer        String @db.Text
 
-  card         Card    @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
 }
 
 model CardsCornell {
-  cardId        Int     @id
-  principalNote String  @db.Text
-  noteQuestions String  @db.Text
-  shortNote     String  @db.Text
+  cardId        Int    @id
+  principalNote String @db.Text
+  noteQuestions String @db.Text
+  shortNote     String @db.Text
 
-  card          Card    @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
 }
 
 model VisualCard {
   cardId   Int    @id
   urlImage String @db.VarChar(250)
 
-  card     Card   @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
 }
 
 model StudySession {
-  sessionId      Int       @id @default(autoincrement())
+  sessionId      Int              @id @default(autoincrement())
   userId         Int
   deckId         Int
-  startTime      DateTime @default(now())
+  startTime      DateTime         @default(now())
   endTime        DateTime?
   minDuration    Int?
   learningMethod LearningMethod[]
   studyMethod    StudyMethod
 
-  user           User @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  deck           Deck @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
-  sessionResult  SessionsResult?
-  activeRecall   SessionActiveRecall?
-  pomodoro       SessionPomodoro?
-  simulatedTest  SessionSimulatedTest?
-  cardReviews    CardReview[]
+  user          User                  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  deck          Deck                  @relation(fields: [deckId], references: [deckId], onDelete: Cascade)
+  sessionResult SessionsResult?
+  activeRecall  SessionActiveRecall?
+  pomodoro      SessionPomodoro?
+  simulatedTest SessionSimulatedTest?
+  cardReviews   CardReview[]
 }
 
 model SessionActiveRecall {
-  sessionId           Int            @id
-  numCardsSpaced      Int
+  sessionId      Int @id
+  numCardsSpaced Int
 
-  session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  session StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 }
 
 model SessionPomodoro {
-  sessionId           Int            @id
-  numCards            Int
-  studyMinutes        Int
-  restMinutes         Int
-  currentCycle        Int @default(1)
-  isOnBreak           Boolean @default(false)
-  breakStartTime     DateTime?
-  studyStartTime     DateTime?
-  totalStudyTimeMin Int @default(0)
-  totalBreakTimeMin Int @default(0)
+  sessionId         Int       @id
+  numCards          Int
+  studyMinutes      Int
+  restMinutes       Int
+  currentCycle      Int       @default(1)
+  isOnBreak         Boolean   @default(false)
+  breakStartTime    DateTime?
+  studyStartTime    DateTime?
+  totalStudyTimeMin Int       @default(0)
+  totalBreakTimeMin Int       @default(0)
 
-  session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  session StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 }
 
 model SessionSimulatedTest {
-  sessionId           Int            @id
-  numQuestions        Int
-  testDurationMin     Int
-  correctAnswers      Int?
-  incorrectAnswers    Int?
+  sessionId        Int  @id
+  numQuestions     Int
+  testDurationMin  Int
+  correctAnswers   Int?
+  incorrectAnswers Int?
 
-  session             StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
-  testQuestions       TestQuestion[]
+  session       StudySession   @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  testQuestions TestQuestion[]
 }
 
 model TestQuestion {
-  questionId     Int      @id @default(autoincrement())
-  testId         Int
-  cardId         Int      // Carta correcta
-  userAnswer     Int?     // ID de la carta que el usuario seleccionó
-  isCorrect      Boolean?
-  optionsOrder   Int[]    // Orden de opciones [0:correcta, 1:incorrecta1, 2:incorrecta2]
-  timeSpent      Int?     // Tiempo en segundos
+  questionId   Int      @id @default(autoincrement())
+  testId       Int
+  cardId       Int // Carta correcta
+  userAnswer   Int? // ID de la carta que el usuario seleccionó
+  isCorrect    Boolean?
+  optionsOrder Int[] // Orden de opciones [0:correcta, 1:incorrecta1, 2:incorrecta2]
+  timeSpent    Int? // Tiempo en segundos
 
   test           SessionSimulatedTest @relation(fields: [testId], references: [sessionId], onDelete: Cascade)
   correctCard    Card                 @relation("CorrectAnswers", fields: [cardId], references: [cardId])
@@ -144,48 +147,78 @@ model TestQuestion {
 }
 
 model CardReview {
-  reviewId      Int       @id @default(autoincrement())
-  sessionId     Int
-  cardId        Int
-  userId        Int
-  evaluation    Evaluation
-  reviewedAt    DateTime  @default(now())
-  nextReviewAt  DateTime
-  intervalMinutes  Int
-  timeSpent     Int?
+  reviewId        Int        @id @default(autoincrement())
+  sessionId       Int
+  cardId          Int
+  userId          Int
+  evaluation      Evaluation
+  reviewedAt      DateTime   @default(now())
+  nextReviewAt    DateTime
+  intervalMinutes Int
+  timeSpent       Int?
 
-  session       StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
-  card          Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  session StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  card    Card         @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
 }
 
 model SessionsResult {
-  resultId  Int       @id @default(autoincrement())
-  sessionId Int       @unique
+  resultId  Int      @id @default(autoincrement())
+  sessionId Int      @unique
   score     Int
-  testDate  DateTime  @default(now())
+  testDate  DateTime @default(now())
 
-  session   StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  session StudySession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 }
 
 model UserStats {
-  userId              Int    @id
-  totalSessions       Int    @default(0)
-  totalStudyMin       Int    @default(0)
-  mostUsedLearningM   LearningMethod?
-  mostUsedStudyM      StudyMethod?
+  userId            Int             @id
+  totalSessions     Int             @default(0)
+  totalStudyMin     Int             @default(0)
+  mostUsedLearningM LearningMethod?
+  mostUsedStudyM    StudyMethod?
 
-  user               User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+// level: 0 = learning phase, 1..7 = spaced. facilPending: card has had one facil already.
+model CardMemoryState {
+  userId          Int
+  cardId          Int
+  level           Int       @default(0)
+  repsInLearning  Int       @default(0)
+  facilPending    Boolean   @default(false)
+  lastReviewedAt  DateTime?
+  nextReviewAt    DateTime?
+  intervalMinutes Int       @default(0)
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+
+  @@id([userId, cardId])
+  @@index([userId, nextReviewAt])
+  @@index([userId, level])
 }
 
 model Exam {
   examId    Int      @id @default(autoincrement())
   userId    Int
+  // Optional FK to a deck. When set, exam-correlation analytics attribute
+  // study sessions on this deck to the exam outcome. When null, the
+  // free-text `subject` field is the fallback identifier.
+  deckId    Int?
+  subject   String?  @db.VarChar(100)
   examDate  DateTime
   examScore Int
+  maxScore  Int      @default(100)
   note      String?  @db.Text
+  createdAt DateTime @default(now())
 
-  user      User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user User  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  deck Deck? @relation(fields: [deckId], references: [deckId], onDelete: SetNull)
+
+  @@index([userId, examDate])
+  @@index([deckId])
 }
 
 enum LearningMethod {

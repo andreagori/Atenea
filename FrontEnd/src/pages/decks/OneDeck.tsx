@@ -4,6 +4,7 @@ import { ChevronLeft, Plus } from "lucide-react";
 import { Button, useToast } from "@/components/ui";
 import { useDecks } from "@/hooks/useDeck";
 import { useCards, type Card } from "@/hooks/useCards";
+import { useExams, type Exam } from "@/hooks/useExams";
 import { type CreateCardPayload } from "@/types/card.types";
 import {
   DeckDetailHeader,
@@ -11,6 +12,8 @@ import {
   CardGridItem,
   AddCardCard,
   CardModal,
+  LogExamModal,
+  ExamHistoryPanel,
   colorForDeck,
 } from "@/components/decks";
 
@@ -85,9 +88,17 @@ const OneDeck = () => {
     updateCard,
     deleteCard,
   } = useCards(deckId);
+  const {
+    exams,
+    loading: examsLoading,
+    error: examsError,
+    createExam,
+    deleteExam,
+  } = useExams(deckId);
 
   // Edit-only modal — card creation is its own page (/mazos/:title/nueva-carta).
   const [editingCard, setEditingCard] = useState<Card | undefined>(undefined);
+  const [logExamOpen, setLogExamOpen] = useState(false);
 
   const goToCreate = () =>
     navigate(`/mazos/${encodeURIComponent(decoded)}/nueva-carta`);
@@ -129,6 +140,20 @@ const OneDeck = () => {
     } catch (err) {
       console.error("Error deleting card:", err);
       showToast("No se pudo eliminar la carta.", { kind: "error" });
+    }
+  };
+
+  const handleDeleteExam = async (exam: Exam) => {
+    const ok = window.confirm(
+      "¿Eliminar este examen? Esta acción no se puede deshacer."
+    );
+    if (!ok) return;
+    try {
+      await deleteExam(exam.examId);
+      showToast("Examen eliminado", { kind: "success" });
+    } catch (err) {
+      console.error("Error deleting exam:", err);
+      showToast("No se pudo eliminar el examen.", { kind: "error" });
     }
   };
 
@@ -212,12 +237,32 @@ const OneDeck = () => {
         </div>
       )}
 
+      {/* Exam logging + history — Track 1 of the research plan. */}
+      <ExamHistoryPanel
+        exams={exams}
+        loading={examsLoading}
+        error={examsError}
+        onAdd={() => setLogExamOpen(true)}
+        onDelete={handleDeleteExam}
+      />
+
       {/* Edit-only modal. Creation flow lives at /mazos/:title/nueva-carta. */}
       <CardModal
         open={editingCard !== undefined}
         onClose={() => setEditingCard(undefined)}
         initialCard={editingCard}
         onUpdate={handleUpdate}
+      />
+
+      <LogExamModal
+        open={logExamOpen}
+        onClose={() => setLogExamOpen(false)}
+        deckId={deck.deckId}
+        deckTitle={deck.title}
+        onSubmit={async (payload) => {
+          await createExam(payload);
+        }}
+        onSuccess={() => showToast("Examen registrado", { kind: "success" })}
       />
     </div>
   );
