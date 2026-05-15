@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plus, Brain, ChevronLeft } from "lucide-react";
+import { Plus, Brain, ChevronLeft, Upload } from "lucide-react";
 import { Button, IconButton } from "@/components/ui";
 
 export interface DeckDetailHeaderProps {
@@ -8,6 +8,7 @@ export interface DeckDetailHeaderProps {
   /** Deck id — preselects this deck on the /sesionesEstudio setup page. */
   deckId: number;
   onAddCard: () => void;
+  onBulkImport: () => void;
 }
 
 /**
@@ -21,6 +22,7 @@ export const DeckDetailHeader = ({
   title,
   deckId,
   onAddCard,
+  onBulkImport,
 }: DeckDetailHeaderProps) => (
   <div className="mb-7">
     {/* Breadcrumb row */}
@@ -50,6 +52,9 @@ export const DeckDetailHeader = ({
       <div className="flex items-center gap-2 flex-shrink-0">
         <Button onClick={onAddCard} variant="secondary">
           <Plus size={16} /> Agregar carta
+        </Button>
+        <Button onClick={onBulkImport} variant="secondary">
+          <Upload size={16} /> Carga masiva
         </Button>
         <Link to={`/sesionesEstudio?deckId=${deckId}`}>
           <Button variant="primary">

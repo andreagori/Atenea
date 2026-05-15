@@ -4,6 +4,7 @@ import { Card } from './entities/card.entity';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { LearningMethod } from './dto/create-card.dto';
+import { BulkCardRow, BulkCreateCardDto } from './dto/bulk-create-card.dto';
 
 @Injectable()
 export class CardService {
@@ -96,6 +97,101 @@ export class CardService {
     return {
       message: 'Carta creada con éxito',
       card,
+    };
+  }
+
+  // Normaliza y valida una fila; devuelve el error en español o null si es válida.
+  private validateRow(row: BulkCardRow): { method: LearningMethod; title: string; error: string | null } {
+    const title = (row.title ?? '').trim();
+    const method = ((row.learningMethod ?? 'activeRecall').toString().trim() ||
+      'activeRecall') as LearningMethod;
+
+    if (title.length < 3 || title.length > 100) {
+      return { method, title, error: 'El título debe tener entre 3 y 100 caracteres' };
+    }
+    if (method === LearningMethod.VISUAL_CARD) {
+      return { method, title, error: 'Las cartas visuales no se pueden crear por carga masiva' };
+    }
+    if (method !== LearningMethod.ACTIVE_RECALL && method !== LearningMethod.CORNELL) {
+      return { method, title, error: `Método no válido: "${method}"` };
+    }
+    if (method === LearningMethod.ACTIVE_RECALL) {
+      if (!(row.questionTitle ?? '').trim() || !(row.answer ?? '').trim()) {
+        return { method, title, error: 'Faltan Pregunta o Respuesta' };
+      }
+    }
+    if (method === LearningMethod.CORNELL) {
+      if (
+        !(row.principalNote ?? '').trim() ||
+        !(row.noteQuestions ?? '').trim() ||
+        !(row.shortNote ?? '').trim()
+      ) {
+        return { method, title, error: 'Faltan Nota principal, Preguntas guía o Resumen' };
+      }
+    }
+    return { method, title, error: null };
+  }
+
+  /**
+   * Crea cartas en lote. Una fila inválida no aborta el resto.
+   * @returns Resumen { created, skipped, total, errors }
+   */
+  async createBulk(dto: BulkCreateCardDto, deckId: number, userId: number) {
+    const deck = await this.prisma.deck.findFirst({ where: { deckId, userId } });
+    if (!deck) {
+      throw new NotFoundException(`El mazo con ID ${deckId} no pertenece al usuario`);
+    }
+
+    const errors: { row: number; title: string; message: string }[] = [];
+    let created = 0;
+
+    for (let i = 0; i < dto.cards.length; i++) {
+      const row = dto.cards[i];
+      const { method, title, error } = this.validateRow(row);
+
+      if (error) {
+        errors.push({ row: i + 1, title, message: error });
+        continue;
+      }
+
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          const card = await tx.card.create({
+            data: { title, deckId, learningMethod: method },
+          });
+
+          if (method === LearningMethod.ACTIVE_RECALL) {
+            await tx.cardsActiveRecall.create({
+              data: {
+                cardId: card.cardId,
+                questionTitle: (row.questionTitle ?? '').trim(),
+                answer: (row.answer ?? '').trim(),
+              },
+            });
+          } else {
+            await tx.cardsCornell.create({
+              data: {
+                cardId: card.cardId,
+                principalNote: (row.principalNote ?? '').trim(),
+                noteQuestions: (row.noteQuestions ?? '').trim(),
+                shortNote: (row.shortNote ?? '').trim(),
+              },
+            });
+          }
+        });
+        created++;
+      } catch (e) {
+        this.logger.error(`Error creando carta en fila ${i + 1}`, e as Error);
+        errors.push({ row: i + 1, title, message: 'Error al guardar la carta' });
+      }
+    }
+
+    return {
+      message: `${created} carta(s) creada(s), ${errors.length} omitida(s)`,
+      created,
+      skipped: errors.length,
+      total: dto.cards.length,
+      errors,
     };
   }
 

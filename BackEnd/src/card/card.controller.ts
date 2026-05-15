@@ -3,6 +3,7 @@ import { Card } from './entities/card.entity';
 import { CardService } from './card.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
+import { BulkCreateCardDto } from './dto/bulk-create-card.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../jwt/JwtAuthGuard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
@@ -36,6 +37,17 @@ export class CardController {
     }
 
     return this.cardService.create(createCardDto, +deckId, user.userId);
+  }
+
+  // BULK CREATE CARDS
+  @ApiResponse({ status: 201, description: 'Cards created in bulk' })
+  @Post('deck/:deckId/bulk')
+  async createBulk(
+    @Param('deckId') deckId: string,
+    @Body() bulkCreateCardDto: BulkCreateCardDto,
+    @GetUser() user: any,
+  ) {
+    return this.cardService.createBulk(bulkCreateCardDto, +deckId, user.userId);
   }
 
   // GET ALL CARDS

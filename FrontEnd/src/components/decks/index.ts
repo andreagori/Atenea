@@ -49,6 +49,8 @@ export {
 
 // Exam logging (deck-scoped)
 export { LogExamModal, type LogExamModalProps } from "./LogExamModal";
+// BulkImportModal is intentionally not re-exported here: it is lazy-loaded
+// directly so exceljs stays in its own chunk.
 export {
   ExamHistoryPanel,
   type ExamHistoryPanelProps,

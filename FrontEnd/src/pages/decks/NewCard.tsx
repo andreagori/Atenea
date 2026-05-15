@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Upload } from "lucide-react";
 import { Button, useToast, IconButton } from "@/components/ui";
 import { useDecks } from "@/hooks/useDeck";
 import { useCards } from "@/hooks/useCards";
@@ -11,6 +11,13 @@ import {
   colorForDeck,
   type CardFormData,
 } from "@/components/decks";
+
+// Lazy: pulls exceljs into its own chunk, loaded only when opened.
+const BulkImportModal = lazy(() =>
+  import("@/components/decks/BulkImportModal").then((m) => ({
+    default: m.BulkImportModal,
+  }))
+);
 
 const INITIAL_PREVIEW_DATA: CardFormData = {
   learningMethod: "activeRecall",
@@ -47,6 +54,7 @@ const NewCard = () => {
 
   const [previewData, setPreviewData] =
     useState<CardFormData>(INITIAL_PREVIEW_DATA);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   // Stable identity so CardForm's onDataChange effect only fires when the
   // form state actually changes.
@@ -121,13 +129,18 @@ const NewCard = () => {
       </div>
 
       {/* Title */}
-      <div className="mb-7">
-        <h1 className="text-[38px] font-medium m-0 leading-[1.05] tracking-[-0.5px] text-v2-ink">
-          Crear carta
-        </h1>
-        <p className="text-[15px] text-v2-ink-2 m-0 mt-1.5">
-          en <span className="text-v2-ink font-medium">{deck.title}</span>
-        </p>
+      <div className="mb-7 flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-[38px] font-medium m-0 leading-[1.05] tracking-[-0.5px] text-v2-ink">
+            Crear carta
+          </h1>
+          <p className="text-[15px] text-v2-ink-2 m-0 mt-1.5">
+            en <span className="text-v2-ink font-medium">{deck.title}</span>
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => setBulkOpen(true)}>
+          <Upload size={16} /> Carga masiva
+        </Button>
       </div>
 
       {/* Two-column: form (left) + sticky live preview (right) */}
@@ -153,6 +166,21 @@ const NewCard = () => {
           </p>
         </aside>
       </div>
+
+      {bulkOpen && (
+        <Suspense fallback={null}>
+          <BulkImportModal
+            open={bulkOpen}
+            onClose={() => setBulkOpen(false)}
+            deckId={deck.deckId}
+            deckTitle={deck.title}
+            onImported={() => {
+              showToast("Cartas importadas", { kind: "success" });
+              navigate(deckUrl);
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Plus } from "lucide-react";
 import { Button, useToast } from "@/components/ui";
@@ -16,6 +16,13 @@ import {
   ExamHistoryPanel,
   colorForDeck,
 } from "@/components/decks";
+
+// Lazy: pulls exceljs into its own chunk, loaded only when opened.
+const BulkImportModal = lazy(() =>
+  import("@/components/decks/BulkImportModal").then((m) => ({
+    default: m.BulkImportModal,
+  }))
+);
 
 const CARD_HEIGHT_PX = 280;
 
@@ -87,6 +94,7 @@ const OneDeck = () => {
     error: cardsError,
     updateCard,
     deleteCard,
+    refetchCards,
   } = useCards(deckId);
   const {
     exams,
@@ -99,6 +107,7 @@ const OneDeck = () => {
   // Edit-only modal — card creation is its own page (/mazos/:title/nueva-carta).
   const [editingCard, setEditingCard] = useState<Card | undefined>(undefined);
   const [logExamOpen, setLogExamOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const goToCreate = () =>
     navigate(`/mazos/${encodeURIComponent(decoded)}/nueva-carta`);
@@ -196,6 +205,7 @@ const OneDeck = () => {
         title={deck.title}
         deckId={deck.deckId}
         onAddCard={goToCreate}
+        onBulkImport={() => setBulkOpen(true)}
       />
       <DeckSummaryCard
         description={deck.body}
@@ -264,6 +274,21 @@ const OneDeck = () => {
         }}
         onSuccess={() => showToast("Examen registrado", { kind: "success" })}
       />
+
+      {bulkOpen && (
+        <Suspense fallback={null}>
+          <BulkImportModal
+            open={bulkOpen}
+            onClose={() => setBulkOpen(false)}
+            deckId={deck.deckId}
+            deckTitle={deck.title}
+            onImported={() => {
+              refetchCards();
+              showToast("Cartas importadas", { kind: "success" });
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
