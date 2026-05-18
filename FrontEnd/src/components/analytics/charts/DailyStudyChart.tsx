@@ -77,7 +77,7 @@ export const DailyStudyChart = ({ data, loading }: DailyStudyChartProps) => {
         ...tooltipChartJs,
         callbacks: {
           label: (ctx: TooltipItem<"line">) => {
-            const m = ctx.parsed.y;
+            const m = ctx.parsed.y ?? 0;
             const h = (m / 60).toFixed(1);
             return `${m} min (${h}h)`;
           },
