@@ -30,11 +30,24 @@ const Eyebrow = ({ children }: { children: string }) => (
   </div>
 );
 
-const PromptSide = ({ title }: { title: string }) => (
+// The real prompt depends on the learning method, not the card.title (which
+// is just a label/topic). Falls back to title if the specific field is empty.
+const getPrompt = (card: RuntimeCard): string => {
+  switch (card.learningMethod.toLowerCase()) {
+    case "activerecall":
+      return card.activeRecall?.questionTitle || card.title;
+    case "cornell":
+      return card.cornell?.noteQuestions || card.title;
+    default:
+      return card.title;
+  }
+};
+
+const PromptSide = ({ prompt }: { prompt: string }) => (
   <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
     <Eyebrow>Pregunta</Eyebrow>
     <h2 className="text-[28px] font-medium leading-[1.2] text-v2-ink m-0 max-w-[640px]">
-      {title}
+      {prompt}
     </h2>
     <p className="text-sm text-v2-ink-2 m-0 mt-2 max-w-md">
       Intenta recordar antes de revelar la respuesta.
@@ -74,7 +87,7 @@ const Zone = ({ label, body }: { label: string; body: string }) => (
     <div className="font-v2-mono text-[10px] tracking-[1.5px] uppercase text-v2-ink-3 font-medium mb-1.5">
       {label}
     </div>
-    <p className="text-[14px] text-v2-ink leading-[1.5] whitespace-pre-wrap m-0">
+    <p className="text-[14px] text-v2-ink leading-[1.5] whitespace-pre-wrap break-words m-0 max-h-[180px] overflow-y-auto pr-1">
       {body}
     </p>
   </div>
@@ -138,12 +151,12 @@ export const StudyCardDisplay = ({
   return (
     <div className="bg-v2-surface border border-v2-line rounded-v2-lg p-6 sm:p-8 shadow-v2-sm">
       {!revealed ? (
-        <PromptSide title={card.title} />
+        <PromptSide prompt={getPrompt(card)} />
       ) : (
         <div>
-          <h2 className="text-[20px] font-medium m-0 mb-4 text-v2-ink-2 flex items-center gap-2">
-            <Eye size={18} className="text-v2-primary" />
-            {card.title}
+          <h2 className="text-[20px] font-medium m-0 mb-4 text-v2-ink-2 flex items-start gap-2">
+            <Eye size={18} className="text-v2-primary mt-1 flex-shrink-0" />
+            <span>{getPrompt(card)}</span>
           </h2>
           {renderAnswer()}
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 import { Field, Input, Textarea } from "@/components/ui";
 import { type CreateCardPayload } from "@/types/card.types";
@@ -152,6 +152,7 @@ export const VisualCardFields = ({
 }: FieldsProps<VisualCardData>) => {
   const [previewUrl, setPreviewUrl] = useState<string>(data.urlImage ?? "");
   const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(
     () => () => {
@@ -161,6 +162,19 @@ export const VisualCardFields = ({
     },
     [previewUrl]
   );
+
+  // Parent resets data on "stay on page" submit — clear the local preview
+  // + native file input so the next card starts blank.
+  useEffect(() => {
+    if (!data.file && !data.urlImage && previewUrl) {
+      if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl("");
+      setFileError(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+    // previewUrl intentionally omitted to avoid loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.file, data.urlImage]);
 
   const handleFile = (file: File | undefined) => {
     if (!file) return;
@@ -206,6 +220,7 @@ export const VisualCardFields = ({
         error={fileError ?? undefined}
       >
         <input
+          ref={fileInputRef}
           id="visual-file"
           type="file"
           accept="image/*"
