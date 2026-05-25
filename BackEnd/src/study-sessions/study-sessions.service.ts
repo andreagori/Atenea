@@ -677,7 +677,7 @@ export class StudySessionsService {
         // Devolver la pregunta pendiente con sus opciones reconstruidas
         return {
           questionId: fullQuestion.questionId,
-          title: fullQuestion.correctCard.title,
+          title: this.getCardPrompt(fullQuestion.correctCard),
           options,
           progress: {
             current: answeredQuestions + 1,
@@ -827,7 +827,7 @@ export class StudySessionsService {
       // Esto asegura que la numeración comience en 1 para la primera pregunta
       return {
         questionId: testQuestion.questionId,
-        title: correctCard.title,
+        title: this.getCardPrompt(correctCard),
         options,
         progress: {
           current: answeredQuestions + 1, // CORRECCIÓN: Usamos preguntas respondidas + 1
@@ -837,6 +837,20 @@ export class StudySessionsService {
     } catch (error) {
       console.error('Error en getTestQuestion:', error);
       throw error;
+    }
+  }
+
+  // Prompt shown as the question stem in simulated tests. card.title is just
+  // a label/topic; the real question lives in the per-method subrecord.
+  private getCardPrompt(card: any): string {
+    if (!card?.learningMethod) return card?.title ?? '';
+    switch (card.learningMethod) {
+      case 'activeRecall':
+        return card.activeRecall?.questionTitle || card.title;
+      case 'cornell':
+        return card.cornell?.noteQuestions || card.title;
+      default:
+        return card.title;
     }
   }
 

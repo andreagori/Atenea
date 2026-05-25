@@ -20,9 +20,9 @@ export const CardPreview = ({
     return <ActiveRecallPreview card={card} deckColor={deckColor} />;
   }
   if (card.learningMethod === "cornell") {
-    return <CornellPreview card={card} />;
+    return <CornellPreview card={card} deckColor={deckColor} />;
   }
-  return <VisualPreview card={card} />;
+  return <VisualPreview card={card} deckColor={deckColor} />;
 };
 
 /* ---------- Active Recall ---------- */
@@ -102,21 +102,27 @@ export const ActiveRecallPreview = ({
 
 /* ---------- Cornell ---------- */
 
-export const CornellPreview = ({ card }: { card: Card }) => {
+export const CornellPreview = ({
+  card,
+  deckColor,
+}: {
+  card: Card;
+  deckColor: string;
+}) => {
   const ideas = card.cornell?.noteQuestions ?? "—";
   const notes = card.cornell?.principalNote ?? "—";
   const summary = card.cornell?.shortNote ?? "—";
 
   return (
     <div
-      className="rounded-v2-lg p-3.5 flex flex-col gap-2"
+      className="rounded-v2-lg p-3.5 flex flex-col gap-2 overflow-hidden"
       style={{
         height: PREVIEW_HEIGHT,
-        background: "var(--color-v2-line)",
-        border: "1.5px solid var(--color-v2-bg)",
+        background: `linear-gradient(180deg, color-mix(in srgb, ${deckColor} 35%, var(--color-v2-bg)), color-mix(in srgb, ${deckColor} 18%, var(--color-v2-bg)))`,
+        border: `1.5px solid color-mix(in srgb, ${deckColor} 40%, transparent)`,
       }}
     >
-      <div className="flex-1 grid grid-cols-[85px_1fr] gap-2">
+      <div className="flex-1 grid grid-cols-[85px_1fr] gap-2 min-h-0 overflow-hidden">
         <ZoneCard label="IDEAS" body={ideas} />
         <ZoneCard label="NOTAS" body={notes} />
       </div>
@@ -134,14 +140,16 @@ const ZoneCard = ({
   body: string;
   compact?: boolean;
 }) => (
-  <div className="bg-v2-surface rounded-[10px] px-3 py-2.5 flex flex-col gap-1 overflow-hidden">
-    <div className="font-v2-mono text-[10px] tracking-[1.5px] text-v2-ink-3 font-medium">
+  <div className="bg-v2-surface rounded-[10px] px-3 py-2.5 flex flex-col gap-1 overflow-hidden min-h-0">
+    <div className="font-v2-mono text-[10px] tracking-[1.5px] text-v2-ink-3 font-medium flex-shrink-0">
       {label}
     </div>
     <div
       className={cn(
-        "text-[10px] text-v2-ink-2 leading-[1.4] whitespace-pre-wrap",
-        compact ? "" : "overflow-hidden"
+        "text-[10px] text-v2-ink-2 leading-[1.4] whitespace-pre-wrap break-words",
+        compact
+          ? "line-clamp-2"
+          : "flex-1 min-h-0 overflow-hidden"
       )}
     >
       {body}
@@ -151,16 +159,23 @@ const ZoneCard = ({
 
 /* ---------- Visual ---------- */
 
-export const VisualPreview = ({ card }: { card: Card }) => {
+export const VisualPreview = ({
+  card,
+  deckColor,
+}: {
+  card: Card;
+  deckColor: string;
+}) => {
   const url = card.visualCard?.urlImage;
   const description = card.title;
 
   return (
     <div
-      className="rounded-v2-lg overflow-hidden flex flex-col border-[1.5px] border-v2-line"
+      className="rounded-v2-lg overflow-hidden flex flex-col"
       style={{
         height: PREVIEW_HEIGHT,
-        background: "linear-gradient(180deg, var(--color-v2-line) 0%, var(--color-v2-bg) 100%)",
+        background: `linear-gradient(180deg, color-mix(in srgb, ${deckColor} 35%, var(--color-v2-bg)) 0%, var(--color-v2-bg) 100%)`,
+        border: `1.5px solid color-mix(in srgb, ${deckColor} 40%, transparent)`,
       }}
     >
       <div className="flex-1 m-3 bg-v2-surface rounded-[14px] flex items-center justify-center overflow-hidden">
